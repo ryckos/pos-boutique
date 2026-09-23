@@ -2,7 +2,13 @@
 import { base } from '../../db/connexion'
 import { gerer } from '../../ipc/gerer'
 import { session } from '../../core/session'
-import { grille, produitsAvecStock, rechercherParCode, rechercherTexte } from './service'
+import {
+  conditionnementsProduit,
+  grille,
+  produitsAvecStock,
+  rechercherParCode,
+  rechercherTexte
+} from './service'
 import { creerCategorie, desactiverCategorie, listerCategories, renommerCategorie } from './categories'
 
 export function enregistrerIpcCatalogue(): void {
@@ -17,6 +23,10 @@ export function enregistrerIpcCatalogue(): void {
   gerer('catalogue:grille', () => {
     session.exiger()
     return grille(base())
+  })
+  gerer('catalogue:conditionnementsProduit', ({ produitId }) => {
+    session.exiger()
+    return conditionnementsProduit(base(), produitId)
   })
   gerer('catalogue:produitsStock', () => {
     // Valeur du stock au CUMP : donnée de gestion, pas pour la caisse.

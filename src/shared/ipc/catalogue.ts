@@ -18,6 +18,11 @@ export interface ContratCatalogue {
   'catalogue:rechercher': { requete: { texte: string }; reponse: ArticleCatalogue[] }
   /** Boutons tactiles de la caisse (produits sans code-barres, lots, cartons…). */
   'catalogue:grille': { requete: void; reponse: ArticleCatalogue[] }
+  /**
+   * Conditionnements actifs d'un produit (« changer le conditionnement » d'une ligne du ticket) :
+   * l'Unité d'abord, puis par quantité croissante. Vide si le produit est inconnu ou désactivé.
+   */
+  'catalogue:conditionnementsProduit': { requete: { produitId: number }; reponse: ArticleCatalogue[] }
   /** Liste des produits avec leur stock calculé. */
   'catalogue:produitsStock': { requete: void; reponse: ProduitStock[] }
   /** Rayons suivis de leurs sous-rayons, par ordre alphabétique (désactivées comprises). */

@@ -62,6 +62,22 @@ export function grille(db: Db): ArticleCatalogue[] {
   ).map(versArticle)
 }
 
+/**
+ * Conditionnements vendables d'un produit, pour « changer le conditionnement » d'une ligne de
+ * caisse : l'Unité d'abord, puis du plus petit au plus grand. Vide si le produit est inconnu ou
+ * désactivé (la vue ne garde que les produits et conditionnements actifs).
+ */
+export function conditionnementsProduit(db: Db, produitId: number): ArticleCatalogue[] {
+  return toutes<LigneArticle>(
+    db,
+    `SELECT ${COLONNES} FROM v_catalogue_vente v ${JOINTURE_RAYON}
+     JOIN conditionnements c ON c.id = v.conditionnement_id
+     WHERE v.produit_id = ?
+     ORDER BY c.est_defaut DESC, v.quantite_base, v.conditionnement_id`,
+    produitId
+  ).map(versArticle)
+}
+
 export function produitsAvecStock(db: Db): ProduitStock[] {
   return toutes<Omit<ProduitStock, 'enAlerte'>>(
     db,
