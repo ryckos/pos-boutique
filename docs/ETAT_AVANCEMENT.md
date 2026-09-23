@@ -17,7 +17,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 |-----------------------------------------------------------|-----------|-------------|----------|--------|--------|
 | `catalogue:rechercherCode`, `catalogue:grille`, `catalogue:rechercher` | socle | A | — | ✅ | — |
 | `core/mouvements`, `numerotation`, `audit`, `session`     | socle     | A et B      | —        | ✅     | — |
-| Contrôle des rôles sur tous les canaux                    | B         | A           | fin S3   | 🔄     | revue faite (PR #4 B1) ; 2 canaux `materiel:*` corrigés par A sur `a/droits-materiel` (PR en cours) |
+| Contrôle des rôles sur tous les canaux                    | B         | A           | fin S3   | ✅     | revue faite (PR #4 B1) ; 2 canaux `materiel:*` corrigés par A (PR #5) |
 | `catalogue:conditionnementsProduit`                       | B         | A           | fin S4   | ⏳     | A1.2 |
 | `parametres:lire` (puis `ecrire`)                         | B         | A           | fin S5   | ⏳     | A3 |
 | `caisse:enregistrerVente` (modèle de transaction)         | A         | B (lecture) | fin S5   | ⏳     | — |
@@ -54,7 +54,7 @@ Le socle comprend :
 | Tâche | Intitulé                                        | Dev | Statut | Notes |
 |-------|-------------------------------------------------|-----|--------|-------|
 | A1.1  | Panier et logique de calcul                     | A   | ✅     | PR #3 — essai à la vraie douchette sur le terminal encore à faire (validé en simulation) |
-| A1.2  | Grille, recherche F2, conditionnement, attente  | A   | ⏳     | attend B2.2 (conditionnementsProduit) |
+| A1.2  | Grille, recherche F2, conditionnement, attente  | A   | 🔄     | `a/caisse-grille` — changement de conditionnement masqué en attendant B2.2 (conditionnementsProduit) |
 | A2    | Encaissement et enregistrement de la vente      | A   | ⏳     |       |
 | A3    | Ticket, tiroir, réglages matériel               | A   | ⏳     | attend B5 (parametres:lire) |
 | A4    | Sessions de caisse, X et Z                      | A   | ⏳     |       |
