@@ -1,0 +1,49 @@
+# Relecteurs obligatoires par zone. Remplacez @dev-a et @dev-b par vos identifiants GitHub.
+# Principe : chacun relit TOUJOURS le travail de l'autre ; les zones partagées sont
+# signalées explicitement pour attirer l'attention.
+
+*                                   @dev-a @dev-b
+
+# ─── Zones partagées (relecture attentive par les deux) ───
+/src/shared/                        @dev-a @dev-b
+/src/main/core/                     @dev-a @dev-b
+/src/main/db/                       @dev-a @dev-b
+/src/main/ipc/                      @dev-a @dev-b
+/src/preload/                       @dev-a @dev-b
+/src/renderer/src/app/              @dev-a @dev-b
+/src/renderer/src/lib/              @dev-a @dev-b
+/src/renderer/src/ui/               @dev-a @dev-b
+/package.json                       @dev-a @dev-b
+/CLAUDE.md                          @dev-a @dev-b
+/.claude/                          @dev-a @dev-b
+/docs/                             @dev-a @dev-b
+/src/main/CLAUDE.md                 @dev-a @dev-b
+/src/renderer/CLAUDE.md             @dev-a @dev-b
+/tests/CLAUDE.md                    @dev-a @dev-b
+
+# ─── Dev A — comptoir et matériel ───
+/src/main/modules/caisse/           @dev-a
+/src/main/modules/clients/          @dev-a
+/src/main/modules/promotions/       @dev-a
+/src/main/modules/rapports-ventes/  @dev-a
+/src/main/materiel/                 @dev-a
+/src/main/fenetres.ts               @dev-a
+/src/renderer/src/modules/caisse/   @dev-a
+/src/renderer/src/modules/clients/  @dev-a
+/src/renderer/client.html           @dev-a
+/src/renderer/src/client.tsx        @dev-a
+/resources/                         @dev-a
+
+# ─── Dev B — back-office et données ───
+/src/main/modules/auth/             @dev-b
+/src/main/modules/utilisateurs/     @dev-b
+/src/main/modules/catalogue/        @dev-b
+/src/main/modules/stock/            @dev-b
+/src/main/modules/parametres/       @dev-b
+/src/main/modules/achats/           @dev-b
+/src/main/modules/inventaires/      @dev-b
+/src/main/modules/depenses/         @dev-b
+/src/main/modules/rapports-gestion/ @dev-b
+/src/main/modules/sauvegardes/      @dev-b
+/src/renderer/src/modules/auth/     @dev-b
+/src/renderer/src/modules/catalogue/ @dev-b

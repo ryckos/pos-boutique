@@ -1,0 +1,15 @@
+node_modules/
+out/
+dist/
+*.db
+*.db-wal
+*.db-shm
+.env
+.DS_Store
+Thumbs.db
+
+# Claude Code : réglages personnels (non partagés)
+.claude/settings.local.json
+
+# Poste personnel de chaque développeur (créé par scripts/configurer-dev.ps1)
+CLAUDE.local.md

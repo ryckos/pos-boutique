@@ -1,0 +1,411 @@
+/*
+ * Styles de l'application. ZONE PARTAGÉE.
+ *
+ * Parti pris : un outil de comptoir, lu vite et touché du doigt.
+ *  - Police Segoe UI : native sur le terminal Windows, aucune dépendance réseau.
+ *  - Chiffres tabulaires partout où il y a de l'argent (.montant) : les colonnes s'alignent.
+ *  - Cibles tactiles de 56 px minimum.
+ *  - Un seul élément fort : le total du ticket. Tout le reste reste calme.
+ *
+ * Les jetons ci-dessous sont la seule source des couleurs. Pas de couleur en dur ailleurs.
+ */
+
+:root {
+  --encre: #1f2d33;
+  --encre-douce: #56646a;
+  --fond: #f4f6f5;
+  --surface: #ffffff;
+  --bord: #d9dedb;
+  --vert: #0f6e56;
+  --vert-fonce: #0b5543;
+  --vert-pale: #e3f1ec;
+  --ambre: #8a5a0b;
+  --ambre-pale: #fbf1dc;
+  --rouge: #a3321f;
+  --rouge-pale: #f9e4e0;
+
+  --rayon: 8px;
+  --cible: 56px;
+
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--encre);
+  background: var(--fond);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--vert);
+  outline-offset: 2px;
+}
+
+.montant {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ─── Boutons ─── */
+.btn {
+  min-height: 48px;
+  padding: 0 20px;
+  border: none;
+  border-radius: var(--rayon);
+  background: var(--vert);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover {
+  background: var(--vert-fonce);
+}
+.btn:disabled {
+  background: var(--bord);
+  color: var(--encre-douce);
+  cursor: not-allowed;
+}
+.btn-discret {
+  background: transparent;
+  color: inherit;
+  border: 1px solid currentColor;
+  opacity: 0.85;
+}
+.btn-discret:hover {
+  background: transparent;
+  opacity: 1;
+}
+
+/* ─── Coque : menu + contenu ─── */
+.coque {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  height: 100vh;
+}
+.menu {
+  display: flex;
+  flex-direction: column;
+  background: var(--encre);
+  color: #e8eeec;
+  padding: 20px 12px;
+}
+.menu-marque {
+  font-size: 20px;
+  font-weight: 700;
+  padding: 0 12px 20px;
+}
+.menu ul {
+  list-style: none;
+  flex: 1;
+}
+.menu a {
+  display: flex;
+  align-items: center;
+  min-height: var(--cible);
+  padding: 0 12px;
+  border-radius: var(--rayon);
+  color: inherit;
+  text-decoration: none;
+}
+.menu a:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.menu a.actif {
+  background: var(--vert);
+  font-weight: 600;
+}
+.menu-pied {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+.menu-pied p {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+}
+.menu-pied span {
+  font-weight: 400;
+  font-size: 14px;
+  opacity: 0.75;
+}
+.contenu {
+  overflow: auto;
+}
+
+/* ─── Pages de gestion ─── */
+.page {
+  padding: 28px 32px;
+  max-width: 1100px;
+}
+.page-entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 20px;
+}
+.page-entete h1 {
+  font-size: 24px;
+}
+.tableau-cadre {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+}
+.tableau {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tableau th {
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--encre-douce);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bord);
+}
+.tableau td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bord);
+}
+.tableau tr:last-child td {
+  border-bottom: none;
+}
+.tableau .nombre {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pastille {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.pastille-alerte {
+  background: var(--ambre-pale);
+  color: var(--ambre);
+}
+.alerte {
+  background: var(--rouge-pale);
+  color: var(--rouge);
+  padding: 10px 14px;
+  border-radius: var(--rayon);
+}
+.bandeau {
+  background: var(--ambre-pale);
+  color: var(--ambre);
+  padding: 10px 14px;
+  border-radius: var(--rayon);
+  font-size: 14px;
+}
+.vide {
+  color: var(--encre-douce);
+}
+
+/* ─── Connexion ─── */
+.connexion {
+  display: grid;
+  place-items: center;
+  height: 100vh;
+  background: var(--encre);
+}
+.connexion-boite {
+  width: 340px;
+  text-align: center;
+  color: #fff;
+}
+.connexion-boite h1 {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+.connexion-invite {
+  opacity: 0.8;
+}
+.pin-points {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin: 28px 0 10px;
+}
+.pin-points span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+}
+.pin-points span.plein {
+  background: #fff;
+  border-color: #fff;
+}
+.connexion-erreur {
+  min-height: 24px;
+  color: #ffb4a6;
+  margin-bottom: 14px;
+}
+.pave {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.pave-touche {
+  height: 72px;
+  border: none;
+  border-radius: var(--rayon);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 26px;
+  cursor: pointer;
+}
+.pave-touche:active {
+  background: var(--vert);
+}
+.pave-action {
+  font-size: 16px;
+  opacity: 0.85;
+}
+
+/* ─── Caisse ─── */
+.caisse {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  height: 100vh;
+}
+.caisse-grille {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  overflow: auto;
+}
+.grille-boutons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+.bouton-article {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 88px;
+  padding: 12px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  cursor: pointer;
+}
+.bouton-article:active {
+  background: var(--vert-pale);
+  border-color: var(--vert);
+}
+.bouton-article .montant {
+  color: var(--vert);
+  font-weight: 600;
+}
+.caisse-ticket {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--surface);
+  border-left: 1px solid var(--bord);
+}
+.caisse-ticket h2 {
+  font-size: 18px;
+}
+.ticket-lignes {
+  list-style: none;
+  flex: 1;
+  overflow: auto;
+}
+.ticket-lignes li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bord);
+}
+.ticket-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 12px;
+  border-top: 2px solid var(--encre);
+  font-size: 20px;
+  font-weight: 600;
+}
+.ticket-total .montant {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* ─── Écran client ─── */
+.ecran-client {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 32px 40px;
+  background: var(--encre);
+  color: #fff;
+}
+.ecran-client h1 {
+  font-size: 26px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+.ecran-client-accueil {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  font-size: 36px;
+  opacity: 0.8;
+}
+.ecran-client-lignes {
+  flex: 1;
+  list-style: none;
+  overflow: hidden;
+  padding: 16px 0;
+}
+.ecran-client-lignes li {
+  display: grid;
+  grid-template-columns: 70px 1fr auto;
+  gap: 12px;
+  font-size: 24px;
+  padding: 8px 0;
+}
+.ecran-client-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 16px;
+  border-top: 2px solid rgba(255, 255, 255, 0.4);
+  font-size: 28px;
+}
+.ecran-client-total .montant {
+  font-size: 56px;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
