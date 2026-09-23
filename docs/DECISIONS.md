@@ -134,3 +134,12 @@ cliente ou entre les deux développeurs.
   - cibles tactiles larges ;
   - le total comme élément fort de la caisse.
 - **Référence** : `docs/UI_UX.md`.
+
+### D-17 — Connexion par nom puis code (remplace D-14) · 2026-09-23
+- **Décision** : on touche son nom, puis on tape son code à 4 chiffres. Les codes ne sont plus
+  uniques. Le verrouillage après 5 codes faux se fait compte par compte. Tout code fixé par l'admin
+  est provisoire : la personne choisit le sien avant tout accès.
+- **Raison** : avec un code seul et unique, l'admin choisissait les codes des autres et le message
+  « code déjà utilisé » révélait qu'un code ouvrait un compte. Un geste de plus par connexion,
+  contre un code définitif que personne d'autre ne connaît.
+- **Validée par** : le chef de projet, le 2026-09-23 (tâche B1).

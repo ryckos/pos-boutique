@@ -113,10 +113,21 @@ Classes existantes :
 
 ## 5. Écrans validés
 
-### 5.1 Connexion (fait)
-Fond `--encre`, nom de la boutique, « Entrez votre code personnel », 4 points de saisie, pavé
-tactile 3×4 (chiffres, Effacer, ←). La connexion part automatiquement au 4e chiffre. En cas
-d'échec, le message s'affiche sous les points et la saisie est vidée.
+### 5.1 Connexion (fait — deux gestes depuis D-17)
+Fond `--encre`, nom de la boutique.
+1. « Touchez votre nom » : un gros bouton par compte actif, deux colonnes, par ordre alphabétique.
+2. « Bonjour Afi » — « Entrez votre code personnel », 4 points de saisie, pavé tactile 3×4
+   (chiffres, Effacer, ←), bouton « Ce n'est pas moi » pour revenir aux noms. La connexion part
+   automatiquement au 4e chiffre. En cas d'échec, le message s'affiche sous les points et la saisie
+   est vidée.
+3. Compte verrouillé : pavé grisé, « Trop de codes faux. Réessayez dans 28 s. » avec compte à rebours.
+4. Code provisoire : « Votre code a été donné par l'administrateur. » puis « Choisissez votre code
+   personnel », « Tapez-le une seconde fois », sur le même pavé.
+
+Écrans liés (B1) : **Comptes utilisateurs** (admin, liste § 5.12 : créer, réinitialiser le code,
+changer le rôle, désactiver avec motif ; pastille « Code provisoire ») · **Mon code** (tout le
+monde : code actuel, nouveau, confirmation) · **Assistant de premier démarrage** (nom, code,
+confirmation, « Créer le compte administrateur »).
 
 ### 5.2 Caisse (Dev A — A1 à A5)
 ```

@@ -18,7 +18,8 @@ export function enregistrerIpcCatalogue(): void {
     return grille(base())
   })
   gerer('catalogue:produitsStock', () => {
-    session.exiger()
+    // Valeur du stock au CUMP : donnée de gestion, pas pour la caisse.
+    session.exiger(['gerant'])
     return produitsAvecStock(base())
   })
 }

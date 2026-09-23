@@ -39,16 +39,18 @@ Actions à journaliser avec `journaliser()` :
 |-------------------------------|--------------------|
 | `connexion`                   |                    |
 | `deconnexion`                 |                    |
-| `echec_connexion_verrouillage`|                    |
+| `echec_connexion_verrouillage`| n° du verrouillage, délai (au nom du compte visé) |
 | `modification_prix`           | avant/après        |
 | `remise`                      | montant, ticket    |
 | `annulation_ligne`            |                    |
 | `annulation_ticket`           |                    |
 | `ouverture_tiroir_hors_vente` |                    |
 | `modification_parametre`      |                    |
-| `creation_utilisateur`        |                    |
+| `creation_utilisateur`        | nom, rôle, code provisoire |
 | `modification_role`           |                    |
-| `desactivation_utilisateur`   |                    |
+| `desactivation_utilisateur`   | motif              |
+| `modification_pin`            | la personne a choisi son code ; jamais la valeur |
+| `reinitialisation_pin`        | l'admin a donné un code provisoire ; jamais la valeur |
 | `validation_inventaire`       |                    |
 | `restauration_sauvegarde`     |                    |
 
@@ -424,14 +426,37 @@ repart à 1 chaque année.
 
 ## 12. Utilisateurs et sécurité (Dev B)
 
-- La connexion se fait par **PIN à 4 chiffres, unique parmi les comptes actifs**.
-- Les PIN sont stockés **hachés** : scrypt avec un sel aléatoire.
-- **Verrouillage** après 5 codes faux consécutifs, avec un délai croissant. Chaque verrouillage est
-  journalisé.
-- Un compte n'est jamais supprimé, il est désactivé.
+- **Connexion en deux gestes (D-17)** : la personne touche son nom (comptes actifs, par ordre
+  alphabétique), puis tape son **code à 4 chiffres**. Les codes ne sont **pas uniques** : c'est le
+  nom touché qui identifie la personne.
+- Les codes sont stockés **hachés** : scrypt avec un sel aléatoire. Jamais de valeur de code dans le
+  journal, même hachée.
+- **Verrouillage du compte** après 5 codes faux consécutifs sur ce compte, avec un délai croissant.
+  Chaque verrouillage est journalisé au nom du compte visé.
+  - Délais successifs : **30 s, 1 min, 2 min, 5 min, puis 15 min** (plafond). Pendant le
+    verrouillage, même un code juste est refusé. Les autres comptes ne sont pas bloqués.
+  - Une connexion réussie remet le compteur et le délai à zéro. Un code mal formé (moins de 4
+    chiffres) ne compte pas comme une tentative.
+  - Le compteur est gardé en base : un redémarrage ne le remet pas à zéro.
+  - **Toute** saisie d'un code est comptée : connexion, remplacement du code provisoire, « Mon code ».
+- **Code provisoire** : le code donné par l'admin (création d'un compte, réinitialisation) est
+  provisoire. À la connexion suivante, la personne doit choisir son propre code (deux fois, différent
+  du provisoire) **avant tout accès** : aucune session n'est ouverte avant. L'admin ne connaît donc
+  jamais le code définitif de quelqu'un d'autre.
+- **Réinitialiser le code** (code oublié) : réservé à l'admin, jamais sur son propre compte ; donne un
+  code provisoire et débloque le compte s'il était verrouillé. La personne s'en aperçoit forcément
+  (son ancien code ne marche plus) : une réinitialisation faite à son insu devient visible.
+- **Mon code** : toute personne connectée change son code en donnant le code actuel.
+- Un compte n'est jamais supprimé, il est désactivé (motif obligatoire, journalisé). Il disparaît
+  de l'écran de connexion. La réactivation n'est pas prévue pour l'instant.
+- Garde-fous : on ne peut ni désactiver ni rétrograder le **dernier administrateur actif**, et on
+  ne peut pas désactiver son propre compte.
 - **Premier démarrage en production** : si aucun compte n'existe, un assistant fait créer le compte
-  administrateur.
+  administrateur, avec le code qu'il choisit (non provisoire).
 - L'identité vient toujours de la session côté processus principal.
+- Limite connue : un admin malhonnête peut réinitialiser un code et s'en servir avant la personne.
+  Le code provisoire rend la manœuvre visible et journalisée, sans l'empêcher : le rôle admin reste
+  réservé à la propriétaire.
 
 ---
 

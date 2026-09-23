@@ -10,8 +10,14 @@ import type { ContratCaisse } from './caisse'
 import type { ContratCatalogue } from './catalogue'
 import type { ContratMateriel } from './materiel'
 import type { ContratSysteme } from './systeme'
+import type { ContratUtilisateurs } from './utilisateurs'
 
-export type ContratIpc = ContratSysteme & ContratAuth & ContratCatalogue & ContratCaisse & ContratMateriel
+export type ContratIpc = ContratSysteme &
+  ContratAuth &
+  ContratUtilisateurs &
+  ContratCatalogue &
+  ContratCaisse &
+  ContratMateriel
 
 export type Canal = keyof ContratIpc
 export type Requete<C extends Canal> = ContratIpc[C]['requete']

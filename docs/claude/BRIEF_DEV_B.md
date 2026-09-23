@@ -122,7 +122,7 @@ crédits, promotions, rapports de ventes, matériel, fenêtres, écran client.
 | Schéma v2 complet         | `db/migrations/20260922_0900_schema_initial.sql` | 27 tables, 6 vues, 6 triggers |
 | Séquences + boutons tactiles | `db/migrations/20260922_0910_sequences_et_boutons.sql` | `sequences`, `conditionnements.bouton_tactile`, `ordre_bouton` |
 | Moteur de migrations      | `db/migrations.ts`                         | Applique les nouveaux `.sql` au démarrage |
-| Connexion PIN             | `modules/auth/service.ts`, `PageConnexion.tsx` | `connexion`, `creerUtilisateur` (PIN uniques, hachés scrypt) |
+| Connexion PIN             | `modules/auth/service.ts`, `PageConnexion.tsx` | `connexion`, `creerUtilisateur` (codes hachés scrypt ; nom puis code depuis D-17) |
 | Catalogue                 | `modules/catalogue/service.ts`             | `rechercherParCode`, `rechercherTexte` (**sans gestion des accents — B2.3**), `grille`, `produitsAvecStock` |
 | Page produits (aperçu)    | `modules/catalogue/PageCatalogue.tsx`      | Liste + stock, à compléter (B2, B4) |
 | Noyau                     | `core/`                                    | mouvements, contre-passation, audit, numérotation, session, sécurité |
@@ -217,7 +217,7 @@ obligatoire par écart**, validation gérant → `ajustement_inventaire` au CUMP
 **Dépenses** : source `caisse` (session ouverte requise, mouvement de caisse `sortie` via la fonction
 de Dev A) ou `fonds_propres` ; numéro `DEP`.
 
-**Utilisateurs** : PIN 4 chiffres unique parmi les actifs, haché, verrouillage après 5 échecs,
+**Utilisateurs** : nom puis code à 4 chiffres (D-17, non unique), haché, code provisoire donné par l'admin, verrouillage par compte après 5 échecs,
 désactivation plutôt que suppression, assistant admin au premier démarrage en production.
 
 **Paramètres** (clés dans `REGLES_METIER.md` § 13) : ajoute toute nouvelle clé au tableau.
