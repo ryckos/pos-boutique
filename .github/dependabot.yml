@@ -1,0 +1,12 @@
+# Dependabot surveille les versions des actions GitHub et ouvre une PR quand une
+# nouvelle majeure sort. Évite de redécouvrir une dépréciation par un avertissement.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: 'ci'
+    labels:
+      - dependencies

@@ -1,0 +1,42 @@
+{
+  "name": "pos-boutique",
+  "version": "0.1.0",
+  "description": "Application de gestion de boutique (POS) — Electron + React + TypeScript + SQLite",
+  "main": "./out/main/index.js",
+  "private": true,
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verifier": "npm run typecheck && npm run test",
+    "dist": "npm run build && electron-builder --win"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^37.0.0",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^3.1.0",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  },
+  "build": {
+    "appId": "tg.boutique.pos",
+    "productName": "Ma Boutique POS",
+    "directories": { "output": "dist" },
+    "files": ["out/**/*"],
+    "extraResources": [{ "from": "resources/raw-print.ps1", "to": "raw-print.ps1" }],
+    "win": { "target": "nsis" }
+  }
+}

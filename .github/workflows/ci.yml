@@ -1,0 +1,28 @@
+# Vérification automatique de chaque Pull Request et de chaque fusion dans main.
+# Une PR ne peut être fusionnée que si ce contrôle est vert.
+#
+# Les actions sont en v6 : elles tournent sur Node 24 (les v4 tournaient sur
+# Node 20, retiré des runners GitHub). Dependabot proposera les majeures suivantes.
+name: Verification
+
+on:
+  pull_request:
+    branches: [test, main] # PR de tâche vers test, puis PR de test vers main
+  push:
+    branches: [test, main]
+
+jobs:
+  verifier:
+    runs-on: windows-latest # même système que le terminal de la boutique
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1' # les tests n'ont pas besoin du binaire Electron
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22 # version de Node utilisée par le projet
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
