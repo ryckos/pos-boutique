@@ -18,6 +18,55 @@ Format d'une entrée :
 
 ---
 
+## 2026-09-23 (suite) — a/caisse-grille — A1.2 Grille, recherche, conditionnement, attente (partie 1)
+**Fait** :
+- A1.1 fusionnée (PR #3) et passée à ✅. Correctif des droits demandé par la revue de Dev B fusionné
+  (PR #5) : `materiel:imprimantes` exige gérant, `materiel:ouvrirEcranClient` exige une session.
+  Contrat « contrôle des rôles » passé à ✅.
+- A1.2 partie 1 (2 commits `ae66392`, `e0b9a3e`) :
+  - `modules/caisse/attente.ts` : tickets en attente (`mettreEnAttente`, `reprendre`, `resumeAttente`,
+    `reducteurCaisse`). **Choix validés par Dev A** : reprendre un ticket alors que le courant est
+    rempli **permute** les deux ; ticket courant et tickets en attente gardés **en mémoire par
+    caissière** (Map au niveau du module de `PageCaisse`), survivent au changement d'écran et à la
+    déconnexion, perdus à la fermeture de l'application, jamais en base.
+  - `modules/caisse/clavier.ts` : F2 recherche, F4 encaisser (sans effet avant A2), F8 attente,
+    Suppr, Échap (désélectionne), + / −. Ignorés dans les champs et quand la recherche est ouverte.
+  - `FenetreRecherche.tsx` : nombre tapé → `catalogue:rechercherCode` d'abord (PLU `101` = baguette),
+    sinon `catalogue:rechercher` ; 200 ms après la dernière frappe ; flèches, Entrée, Échap.
+  - `changerConditionnement()` dans `panier.ts` (quantité conservée, fusion si déjà au ticket, refus si
+    autre produit) : **logique et tests seulement**, pas de bouton tant que le canal de Dev B manque.
+  - `styles.css` (zone partagée) : `.caisse-recherche`, `.caisse-ticket-actions`, `.attente-*`,
+    `.voile`, `.fenetre*`, `.recherche-*`, nouveau jeton `--voile`.
+  - 12 tests de plus (76 au total), build OK, essai manuel concluant (recherche, attente, raccourcis,
+    mémoire, vente mixte < 15 s).
+
+**En cours** : A1.2 🔄 — PR « partie 1 » vers `test` ouverte / en relecture par Dev B.
+
+**Prochaine étape** :
+1. Faire fusionner la PR partie 1 (relecture Dev B). Supprimer la branche.
+2. **Partie 2** dès qu'un des contrats de Dev B arrive dans `test` (nouvelle branche depuis `test`,
+   ex. `a/caisse-conditionnement`) :
+   - `catalogue:conditionnementsProduit` → bouton « Changer le conditionnement » dans
+     `.ticket-actions` de la ligne sélectionnée ; petite fenêtre listant les conditionnements ; action
+     `{ type: 'changerConditionnement', ancienId, article }` déjà prête dans le réducteur.
+   - `categorie` dans `ArticleCatalogue` → onglets de catégories au-dessus de la grille (« Tout » +
+     une par catégorie), filtre local sans nouvelle requête.
+   Puis A1.2 → ✅.
+3. En attendant les contrats : démarrer **A2 — Encaissement et `caisse:enregistrerVente`** (`/tache A2`),
+   rendez-vous à livrer à Dev B fin S5.
+
+**Questions ouvertes** :
+- Essai à la vraie douchette sur le terminal (A1.1) : toujours à faire.
+- D-A1, D-A2, D-A3 : inchangées.
+
+**Contrats** :
+- Demandé à Dev B (2026-09-23) : `categorie: string | null` dans `ArticleCatalogue` (au moins dans
+  `catalogue:grille`), avec B2.1 ; ordre alphabétique suffisant, `ordreCategorie` bienvenu.
+  Ligne ajoutée aux rendez-vous de `ETAT_AVANCEMENT.md`.
+- Rappel fin S4 : `catalogue:conditionnementsProduit` attendu sous la forme
+  `{ requete: { produitId: number }; reponse: ArticleCatalogue[] }`, unité en premier.
+- Aucun contrat livré ni modifié par Dev A.
+
 ## 2026-09-23 — a/caisse-panier — A1.1 Panier et logique de calcul
 **Fait** :
 - `src/renderer/src/modules/caisse/panier.ts` : panier en fonctions pures (`ajouterArticle`,
