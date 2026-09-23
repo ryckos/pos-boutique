@@ -5,8 +5,10 @@
 import type { DefinitionRoute } from './types'
 import { routesCaisse } from '@renderer/modules/caisse/routes'
 import { routesCatalogue } from '@renderer/modules/catalogue/routes'
+import { routesUtilisateurs } from '@renderer/modules/utilisateurs/routes'
 
 export const routes: DefinitionRoute[] = [
   ...routesCaisse, // Dev A
-  ...routesCatalogue // Dev B
+  ...routesCatalogue, // Dev B
+  ...routesUtilisateurs // Dev B
 ]

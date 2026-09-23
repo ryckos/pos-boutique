@@ -218,6 +218,128 @@ select {
   color: var(--encre-douce);
 }
 
+.succes {
+  background: var(--vert-pale);
+  color: var(--vert);
+  padding: 10px 14px;
+  border-radius: var(--rayon);
+}
+.pastille-ok {
+  background: var(--vert-pale);
+  color: var(--vert);
+}
+.pastille-inactif {
+  background: var(--fond);
+  color: var(--encre-douce);
+  border: 1px solid var(--bord);
+}
+.tableau tr.inactif td {
+  color: var(--encre-douce);
+}
+.tableau-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ─── Boutons secondaires (actions d'une ligne de tableau) ─── */
+.btn-secondaire {
+  background: var(--surface);
+  color: var(--vert);
+  border: 1px solid var(--vert);
+}
+.btn-secondaire:hover {
+  background: var(--vert-pale);
+}
+.btn-attention {
+  background: var(--surface);
+  color: var(--rouge);
+  border: 1px solid var(--rouge);
+}
+.btn-attention:hover {
+  background: var(--rouge-pale);
+}
+
+/* ─── Formulaires de gestion ─── */
+.panneau {
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.panneau h2 {
+  font-size: 18px;
+  margin-bottom: 14px;
+}
+.formulaire {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+}
+.formulaire-colonne {
+  flex-direction: column;
+  align-items: stretch;
+}
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--encre-douce);
+}
+.champ input,
+.champ select {
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  color: var(--encre);
+  font-size: 16px;
+  font-weight: 400;
+}
+.champ-large {
+  flex: 1;
+  min-width: 240px;
+}
+.champ-code input {
+  width: 140px;
+  letter-spacing: 0.3em;
+}
+.formulaire-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* ─── Assistant de premier démarrage ─── */
+.assistant {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  background: var(--encre);
+}
+.assistant-boite {
+  width: 440px;
+  background: var(--surface);
+  border-radius: var(--rayon);
+  padding: 32px;
+}
+.assistant-boite h1 {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+.assistant-boite > p {
+  color: var(--encre-douce);
+  margin-bottom: 24px;
+}
+.assistant-boite .champ-code input {
+  width: 100%;
+}
+
 /* ─── Connexion ─── */
 .connexion {
   display: grid;
@@ -274,6 +396,34 @@ select {
 }
 .pave-touche:active {
   background: var(--vert);
+}
+.connexion-noms {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 28px;
+}
+.connexion-nom {
+  min-height: 72px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--rayon);
+  background: rgba(255, 255, 255, 0.1); /* même voile que .pave-touche */
+  color: var(--surface);
+  font-size: 20px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.connexion-nom:active {
+  background: var(--vert);
+}
+.connexion-changer {
+  margin-top: 20px;
+  width: 100%;
+}
+.pave-touche:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 .pave-action {
   font-size: 16px;

@@ -5,13 +5,15 @@
 import { enregistrerIpcAuth } from '../modules/auth/ipc'
 import { enregistrerIpcCaisse } from '../modules/caisse/ipc'
 import { enregistrerIpcCatalogue } from '../modules/catalogue/ipc'
+import { enregistrerIpcUtilisateurs } from '../modules/utilisateurs/ipc'
 import { enregistrerIpcMateriel } from '../materiel/ipc'
 import { enregistrerIpcSysteme } from './systeme'
 
 export function enregistrerTousLesIpc(options: { cheminBase: string; modeDev: boolean }): void {
   enregistrerIpcSysteme(options)
   // ─── Dev B ───
-  enregistrerIpcAuth()
+  enregistrerIpcAuth(options)
+  enregistrerIpcUtilisateurs()
   enregistrerIpcCatalogue()
   // ─── Dev A ───
   enregistrerIpcCaisse()

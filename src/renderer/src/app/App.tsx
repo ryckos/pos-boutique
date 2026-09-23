@@ -3,21 +3,36 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import type { UtilisateurConnecte } from '@shared/types'
 import { appel } from '@renderer/lib/api'
 import { PageConnexion } from '@renderer/modules/auth/PageConnexion'
+import { PagePremierDemarrage } from '@renderer/modules/auth/PagePremierDemarrage'
 import { ContexteUtilisateur } from './contexte'
 import { Layout } from './Layout'
 import { routes } from './routes'
 
 export default function App(): React.JSX.Element | null {
   const [utilisateur, setUtilisateur] = useState<UtilisateurConnecte | null>(null)
+  const [premierDemarrage, setPremierDemarrage] = useState(false)
   const [pret, setPret] = useState(false)
 
   useEffect(() => {
-    appel('auth:utilisateurCourant')
-      .then(setUtilisateur)
+    Promise.all([appel('auth:utilisateurCourant'), appel('auth:etatDemarrage')])
+      .then(([u, etat]) => {
+        setUtilisateur(u)
+        setPremierDemarrage(etat.premierDemarrage)
+      })
       .finally(() => setPret(true))
   }, [])
 
   if (!pret) return null
+  if (!utilisateur && premierDemarrage) {
+    return (
+      <PagePremierDemarrage
+        onCree={(u) => {
+          setPremierDemarrage(false)
+          setUtilisateur(u)
+        }}
+      />
+    )
+  }
   if (!utilisateur) return <PageConnexion onConnexion={setUtilisateur} />
 
   const autorisees = routes.filter((r) => utilisateur.role === 'admin' || r.roles.includes(utilisateur.role))

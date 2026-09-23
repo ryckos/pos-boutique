@@ -7,7 +7,9 @@ import { semerDonneesDemo } from './db/seed'
 import { enregistrerTousLesIpc } from './ipc'
 import { creerFenetrePrincipale } from './fenetres'
 
-const modeDev = !app.isPackaged
+// POS_SIMULER_PROD=1 : se comporter comme l'application installée (pas de données de démo,
+// assistant de premier démarrage), pour tester en développement. À utiliser avec POS_DB.
+const modeDev = !app.isPackaged && !process.env['POS_SIMULER_PROD']
 
 app.whenReady().then(() => {
   // POS_DB permet de pointer une autre base en développement (ex : POS_DB=C:\temp\test.db).

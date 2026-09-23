@@ -19,7 +19,7 @@ document à jour.
 | `schema_migrations` | Migrations appliquées. Gérée par `db/migrations.ts`                 |
 | `sequences`         | Compteurs de numérotation par préfixe et par année. Gérée par `core/numerotation.ts` |
 | `parametres`        | Clé/valeur de la boutique (liste dans `REGLES_METIER.md` § 13)      |
-| `utilisateurs`      | Comptes, `pin_hash` (scrypt), `role`, `actif`                       |
+| `utilisateurs`      | Comptes, `pin_hash` (scrypt, **non unique** : D-17), `role`, `actif`, `pin_provisoire` (code donné par l'admin, à remplacer), état du verrouillage : `echecs_consecutifs`, `verrouillages`, `verrouille_jusqu_a` (ms) |
 | `journal_audit`     | Actions sensibles. **Immuable.** Écriture par `core/audit.ts` seulement |
 
 ### Catalogue et stock — Dev B
@@ -92,6 +92,7 @@ document à jour.
 |------------------------------------------|------------------------------------------------------|
 | `20260922_0900_schema_initial.sql`       | Schéma v2 complet : tables, index, vues, triggers    |
 | `20260922_0910_sequences_et_boutons.sql` | Table `sequences`, boutons tactiles sur `conditionnements` |
+| `20260923_1157_securite_connexion.sql`   | `utilisateurs` : code provisoire et verrouillage par compte |
 
 Ajouter ici chaque nouvelle migration (nom et contenu en une ligne).
 

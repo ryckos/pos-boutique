@@ -17,7 +17,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 |-----------------------------------------------------------|-----------|-------------|----------|--------|--------|
 | `catalogue:rechercherCode`, `catalogue:grille`, `catalogue:rechercher` | socle | A | — | ✅ | — |
 | `core/mouvements`, `numerotation`, `audit`, `session`     | socle     | A et B      | —        | ✅     | — |
-| Contrôle des rôles sur tous les canaux                    | B         | A           | fin S3   | ⏳     | confiance générale |
+| Contrôle des rôles sur tous les canaux                    | B         | A           | fin S3   | 🔄     | revue faite (PR 1 B1) ; 2 canaux `materiel:*` à corriger par A |
 | `catalogue:conditionnementsProduit`                       | B         | A           | fin S4   | ⏳     | A1.2 |
 | `parametres:lire` (puis `ecrire`)                         | B         | A           | fin S5   | ⏳     | A3 |
 | `caisse:enregistrerVente` (modèle de transaction)         | A         | B (lecture) | fin S5   | ⏳     | — |
@@ -59,7 +59,7 @@ Le socle comprend :
 | A3    | Ticket, tiroir, réglages matériel               | A   | ⏳     | attend B5 (parametres:lire) |
 | A4    | Sessions de caisse, X et Z                      | A   | ⏳     |       |
 | A5    | Remises, droits, stabilisation                  | A   | ⏳     |       |
-| B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | ⏳     |       |
+| B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | 🔄     | `b/utilisateurs-roles` — service, verrouillage par compte, code provisoire (D-17), écrans Comptes / Mon code / premier démarrage, revue des canaux ; **PR vers `test` en relecture par Dev A** |
 | B2.1  | Catégories                                      | B   | ⏳     |       |
 | B2.2  | Produits et conditionnements, codes internes    | B   | ⏳     | rendez-vous fin S4 |
 | B2.3  | Recherche sans accents, création depuis scan    | B   | ⏳     |       |
