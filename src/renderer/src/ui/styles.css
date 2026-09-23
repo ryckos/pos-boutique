@@ -408,8 +408,8 @@ select {
   padding: 0 12px;
   border: none;
   border-radius: var(--rayon);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.1); /* même voile que .pave-touche */
+  color: var(--surface);
   font-size: 20px;
   font-weight: 600;
   cursor: pointer;

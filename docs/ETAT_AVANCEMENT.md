@@ -59,7 +59,7 @@ Le socle comprend :
 | A3    | Ticket, tiroir, réglages matériel               | A   | ⏳     | attend B5 (parametres:lire) |
 | A4    | Sessions de caisse, X et Z                      | A   | ⏳     |       |
 | A5    | Remises, droits, stabilisation                  | A   | ⏳     |       |
-| B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | 🔄     | `b/utilisateurs-roles` — service, verrouillage par compte, code provisoire (D-17), écrans Comptes / Mon code / premier démarrage, revue des canaux ; en test chez Dev B |
+| B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | 🔄     | `b/utilisateurs-roles` — service, verrouillage par compte, code provisoire (D-17), écrans Comptes / Mon code / premier démarrage, revue des canaux ; **PR vers `test` en relecture par Dev A** |
 | B2.1  | Catégories                                      | B   | ⏳     |       |
 | B2.2  | Produits et conditionnements, codes internes    | B   | ⏳     | rendez-vous fin S4 |
 | B2.3  | Recherche sans accents, création depuis scan    | B   | ⏳     |       |
