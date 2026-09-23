@@ -17,7 +17,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 |-----------------------------------------------------------|-----------|-------------|----------|--------|--------|
 | `catalogue:rechercherCode`, `catalogue:grille`, `catalogue:rechercher` | socle | A | — | ✅ | — |
 | `core/mouvements`, `numerotation`, `audit`, `session`     | socle     | A et B      | —        | ✅     | — |
-| Contrôle des rôles sur tous les canaux                    | B         | A           | fin S3   | 🔄     | revue faite (PR 1 B1) ; 2 canaux `materiel:*` à corriger par A |
+| Contrôle des rôles sur tous les canaux                    | B         | A           | fin S3   | 🔄     | revue faite (PR #4 B1) ; 2 canaux `materiel:*` corrigés par A sur `a/droits-materiel` (PR en cours) |
 | `catalogue:conditionnementsProduit`                       | B         | A           | fin S4   | ⏳     | A1.2 |
 | `parametres:lire` (puis `ecrire`)                         | B         | A           | fin S5   | ⏳     | A3 |
 | `caisse:enregistrerVente` (modèle de transaction)         | A         | B (lecture) | fin S5   | ⏳     | — |
@@ -53,7 +53,7 @@ Le socle comprend :
 ## Phase 1 — Caisse et ventes (S3–S8)
 | Tâche | Intitulé                                        | Dev | Statut | Notes |
 |-------|-------------------------------------------------|-----|--------|-------|
-| A1.1  | Panier et logique de calcul                     | A   | 🔄     | `a/caisse-panier` — code et tests faits, rafales de scans validées en simulation ; reste la PR, et l'essai à la vraie douchette sur le terminal |
+| A1.1  | Panier et logique de calcul                     | A   | ✅     | PR #3 — essai à la vraie douchette sur le terminal encore à faire (validé en simulation) |
 | A1.2  | Grille, recherche F2, conditionnement, attente  | A   | ⏳     | attend B2.2 (conditionnementsProduit) |
 | A2    | Encaissement et enregistrement de la vente      | A   | ⏳     |       |
 | A3    | Ticket, tiroir, réglages matériel               | A   | ⏳     | attend B5 (parametres:lire) |
@@ -114,3 +114,4 @@ Le socle comprend :
 | 2026-09-22 | —     | Initialisation du socle                       |
 | 2026-09-22 | —     | Contexte complet pour Claude Code (CLAUDE.md, docs) |
 | 2026-09-22 | —     | Briefs de passation et carnets de bord par développeur |
+| 2026-09-23 | A1.1  | Panier en fonctions pures et vrai écran de caisse (PR #3) |
