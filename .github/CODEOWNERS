@@ -2,48 +2,48 @@
 # Principe : chacun relit TOUJOURS le travail de l'autre ; les zones partagées sont
 # signalées explicitement pour attirer l'attention.
 
-*                                   @dev-a @dev-b
+*                                   @ryckos @sowadan
 
 # ─── Zones partagées (relecture attentive par les deux) ───
-/src/shared/                        @dev-a @dev-b
-/src/main/core/                     @dev-a @dev-b
-/src/main/db/                       @dev-a @dev-b
-/src/main/ipc/                      @dev-a @dev-b
-/src/preload/                       @dev-a @dev-b
-/src/renderer/src/app/              @dev-a @dev-b
-/src/renderer/src/lib/              @dev-a @dev-b
-/src/renderer/src/ui/               @dev-a @dev-b
-/package.json                       @dev-a @dev-b
-/CLAUDE.md                          @dev-a @dev-b
-/.claude/                          @dev-a @dev-b
-/docs/                             @dev-a @dev-b
-/src/main/CLAUDE.md                 @dev-a @dev-b
-/src/renderer/CLAUDE.md             @dev-a @dev-b
-/tests/CLAUDE.md                    @dev-a @dev-b
+/src/shared/                        @ryckos @sowadan
+/src/main/core/                     @ryckos @sowadan
+/src/main/db/                       @ryckos @sowadan
+/src/main/ipc/                      @ryckos @sowadan
+/src/preload/                       @ryckos @sowadan
+/src/renderer/src/app/              @ryckos @sowadan
+/src/renderer/src/lib/              @ryckos @sowadan
+/src/renderer/src/ui/               @ryckos @sowadan
+/package.json                       @ryckos @sowadan
+/CLAUDE.md                          @ryckos @sowadan
+/.claude/                          @ryckos @sowadan
+/docs/                             @ryckos @sowadan
+/src/main/CLAUDE.md                 @ryckos @sowadan
+/src/renderer/CLAUDE.md             @ryckos @sowadan
+/tests/CLAUDE.md                    @ryckos @sowadan
 
 # ─── Dev A — comptoir et matériel ───
-/src/main/modules/caisse/           @dev-a
-/src/main/modules/clients/          @dev-a
-/src/main/modules/promotions/       @dev-a
-/src/main/modules/rapports-ventes/  @dev-a
-/src/main/materiel/                 @dev-a
-/src/main/fenetres.ts               @dev-a
-/src/renderer/src/modules/caisse/   @dev-a
-/src/renderer/src/modules/clients/  @dev-a
-/src/renderer/client.html           @dev-a
-/src/renderer/src/client.tsx        @dev-a
-/resources/                         @dev-a
+/src/main/modules/caisse/           @ryckos
+/src/main/modules/clients/          @ryckos
+/src/main/modules/promotions/       @ryckos
+/src/main/modules/rapports-ventes/  @ryckos
+/src/main/materiel/                 @ryckos
+/src/main/fenetres.ts               @ryckos
+/src/renderer/src/modules/caisse/   @ryckos
+/src/renderer/src/modules/clients/  @ryckos
+/src/renderer/client.html           @ryckos
+/src/renderer/src/client.tsx        @ryckos
+/resources/                         @ryckos
 
 # ─── Dev B — back-office et données ───
-/src/main/modules/auth/             @dev-b
-/src/main/modules/utilisateurs/     @dev-b
-/src/main/modules/catalogue/        @dev-b
-/src/main/modules/stock/            @dev-b
-/src/main/modules/parametres/       @dev-b
-/src/main/modules/achats/           @dev-b
-/src/main/modules/inventaires/      @dev-b
-/src/main/modules/depenses/         @dev-b
-/src/main/modules/rapports-gestion/ @dev-b
-/src/main/modules/sauvegardes/      @dev-b
-/src/renderer/src/modules/auth/     @dev-b
-/src/renderer/src/modules/catalogue/ @dev-b
+/src/main/modules/auth/             @sowadan
+/src/main/modules/utilisateurs/     @sowadan
+/src/main/modules/catalogue/        @sowadan
+/src/main/modules/stock/            @sowadan
+/src/main/modules/parametres/       @sowadan
+/src/main/modules/achats/           @sowadan
+/src/main/modules/inventaires/      @sowadan
+/src/main/modules/depenses/         @sowadan
+/src/main/modules/rapports-gestion/ @sowadan
+/src/main/modules/sauvegardes/      @sowadan
+/src/renderer/src/modules/auth/     @sowadan
+/src/renderer/src/modules/catalogue/ @sowadan
