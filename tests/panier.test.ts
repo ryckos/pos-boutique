@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ArticleCatalogue } from '../src/shared/types'
 import {
   ajouterArticle,
+  changerConditionnement,
   changerQuantite,
   decrementer,
   incrementer,
@@ -148,6 +149,35 @@ describe('Panier de la caisse', () => {
     changerQuantite(avant, 1, 5)
     supprimerLigne(avant, 1)
     expect(avant).toEqual(copie)
+  })
+
+  it('changer 2 unités de tomate en lot de 3 donne 2 lots à 2 000 F', () => {
+    const p = changerConditionnement(avec(tomateUnite, tomateUnite), 1, tomateLot)
+    expect(p.lignes).toHaveLength(1)
+    expect(p.lignes[0].article.conditionnementId).toBe(2)
+    expect(p.lignes[0].quantite).toBe(2)
+    expect(totalPanier(p)).toBe(2000)
+  })
+
+  it('changer une unité en carton déjà au ticket fusionne : 2 cartons, 15 000 F', () => {
+    const p = changerConditionnement(avec(tomateCarton, jus, tomateUnite), 1, tomateCarton)
+    expect(p.lignes.map((l) => [l.article.conditionnementId, l.quantite])).toEqual([
+      [3, 2],
+      [5, 1]
+    ])
+    expect(totalPanier(p)).toBe(15600)
+    expect(totalPanier({ ...p, lignes: p.lignes.slice(0, 1) })).toBe(15000)
+  })
+
+  it('le changement de conditionnement garde la place de la ligne et la sélectionne', () => {
+    const p = changerConditionnement(selectionner(avec(tomateUnite, jus), 5), 1, tomateCarton)
+    expect(p.lignes.map((l) => l.article.conditionnementId)).toEqual([3, 5])
+    expect(p.selection).toBe(3)
+  })
+
+  it('refuse de changer vers le conditionnement d’un autre produit', () => {
+    const avant = avec(tomateUnite)
+    expect(changerConditionnement(avant, 1, jus)).toBe(avant)
   })
 
   it('le réducteur vide le panier et prépare l’écran client', () => {
