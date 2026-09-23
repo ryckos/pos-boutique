@@ -18,6 +18,61 @@ Format d'une entrée :
 
 ---
 
+## 2026-09-23 (fin) — a/caisse-encaissement — A2 Encaissement (partie 1 : serveur)
+> **Entrée restaurée** : perdue lors de la résolution de conflit de la PR #7 (fusionnée), remise en place
+> par `/verifier`. Branche créée depuis `test` **avant** la fusion de la PR A1.2 (`a/caisse-grille`, entrée de carnet
+> « A1.2 partie 1 » sur cette branche-là). Au rebase, garder les deux entrées, celle-ci en haut.
+
+**Fait** :
+- **Décision validée par Dev A** : le minimum des sessions de caisse est avancé d'A4 à A2, car
+  `ventes.session_caisse_id` est obligatoire (règle 6.1 : aucune vente sans session). Pas de session
+  automatique. A4 garde clôture, X, Z.
+- Contrat `src/shared/ipc/caisse.ts` : `caisse:sessionCourante`, `caisse:ouvrirSession
+  { fondOuverture }`, `caisse:enregistrerVente` (`RequeteVente` → `VenteEnregistree` avec
+  `alertesStock`). Rôles caissier et gérant. Modes acceptés : `especes`, `tmoney`, `flooz`
+  (**crédit refusé jusqu'à A11**, validé par Dev A).
+- `calculs.ts` : `ventilerTva()` par taux (seul arrondi).
+- `service-session.ts` : `sessionOuverte(db, utilisateurId)`, `ouvrirSession()` (une seule ouverte,
+  fond entier ≥ 0, journalisée `ouverture_session_caisse`).
+- `service-vente.ts` : `enregistrerVente(db, utilisateurId, requete)` en une `avecTransaction`
+  (prix/coûts relus dans `v_catalogue_vente` + CUMP, photocopie, un mouvement `vente` par ligne,
+  `lot_id` null jusqu'à A9, paiements, somme = total, référence mobile money obligatoire, espèces
+  reçues ≥ part espèces, monnaie rendue). Stock négatif : vente enregistrée + `alertesStock`
+  (**D-A1 non tranchée**, validé par Dev A : pas de journalisation spéciale).
+- `tests/caisse-vente.test.ts` : 22 tests (TVA 11 363 / 1 937 ; vente de démo 8 500 F, HT 7 249,
+  TVA 1 251, monnaie 1 500 ; tomate 72 → 46 ; marges 1 500 / 200 / 120 ; scénario 10 100 F ; refus
+  et rollback complet, numéro non consommé). 86 tests au total, build OK.
+- Commits `20f9225`, `1d108fb`.
+
+**En cours** : A2 🔄 — PR « partie 1 » vers `test`. A1.2 partie 1 aussi en PR (non fusionnée).
+
+**Prochaine étape** :
+1. Dès que la PR A1.2 est fusionnée : `git fetch && git rebase origin/test` sur cette branche
+   (conflits attendus seulement dans `ETAT_AVANCEMENT.md` et ce carnet : garder les deux versions).
+2. **A2 partie 2** (même branche si la PR 1 n'est pas encore fusionnée, sinon nouvelle branche
+   `a/caisse-paiement` depuis `test`) :
+   - au chargement de `PageCaisse` : `caisse:sessionCourante` ; sans session, n'afficher que
+     « Ouvrir la caisse » (saisie du fond, `caisse:ouvrirSession`) — UI_UX § 5.2 ;
+   - `FenetrePaiement.tsx` (UI_UX § 5.3), en réutilisant `.voile` / `.fenetre` de la PR A1.2 :
+     billets 1 000 / 2 000 / 5 000 / 10 000 + « Montant exact », monnaie à rendre en très grand,
+     référence obligatoire TMoney/Flooz, paiement mixte avec « Reste à payer », bouton « Encaisser » ;
+     ouverte par les boutons Espèces/TMoney/Flooz et par F4 (`case 'encaisser'` déjà prévu) ;
+   - envoi `{ lignes: [{ conditionnementId, quantite }], paiements, montantRecu }` ; au succès,
+     vider le ticket et afficher « Vente T-… enregistrée. Monnaie à rendre : … » ; afficher
+     `alertesStock` en bandeau ambre ; l'impression et le tiroir restent pour A3.
+   Puis A2 → ✅ et contrat `caisse:enregistrerVente` → ✅.
+
+**Questions ouvertes** :
+- Essai à la vraie douchette sur le terminal (A1.1) : toujours à faire.
+- D-A1 (stock négatif), D-A2 (page de codes, à demander avant A3), D-A3 (plafond remise) : inchangées.
+
+**Contrats** :
+- **Livré en lecture pour Dev B** : `caisse:enregistrerVente`, modèle de transaction
+  (`service-vente.ts`). `sessionOuverte(db, utilisateurId)` existe déjà ; attention, Dev B attend
+  pour B13 une forme **sans** utilisateur (`sessionOuverte(db)`, fin S10) : à discuter en A8.
+- Attendus inchangés : `catalogue:conditionnementsProduit` (fin S4), `categorie` dans
+  `ArticleCatalogue` (avec B2.1), `parametres:lire` (fin S5).
+
 ## 2026-09-23 (suite) — a/caisse-grille — A1.2 Grille, recherche, conditionnement, attente (partie 1)
 **Fait** :
 - A1.1 fusionnée (PR #3) et passée à ✅. Correctif des droits demandé par la revue de Dev B fusionné
