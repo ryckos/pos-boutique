@@ -20,7 +20,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 | Contrôle des rôles sur tous les canaux                    | B         | A           | fin S3   | 🔄     | revue faite (PR #4 B1) ; 2 canaux `materiel:*` corrigés par A sur `a/droits-materiel` (PR en cours) |
 | `catalogue:conditionnementsProduit`                       | B         | A           | fin S4   | ⏳     | A1.2 |
 | `parametres:lire` (puis `ecrire`)                         | B         | A           | fin S5   | ⏳     | A3 |
-| `caisse:enregistrerVente` (modèle de transaction)         | A         | B (lecture) | fin S5   | ⏳     | — |
+| `caisse:enregistrerVente` (modèle de transaction)         | A         | B (lecture) | fin S5   | 🔄     | code et tests sur `a/caisse-encaissement` (PR A2 partie 1) — lisible par B dès maintenant |
 | Stock initial de démarrage                                | B         | A (recette) | fin S7   | ⏳     | recette Phase 1 |
 | `stock/allouerFefo(db, produitId, qteBase)`               | B         | A           | fin S10  | ⏳     | A9 |
 | `caisse/sessionOuverte()`, `enregistrerMouvementCaisse()` | A         | B           | fin S10  | ⏳     | B13 |
@@ -55,9 +55,9 @@ Le socle comprend :
 |-------|-------------------------------------------------|-----|--------|-------|
 | A1.1  | Panier et logique de calcul                     | A   | ✅     | PR #3 — essai à la vraie douchette sur le terminal encore à faire (validé en simulation) |
 | A1.2  | Grille, recherche F2, conditionnement, attente  | A   | ⏳     | attend B2.2 (conditionnementsProduit) |
-| A2    | Encaissement et enregistrement de la vente      | A   | ⏳     |       |
+| A2    | Encaissement et enregistrement de la vente      | A   | 🔄     | `a/caisse-encaissement` — partie 1 (TVA, session minimale, `enregistrerVente`, 22 tests) en PR ; partie 2 (fenêtre de paiement, ouverture de caisse) après fusion d'A1.2 |
 | A3    | Ticket, tiroir, réglages matériel               | A   | ⏳     | attend B5 (parametres:lire) |
-| A4    | Sessions de caisse, X et Z                      | A   | ⏳     |       |
+| A4    | Sessions de caisse, X et Z                      | A   | ⏳     | ouverture de session déjà livrée avec A2 ; reste clôture, X, Z |
 | A5    | Remises, droits, stabilisation                  | A   | ⏳     |       |
 | B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | 🔄     | `b/utilisateurs-roles` — service, verrouillage par compte, code provisoire (D-17), écrans Comptes / Mon code / premier démarrage, revue des canaux ; **PR vers `test` en relecture par Dev A** |
 | B2.1  | Catégories                                      | B   | ⏳     |       |
