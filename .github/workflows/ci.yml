@@ -18,7 +18,7 @@ jobs:
       ELECTRON_SKIP_BINARY_DOWNLOAD: '1' # les tests n'ont pas besoin du binaire Electron
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22 # version de Node utilisée par le projet
           cache: npm
