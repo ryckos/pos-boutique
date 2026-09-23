@@ -10,7 +10,11 @@ import { envoyerBrut, listerImprimantes } from './imprimante'
 export function enregistrerIpcMateriel(): void {
   enregistrerRelaisEcranClient()
 
-  gerer('materiel:imprimantes', () => listerImprimantes())
+  // La liste des imprimantes ne sert qu'aux réglages matériel, réservés au gérant (comme le ticket test).
+  gerer('materiel:imprimantes', () => {
+    session.exiger(['gerant'])
+    return listerImprimantes()
+  })
 
   gerer('materiel:ticketTest', async ({ methode, cible, pageDeCodes }) => {
     session.exiger(['gerant'])
@@ -24,5 +28,9 @@ export function enregistrerIpcMateriel(): void {
     journaliser(base(), { utilisateurId: u.id, action: 'ouverture_tiroir_hors_vente' })
   })
 
-  gerer('materiel:ouvrirEcranClient', () => ouvrirEcranClient())
+  // Ouvert depuis la caisse : toute personne connectée, caissière comprise.
+  gerer('materiel:ouvrirEcranClient', () => {
+    session.exiger()
+    return ouvrirEcranClient()
+  })
 }
