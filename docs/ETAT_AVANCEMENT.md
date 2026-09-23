@@ -19,7 +19,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 | `core/mouvements`, `numerotation`, `audit`, `session`     | socle     | A et B      | —        | ✅     | — |
 | Contrôle des rôles sur tous les canaux                    | B         | A           | fin S3   | ✅     | revue faite (PR #4 B1) ; 2 canaux `materiel:*` corrigés par A (PR #5) |
 | `catalogue:conditionnementsProduit`                       | B         | A           | fin S4   | ⏳     | A1.2 |
-| Catégorie dans `ArticleCatalogue` (`categorie`) — demandé le 2026-09-23 | B | A     | avec B2.1 | ⏳    | onglets de A1.2 (grille à plat d'ici là) |
+| Catégorie dans `ArticleCatalogue` (`categorie`) — demandé le 2026-09-23 | B | A     | avec B2.1 | 🔄    | livré sur `b/categories` (PR B2.1) : nom du rayon, champ optionnel toujours renseigné |
 | `parametres:lire` (puis `ecrire`)                         | B         | A           | fin S5   | ⏳     | A3 |
 | `caisse:enregistrerVente` (modèle de transaction)         | A         | B (lecture) | fin S5   | 🔄     | code et tests sur `a/caisse-encaissement` (PR A2 partie 1) — lisible par B dès maintenant |
 | Stock initial de démarrage                                | B         | A (recette) | fin S7   | ⏳     | recette Phase 1 |
@@ -61,7 +61,7 @@ Le socle comprend :
 | A4    | Sessions de caisse, X et Z                      | A   | ⏳     | ouverture de session déjà livrée avec A2 ; reste clôture, X, Z |
 | A5    | Remises, droits, stabilisation                  | A   | ⏳     |       |
 | B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | ✅     | PR #4 — connexion par nom et code (D-17), verrouillage par compte, code provisoire, écrans Comptes / Mon code / premier démarrage |
-| B2.1  | Catégories                                      | B   | ⏳     |       |
+| B2.1  | Catégories                                      | B   | 🔄     | `b/categories` — rayons et sous-rayons, écran Catégories, `categorie` dans `ArticleCatalogue` ; PR vers `test` |
 | B2.2  | Produits et conditionnements, codes internes    | B   | ⏳     | rendez-vous fin S4 |
 | B2.3  | Recherche sans accents, création depuis scan    | B   | ⏳     |       |
 | B3    | Import Excel du catalogue                       | B   | ⏳     |       |

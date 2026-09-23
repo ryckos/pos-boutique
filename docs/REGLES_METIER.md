@@ -111,6 +111,20 @@ Trois moyens complémentaires, par ordre de priorité :
 
 ---
 
+### 2.5 Catégories (rayons et sous-rayons)
+- Deux niveaux au plus : un **rayon** (ex. Alimentation) peut avoir des **sous-rayons** (ex.
+  Conserves). Un sous-rayon ne contient pas d'autres catégories.
+- Le nom est unique parmi les catégories actives du même niveau (casse et espaces ignorés) : deux
+  rayons « Boissons » sont refusés, mais un sous-rayon « Boissons » sous Alimentation est accepté.
+- Jamais de suppression. Une catégorie se **désactive**, et seulement si elle ne contient plus
+  aucun produit actif ni sous-rayon actif (message : « déplacez-les d'abord »). Pas de réactivation
+  pour l'instant.
+- Gestion par le gérant (et l'admin) ; lecture pour tous. Création et renommage ne sont pas
+  journalisés (pas des actions sensibles).
+- La caisse reçoit le **rayon** de chaque article (`ArticleCatalogue.categorie`) : pour un produit
+  rangé dans un sous-rayon, c'est le nom du rayon parent. Les onglets de la grille sont donc les
+  rayons, par ordre alphabétique.
+
 ## 3. Stock
 
 ### 3.1 Le stock est calculé

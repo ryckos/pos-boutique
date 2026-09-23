@@ -46,6 +46,12 @@ export interface ArticleCatalogue {
   coutConditionnement: number
   codeBarres: string | null
   codePlu: string | null
+  /**
+   * Rayon du produit (catégorie de premier niveau : « Alimentation » pour un produit rangé dans
+   * « Alimentation › Conserves »), pour les onglets de la grille. null si le produit n'est pas classé.
+   * Toujours renseigné par les canaux catalogue:* ; optionnel pour ne pas casser les objets de test.
+   */
+  categorie?: string | null
 }
 
 export interface ProduitStock {

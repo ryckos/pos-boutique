@@ -10,7 +10,14 @@ const COLONNES = `
   v.conditionnement_id AS conditionnementId, v.produit_id AS produitId, v.designation,
   v.conditionnement, v.quantite_base AS quantiteBase, v.prix_vente AS prixVente,
   v.taux_tva AS tauxTva, v.suivi_peremption AS suiviPeremption,
-  v.cout_conditionnement AS coutConditionnement, v.code_barres AS codeBarres, v.code_plu AS codePlu`
+  v.cout_conditionnement AS coutConditionnement, v.code_barres AS codeBarres, v.code_plu AS codePlu,
+  COALESCE(rayon.nom, cat.nom) AS categorie`
+
+/** Rayon de l'article : la catégorie du produit, ou son parent si c'est une sous-catégorie. */
+const JOINTURE_RAYON = `
+  JOIN produits pr ON pr.id = v.produit_id
+  LEFT JOIN categories cat ON cat.id = pr.categorie_id
+  LEFT JOIN categories rayon ON rayon.id = cat.parent_id`
 
 type LigneArticle = Omit<ArticleCatalogue, 'suiviPeremption'> & { suiviPeremption: number }
 
@@ -22,7 +29,7 @@ export function rechercherParCode(db: Db, code: string): ArticleCatalogue | null
   if (!c) return null
   const l = une<LigneArticle>(
     db,
-    `SELECT ${COLONNES} FROM v_catalogue_vente v WHERE v.code_barres = ? OR v.code_plu = ? LIMIT 1`,
+    `SELECT ${COLONNES} FROM v_catalogue_vente v ${JOINTURE_RAYON} WHERE v.code_barres = ? OR v.code_plu = ? LIMIT 1`,
     c,
     c
   )
@@ -38,7 +45,7 @@ export function rechercherTexte(db: Db, texte: string, limite = 20): ArticleCata
   if (t.length < 2) return []
   return toutes<LigneArticle>(
     db,
-    `SELECT ${COLONNES} FROM v_catalogue_vente v WHERE v.designation LIKE ? ORDER BY v.designation LIMIT ?`,
+    `SELECT ${COLONNES} FROM v_catalogue_vente v ${JOINTURE_RAYON} WHERE v.designation LIKE ? ORDER BY v.designation LIMIT ?`,
     `%${t}%`,
     limite
   ).map(versArticle)
@@ -48,7 +55,7 @@ export function rechercherTexte(db: Db, texte: string, limite = 20): ArticleCata
 export function grille(db: Db): ArticleCatalogue[] {
   return toutes<LigneArticle>(
     db,
-    `SELECT ${COLONNES} FROM v_catalogue_vente v
+    `SELECT ${COLONNES} FROM v_catalogue_vente v ${JOINTURE_RAYON}
      JOIN conditionnements c ON c.id = v.conditionnement_id
      WHERE c.bouton_tactile = 1
      ORDER BY c.ordre_bouton, v.designation`
