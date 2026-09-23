@@ -235,6 +235,9 @@ select {
   color: var(--encre-douce);
   border: 1px solid var(--bord);
 }
+.tableau td.retrait {
+  padding-left: 40px;
+}
 .tableau tr.inactif td {
   color: var(--encre-douce);
 }

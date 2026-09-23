@@ -10,6 +10,7 @@ import type { CompteUtilisateur } from '@shared/ipc/utilisateurs'
 import { formaterDate } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { useUtilisateur } from '@renderer/app/contexte'
+import { Panneau } from '@renderer/ui/Panneau'
 
 const LIBELLES_ROLE: Record<Role, string> = { caissier: 'Caissier', gerant: 'Gérant', admin: 'Administrateur' }
 const ROLES: Role[] = ['caissier', 'gerant', 'admin']
@@ -219,42 +220,6 @@ function ChampRole(props: { valeur: Role; onChange: (r: Role) => void }): React.
         ))}
       </select>
     </label>
-  )
-}
-
-interface PropsPanneau {
-  titre: string
-  libelleValider: string
-  valide: boolean
-  attention?: boolean
-  onValider: () => Promise<void>
-  onFermer: () => void
-  children: React.ReactNode
-}
-
-function Panneau(props: PropsPanneau): React.JSX.Element {
-  const [envoi, setEnvoi] = useState(false)
-  const soumettre = (e: React.FormEvent): void => {
-    e.preventDefault()
-    if (!props.valide || envoi) return
-    setEnvoi(true)
-    props.onValider().finally(() => setEnvoi(false))
-  }
-  return (
-    <section className="panneau">
-      <h2>{props.titre}</h2>
-      <form className="formulaire" onSubmit={soumettre}>
-        {props.children}
-        <div className="formulaire-actions">
-          <button type="submit" className={props.attention ? 'btn btn-attention' : 'btn'} disabled={!props.valide || envoi}>
-            {props.libelleValider}
-          </button>
-          <button type="button" className="btn btn-secondaire" onClick={props.onFermer}>
-            Fermer
-          </button>
-        </div>
-      </form>
-    </section>
   )
 }
 

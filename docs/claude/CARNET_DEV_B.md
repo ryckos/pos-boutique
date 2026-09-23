@@ -18,6 +18,36 @@ Format d'une entrée :
 
 ---
 
+## 2026-09-23 (suite) — b/categories — B2.1 Catégories
+**Fait** :
+- B1 fusionnée (PR #4), passée à ✅ ; branche supprimée.
+- Règles validées par Dev B et écrites (`REGLES_METIER.md` § 2.5) : rayons et sous-rayons, **un seul
+  niveau** ; nom unique parmi les actives du même niveau (casse et espaces ignorés) ; désactivation
+  seulement d'une catégorie vide (ni produit ni sous-rayon actif) ; gérant ; pas de journal.
+- `catalogue/categories.ts` + canaux `catalogue:categories` (tous), `creerCategorie`,
+  `renommerCategorie`, `desactiverCategorie` (gérant). Aucune migration.
+- Écran « Catégories » (gérant). Composant commun `ui/Panneau.tsx` (sorti de l'écran des comptes).
+- 111 tests verts (15 nouveaux), build OK, testé à la main par Dev B.
+
+**En cours** : PR B2.1 vers `test`, en relecture par Dev A.
+
+**Prochaine étape** : après fusion, B2.1 ✅ et contrat « catégorie » ✅ ; puis **B2.2 Produits et
+conditionnements** (`/tache B2.2`, branche `b/produits`) — livrer **`catalogue:conditionnementsProduit`
+tôt** (fin S4, attendu par A1.2 sous la forme `{ requete: { produitId }; reponse: ArticleCatalogue[] }`,
+unité en premier). La fiche produit permettra aussi de déplacer un produit d'une catégorie à l'autre
+(aujourd'hui impossible dans l'application).
+
+**Questions ouvertes** : `xlsx` (B3) toujours à valider ; réactivation (comptes, catégories) non prévue.
+
+**Contrats** : **livré pour Dev A** — `ArticleCatalogue.categorie` = nom du **rayon** (catégorie de
+premier niveau, même si le produit est dans un sous-rayon), `null` si non classé ; renseigné par
+`rechercherCode`, `rechercher` et `grille`. Déclaré **optionnel** (`categorie?: string | null`) pour ne
+pas casser les objets `ArticleCatalogue` écrits en dur dans `panier.test.ts` et `attente.test.ts` ; le
+service le remplit toujours. Onglets par ordre alphabétique ; pas de champ d'ordre (pas demandé
+fermement, demanderait une migration). Nouveau canal `catalogue:categories` si besoin de la liste.
+
+---
+
 ## 2026-09-23 — b/utilisateurs-roles — B1 Utilisateurs, rôles et sécurité
 **Fait** :
 - **Décision D-17, validée par le chef de projet** : connexion en deux gestes (toucher son nom,
