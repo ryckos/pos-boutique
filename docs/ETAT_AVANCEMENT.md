@@ -53,7 +53,7 @@ Le socle comprend :
 ## Phase 1 — Caisse et ventes (S3–S8)
 | Tâche | Intitulé                                        | Dev | Statut | Notes |
 |-------|-------------------------------------------------|-----|--------|-------|
-| A1.1  | Panier et logique de calcul                     | A   | ⏳     |       |
+| A1.1  | Panier et logique de calcul                     | A   | 🔄     | `a/caisse-panier` — code et tests faits, rafales de scans validées en simulation ; reste la PR, et l'essai à la vraie douchette sur le terminal |
 | A1.2  | Grille, recherche F2, conditionnement, attente  | A   | ⏳     | attend B2.2 (conditionnementsProduit) |
 | A2    | Encaissement et enregistrement de la vente      | A   | ⏳     |       |
 | A3    | Ticket, tiroir, réglages matériel               | A   | ⏳     | attend B5 (parametres:lire) |
