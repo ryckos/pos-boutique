@@ -19,9 +19,9 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 | `core/mouvements`, `numerotation`, `audit`, `session`     | socle     | A et B      | —        | ✅     | — |
 | Contrôle des rôles sur tous les canaux                    | B         | A           | fin S3   | ✅     | revue faite (PR #4 B1) ; 2 canaux `materiel:*` corrigés par A (PR #5) |
 | `catalogue:conditionnementsProduit`                       | B         | A           | fin S4   | ⏳     | A1.2 |
-| Catégorie dans `ArticleCatalogue` (`categorie`) — demandé le 2026-09-23 | B | A     | avec B2.1 | 🔄    | livré sur `b/categories` (PR B2.1) : nom du rayon, champ optionnel toujours renseigné |
+| Catégorie dans `ArticleCatalogue` (`categorie`) — demandé le 2026-09-23 | B | A     | avec B2.1 | ✅    | PR #8 : nom du rayon, champ optionnel toujours renseigné — débloque les onglets de A1.2 |
 | `parametres:lire` (puis `ecrire`)                         | B         | A           | fin S5   | ⏳     | A3 |
-| `caisse:enregistrerVente` (modèle de transaction)         | A         | B (lecture) | fin S5   | 🔄     | code et tests sur `a/caisse-encaissement` (PR A2 partie 1) — lisible par B dès maintenant |
+| `caisse:enregistrerVente` (modèle de transaction)         | A         | B (lecture) | fin S5   | ✅     | PR #7 — `service-vente.ts`, modèle de transaction à lire |
 | Stock initial de démarrage                                | B         | A (recette) | fin S7   | ⏳     | recette Phase 1 |
 | `stock/allouerFefo(db, produitId, qteBase)`               | B         | A           | fin S10  | ⏳     | A9 |
 | `caisse/sessionOuverte()`, `enregistrerMouvementCaisse()` | A         | B           | fin S10  | ⏳     | B13 |
@@ -55,8 +55,8 @@ Le socle comprend :
 | Tâche | Intitulé                                        | Dev | Statut | Notes |
 |-------|-------------------------------------------------|-----|--------|-------|
 | A1.1  | Panier et logique de calcul                     | A   | ✅     | PR #3 — essai à la vraie douchette sur le terminal encore à faire (validé en simulation) |
-| A1.2  | Grille, recherche F2, conditionnement, attente  | A   | 🔄     | `a/caisse-grille` — changement de conditionnement masqué en attendant B2.2 (conditionnementsProduit) |
-| A2    | Encaissement et enregistrement de la vente      | A   | ⏳     |       |
+| A1.2  | Grille, recherche F2, conditionnement, attente  | A   | 🔄     | partie 1 fusionnée (PR #6 : attente, F2, raccourcis) ; reste onglets (débloqués par PR #8) et bouton de conditionnement (attend B2.2) |
+| A2    | Encaissement et enregistrement de la vente      | A   | 🔄     | partie 1 fusionnée (PR #7 : TVA, session minimale, `enregistrerVente`) ; reste fenêtre de paiement et ouverture de caisse à l'écran |
 | A3    | Ticket, tiroir, réglages matériel               | A   | ⏳     | attend B5 (parametres:lire) |
 | A4    | Sessions de caisse, X et Z                      | A   | ⏳     | ouverture de session déjà livrée avec A2 ; reste clôture, X, Z |
 | A5    | Remises, droits, stabilisation                  | A   | ⏳     |       |
@@ -117,3 +117,5 @@ Le socle comprend :
 | 2026-09-22 | —     | Briefs de passation et carnets de bord par développeur |
 | 2026-09-23 | A1.1  | Panier en fonctions pures et vrai écran de caisse (PR #3) |
 | 2026-09-23 | B1    | Connexion par nom et code (D-17), verrouillage par compte, comptes utilisateurs (PR #4) |
+| 2026-09-23 | A1.2  | Partie 1 : tickets en attente, recherche F2 (nom ou PLU), raccourcis clavier (PR #6) |
+| 2026-09-23 | A2    | Partie 1 : TVA ventilée, ouverture de session, `caisse:enregistrerVente` — contrat livré à B (PR #7) |
