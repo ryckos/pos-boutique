@@ -356,6 +356,75 @@ select {
   font-weight: 700;
   letter-spacing: -0.5px;
 }
+.ticket-entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.ticket-lignes li.ticket-ligne {
+  min-height: 48px;
+  align-items: center;
+  padding: 10px 8px;
+  cursor: pointer;
+}
+.ticket-ligne-libelle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.ticket-ligne-selectionnee {
+  background: var(--vert-pale);
+  box-shadow: inset 4px 0 0 var(--vert);
+}
+/* Retour visuel d'un scan réussi (UI_UX § 3) : répond à une action, donc autorisé. */
+.ticket-ligne-surlignee {
+  animation: ticket-surlignage 600ms ease-out;
+}
+@keyframes ticket-surlignage {
+  from {
+    background: var(--vert-pale);
+  }
+}
+.pastille-conditionnement {
+  background: var(--vert-pale);
+  color: var(--vert);
+}
+.ticket-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ticket-actions .btn {
+  min-width: 56px;
+  font-size: 22px;
+}
+.ticket-actions .ticket-actions-supprimer {
+  margin-left: auto;
+  font-size: 16px;
+  color: var(--rouge);
+}
+.ticket-actions-quantite {
+  min-width: 40px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+}
+.caisse-paiements {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.caisse-paiements .caisse-paiement-principal {
+  grid-column: 1 / -1;
+  min-height: 64px;
+  font-size: 20px;
+}
+.caisse-ecran-client {
+  align-self: flex-start;
+  margin-top: auto;
+}
 
 /* ─── Écran client ─── */
 .ecran-client {
