@@ -18,6 +18,66 @@ Format d'une entrée :
 
 ---
 
+## 2026-09-24 — b/produits (fusionnée) — B2.2 Produits et conditionnements
+**Fait** :
+- **B2.2 terminée et fusionnée** (PR #10 partie 1, PR #12 le reste) ; branche supprimée.
+- **Règles validées par Dev B** et écrites dans `REGLES_METIER.md` § 1.4, 2.2, 2.3 : conditionnement de
+  base toujours nommé « Unité » ; quantité d'un conditionnement existant **non modifiable** (on le
+  désactive et on en crée un autre) ; codes-barres 8 à 14 chiffres, PLU 1 à 5 chiffres, uniques
+  **toutes colonnes confondues** (désactivés compris) ; codes internes à la suite (`2000000000015`,
+  `…022`…) en sautant les pris ; désactivation d'un produit avec motif, journalisée
+  (`desactivation_produit`, motif + stock restant), autorisée même avec du stock ; **photo reportée**.
+- **Décision d'interface de Dev B, pour tout le projet** (`UI_UX.md` § 3 et 5.12) : toute création,
+  modification ou désactivation s'ouvre dans une **fenêtre modale** (`ui/FenetreFormulaire.tsx`, qui
+  remplace `ui/Panneau.tsx` ; PR #11). Le refus s'affiche dans la fenêtre, la saisie est gardée ;
+  Échap ferme, un toucher à côté non. Écrans Comptes et Catégories convertis.
+- Service `catalogue/produits.ts` (créer, modifier, désactiver, générer un code, liste, fiche) ;
+  règles pures partagées `src/shared/catalogue.ts` (clé EAN-13, garde-fou prix) ; logique d'écran
+  pure `modules/catalogue/saisieProduit.ts`.
+- Écrans : « Produits » (recherche sans accents, filtre par rayon) et fiche produit en fenêtre large ;
+  l'ancienne page « Produits et stock » s'appelle « Stock » (`/stock`, à compléter en B4).
+- 140 tests verts (29 nouveaux), build OK, scénario complet testé à la main par Dev B.
+- Leçon : la case « Bouton caisse », d'abord une case seule de 24 px, ratait les touchers ; remplacée
+  par une étiquette « En bouton » de 48 px (`.case-cellule`). **Toute case à cocher dans un tableau
+  doit être une étiquette de 48 px.**
+
+**En cours** : rien. Branche `b/recherche-scan` créée depuis `test` à jour, avec ce carnet seulement.
+
+**Prochaine étape** : **B2.3** (`/tache B2.3`) sur `b/recherche-scan` :
+1. Recherche insensible aux accents et à la casse côté principal (`rechercherTexte` dans
+   `catalogue/service.ts`, TODO en place ; utilisé par la F2 de Dev A). Piste : colonne normalisée
+   remplie par le service (demande une migration) ou fonction SQL enregistrée sur la connexion.
+   L'écran Produits filtre déjà sans accents, mais en local (`normaliser` dans `PageProduits.tsx`).
+2. Création d'un produit pré-remplie depuis un code inconnu scanné : `FenetreProduit` accepte déjà
+   la création ; ajouter une prop « code scanné » (pastille « Code scanné : … », UI_UX § 5.7), qui
+   servira à la réception (B8). Le bouton « Enregistrer et ajouter à la réception » viendra avec B8.
+Puis **B5 : livrer `parametres:lire` à Dev A avant la fin de S5** (le glisser tôt, comme
+`conditionnementsProduit`).
+
+**Questions ouvertes** :
+- `xlsx` pour l'import (B3) : toujours à valider.
+- Réactivation d'un produit, d'un compte ou d'une catégorie désactivés : non prévue (cliente).
+- Photo des produits : reportée ; à rouvrir si la cliente veut des images sur les boutons.
+- « Mon code » et l'assistant de premier démarrage restent des pages entières (pas des fenêtres) :
+  Dev B n'a pas demandé de les convertir.
+
+**Contrats** :
+- **Livré à Dev A** : `catalogue:conditionnementsProduit` `{ produitId }` → `ArticleCatalogue[]`
+  (Unité d'abord, puis par quantité croissante, actifs seulement ; vide si produit inconnu ou
+  désactivé). Débloque le bouton « Changer le conditionnement » d'A1.2.
+- **Ajoutés (gérant, sans impact pour Dev A)** : `catalogue:listeProduits`, `ficheProduit`,
+  `creerProduit`, `modifierProduit`, `desactiverProduit`, `genererCodeInterne`. `ArticleCatalogue`
+  inchangé.
+- **Pour Dev A** : la règle des fenêtres modales vaut aussi pour ses futurs formulaires (ouverture de
+  caisse, clients, mouvements de caisse…) : utiliser `ui/FenetreFormulaire.tsx`. Ses fenêtres de
+  caisse (F2, paiement) gardent `.voile` / `.fenetre`. Nouvelles classes communes listées dans
+  `UI_UX.md` § 2.
+- Attendus inchangés : `sessionOuverte()` / `enregistrerMouvementCaisse()` (fin S10) — sa version
+  actuelle prend un `utilisateurId`, à discuter en A8.
+
+
+---
+
 ## 2026-09-23 (suite) — b/categories — B2.1 Catégories
 **Fait** :
 - B1 fusionnée (PR #4), passée à ✅ ; branche supprimée.
