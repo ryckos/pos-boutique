@@ -20,7 +20,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 | Contrôle des rôles sur tous les canaux                    | B         | A           | fin S3   | ✅     | revue faite (PR #4 B1) ; 2 canaux `materiel:*` corrigés par A (PR #5) |
 | `catalogue:conditionnementsProduit`                       | B         | A           | fin S4   | ✅     | PR #10 — `{ produitId }` → `ArticleCatalogue[]`, Unité d'abord ; débloque le bouton de conditionnement d'A1.2 |
 | Catégorie dans `ArticleCatalogue` (`categorie`) — demandé le 2026-09-23 | B | A     | avec B2.1 | ✅    | PR #8 : nom du rayon, champ optionnel toujours renseigné — débloque les onglets de A1.2 |
-| `parametres:lire` (puis `ecrire`)                         | B         | A           | fin S5   | ⏳     | A3 |
+| `parametres:lire` (puis `ecrire`)                         | B         | A           | fin S5   | 🔄     | A3 — `b/parametres` : sans requête → `ParametresBoutique` (objet typé, défauts appliqués) ; `lireParametres(db)` appelable directement dans le principal pour le ticket |
 | `caisse:enregistrerVente` (modèle de transaction)         | A         | B (lecture) | fin S5   | ✅     | PR #7 — `service-vente.ts`, modèle de transaction à lire |
 | Stock initial de démarrage                                | B         | A (recette) | fin S7   | ⏳     | recette Phase 1 |
 | `stock/allouerFefo(db, produitId, qteBase)`               | B         | A           | fin S10  | ⏳     | A9 |
@@ -66,7 +66,7 @@ Le socle comprend :
 | B2.3  | Recherche sans accents, création depuis scan    | B   | 🔄     | `b/recherche-scan` : terminée, testée à la main par Dev B, PR vers `test` en cours ; F2 de la caisse sans accents sans changement de contrat |
 | B3    | Import Excel du catalogue                       | B   | ⏳     |       |
 | B4    | Écran stock et historique produit               | B   | ⏳     |       |
-| B5    | Paramètres de la boutique                       | B   | ⏳     | rendez-vous fin S5 (lecture) |
+| B5    | Paramètres de la boutique                       | B   | 🔄     | `b/parametres` : PR 1 `parametres:lire` (lecture, tous rôles) ; PR 2 `parametres:ecrire` et écran |
 | B6    | Stock initial de démarrage                      | B   | ⏳     |       |
 
 ## Phase 2 — Achats, lots, retours (S9–S12)

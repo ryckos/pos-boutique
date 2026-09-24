@@ -9,6 +9,7 @@ import type { ContratAuth } from './auth'
 import type { ContratCaisse } from './caisse'
 import type { ContratCatalogue } from './catalogue'
 import type { ContratMateriel } from './materiel'
+import type { ContratParametres } from './parametres'
 import type { ContratSysteme } from './systeme'
 import type { ContratUtilisateurs } from './utilisateurs'
 
@@ -16,6 +17,7 @@ export type ContratIpc = ContratSysteme &
   ContratAuth &
   ContratUtilisateurs &
   ContratCatalogue &
+  ContratParametres &
   ContratCaisse &
   ContratMateriel
 
