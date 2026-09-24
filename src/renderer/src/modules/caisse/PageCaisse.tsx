@@ -21,6 +21,7 @@ import { versRequete, type EtatPaiement } from './paiement'
 import { TOUT, afficherOnglets, filtrerGrille, ongletsDeGrille } from './grille'
 import { FenetreRecherche } from './FenetreRecherche'
 import { FenetreConditionnement } from './FenetreConditionnement'
+import { FenetreReimpression } from './FenetreReimpression'
 import { FenetrePaiement } from './FenetrePaiement'
 import { OuvertureCaisse } from './OuvertureCaisse'
 
@@ -47,6 +48,9 @@ export function PageCaisse(): React.JSX.Element {
   const [rechercheOuverte, setRechercheOuverte] = useState(false)
   /** conditionnementId de la ligne dont on change le conditionnement ; null = fenêtre fermée. */
   const [conditionnementOuvert, setConditionnementOuvert] = useState<number | null>(null)
+  const [reimpressionOuverte, setReimpressionOuverte] = useState(false)
+  /** Confirmation d'une réimpression par numéro, effacée au scan suivant. */
+  const [reimprime, setReimprime] = useState<string | null>(null)
   /** Mode choisi pour ouvrir la fenêtre de paiement ; null = fenêtre fermée. */
   const [paiement, setPaiement] = useState<ModePaiementCaisse | null>(null)
   /** undefined = en cours de lecture ; null = caisse fermée. */
@@ -94,6 +98,7 @@ export function PageCaisse(): React.JSX.Element {
     (article: ArticleCatalogue) => {
       setMessage(null)
       setDerniereVente(null)
+      setReimprime(null)
       agir({ type: 'ajouter', article })
       setSurlignee((s) => ({ id: article.conditionnementId, n: (s?.n ?? 0) + 1 }))
     },
@@ -121,14 +126,15 @@ export function PageCaisse(): React.JSX.Element {
         }
       })
     },
-    { actif: caisseOuverte && paiement === null && conditionnementOuvert === null }
+    { actif: caisseOuverte && paiement === null && conditionnementOuvert === null && !reimpressionOuverte }
   )
 
   // Raccourcis clavier (UI_UX § 3). Ignorés dans un champ de saisie et quand une fenêtre est
   // ouverte : elle gère ses propres touches.
   const etatCourant = useRef(etat)
   etatCourant.current = etat
-  const fenetreOuverte = rechercheOuverte || paiement !== null || conditionnementOuvert !== null
+  const fenetreOuverte =
+    rechercheOuverte || paiement !== null || conditionnementOuvert !== null || reimpressionOuverte
   useEffect(() => {
     if (fenetreOuverte || !caisseOuverte) return
     const surTouche = (e: KeyboardEvent): void => {
@@ -392,6 +398,12 @@ export function PageCaisse(): React.JSX.Element {
           </>
         )}
 
+        {reimprime && (
+          <p className="succes" role="status">
+            {reimprime}
+          </p>
+        )}
+
         {impression?.etat === 'echec' && (
           <div className="bandeau caisse-impression-echec" role="alert">
             <p>
@@ -452,8 +464,25 @@ export function PageCaisse(): React.JSX.Element {
           >
             Vider le ticket
           </button>
+          <button className="btn btn-discret" onClick={() => setReimpressionOuverte(true)}>
+            Réimprimer un ticket
+          </button>
         </div>
       </section>
+
+      {reimpressionOuverte && (
+        <FenetreReimpression
+          numeroInitial={impression?.numeroTicket ?? derniereVente?.numeroTicket ?? ''}
+          onReimprime={(numero, duplicata) => {
+            setReimpressionOuverte(false)
+            setMessage(null)
+            // Un ticket raté qui vient d'être réimprimé n'a plus besoin de son bandeau.
+            if (impression?.etat === 'echec' && impression.numeroTicket === numero) setImpression(null)
+            setReimprime(`Ticket ${numero} réimprimé${duplicata ? ' (duplicata)' : ''}.`)
+          }}
+          onFermer={() => setReimpressionOuverte(false)}
+        />
+      )}
 
       {rechercheOuverte && (
         <FenetreRecherche

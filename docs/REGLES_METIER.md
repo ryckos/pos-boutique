@@ -296,6 +296,19 @@ L'impression et l'ouverture du tiroir se font **après** la validation de la tra
 l'imprimante échoue, la vente reste enregistrée : afficher « Vente enregistrée, ticket non
 imprimé » et proposer la réimpression.
 
+**Ticket imprimé et réimpression** (validé par Dev A, 2026-09-24, tâche A3) :
+- La **première impression réussie** d'une vente est l'original ; **toute impression suivante porte
+  la mention DUPLICATA**. Le processus principal le déduit du journal d'audit (action
+  `impression_ticket`, notée seulement après un envoi réussi) : l'écran ne peut pas demander un
+  second original. Un « Réimprimer » après une panne d'imprimante sort donc l'original.
+- **Qui réimprime** : une caissière, les tickets de **sa session ouverte** ; le gérant (et l'admin),
+  n'importe quel ticket, par son numéro.
+- Le **tiroir** s'ouvre à l'impression de l'original d'une vente payée, même en partie, en espèces ;
+  jamais pour un duplicata ni pour une vente sans espèces. Une ouverture manuelle (Réglages
+  matériel) est journalisée (`ouverture_tiroir_hors_vente`).
+- Le ticket tient sur 48 colonnes et affiche la TVA ventilée par taux (§ 6.4), les paiements avec
+  leur référence, les espèces reçues et la monnaie rendue.
+
 ### 6.4 TVA
 Les prix sont TTC. Le calcul se fait **par taux**, puis on additionne :
 ```
@@ -510,6 +523,12 @@ repart à 1 chaque année.
 | `imprimante_methode`             | `spooler` ou `share`                       | spooler                 |
 | `imprimante_cible`               | Nom de l'imprimante ou du partage          | —                       |
 | `imprimante_page_codes`          | Page de codes validée en Phase 0           | voir DECISIONS.md       |
+
+**Provisoire (A3)** : tant que `parametres:lire` / `parametres:ecrire` (Dev B, B5) ne sont pas
+livrés, les trois clés `imprimante_*` sont gardées dans un fichier local `materiel.json` (dossier de
+l'application, à côté de la base), modifiable par l'écran « Réglages matériel » (gérant, journalisé
+`reglages_imprimante`) ; l'en-tête du ticket est écrit en dur (« Ma Boutique », « Lomé - Togo »,
+« Merci de votre visite ! »). Bascule vers la table `parametres` à l'arrivée de B5.
 
 Ajouter ici toute nouvelle clé.
 

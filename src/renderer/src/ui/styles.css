@@ -311,6 +311,23 @@ select {
   font-weight: 400;
   font-size: 13px;
 }
+/* Message de succès ou d'erreur en haut d'une page de gestion. */
+.page-message {
+  margin-bottom: 16px;
+}
+/* Réglages matériel (Dev A, A3) : libellé à gauche, valeur à droite. */
+.reglages-liste {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 24px;
+}
+.reglages-liste dt {
+  color: var(--encre-douce);
+  font-weight: 600;
+}
+.reglages-aide {
+  margin-bottom: 12px;
+}
 .formulaire {
   display: flex;
   flex-wrap: wrap;
@@ -704,6 +721,7 @@ select {
 }
 .caisse-ticket-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .caisse-ticket-actions .btn {
