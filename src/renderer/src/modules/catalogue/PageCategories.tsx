@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Categorie } from '@shared/ipc/catalogue'
 import { appel } from '@renderer/lib/api'
-import { Panneau } from '@renderer/ui/Panneau'
+import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 
 type Action =
   | { type: 'creer'; parentId: number | null }
@@ -33,17 +33,13 @@ export function PageCategories(): React.JSX.Element {
     setSucces(null)
   }
 
-  /** Exécute l'action, puis ferme le panneau et recharge ; en cas de refus, garde la saisie. */
+  /** Exécute l'action, puis ferme la fenêtre et recharge. Un refus remonte à la fenêtre, qui l'affiche et garde la saisie. */
   const executer = async (travail: () => Promise<unknown>, message: string): Promise<void> => {
     setErreur(null)
-    try {
-      await travail()
-      setAction(null)
-      setSucces(message)
-      charger()
-    } catch (e) {
-      setErreur((e as Error).message)
-    }
+    await travail()
+    setAction(null)
+    setSucces(message)
+    charger()
   }
 
   const rayonsActifs = categories.filter((c) => c.actif && c.parentId === null)
@@ -94,7 +90,7 @@ export function PageCategories(): React.JSX.Element {
         />
       )}
       {action?.type === 'desactiver' && (
-        <Panneau
+        <FenetreFormulaire
           key={action.categorie.id}
           titre={`Désactiver « ${action.categorie.nom} »`}
           libelleValider="Désactiver la catégorie"
@@ -111,7 +107,7 @@ export function PageCategories(): React.JSX.Element {
           <p className="vide champ-large">
             Elle ne sera plus proposée pour les produits. Seule une catégorie vide peut être désactivée.
           </p>
-        </Panneau>
+        </FenetreFormulaire>
       )}
 
       {erreur && (
@@ -193,7 +189,7 @@ function FormulaireCreation(props: {
   const [nom, setNom] = useState('')
   const [parentId, setParentId] = useState<number | null>(props.parentInitial)
   return (
-    <Panneau
+    <FenetreFormulaire
       titre={parentId === null ? 'Nouveau rayon' : 'Nouveau sous-rayon'}
       libelleValider="Créer la catégorie"
       valide={nom.trim() !== ''}
@@ -218,7 +214,7 @@ function FormulaireCreation(props: {
           ))}
         </select>
       </label>
-    </Panneau>
+    </FenetreFormulaire>
   )
 }
 
@@ -229,7 +225,7 @@ function FormulaireRenommage(props: {
 }): React.JSX.Element {
   const [nom, setNom] = useState(props.categorie.nom)
   return (
-    <Panneau
+    <FenetreFormulaire
       titre={`Renommer « ${props.categorie.nom} »`}
       libelleValider="Renommer la catégorie"
       valide={nom.trim() !== '' && nom.trim() !== props.categorie.nom}
@@ -240,6 +236,6 @@ function FormulaireRenommage(props: {
         Nouveau nom
         <input autoFocus value={nom} onChange={(e) => setNom(e.target.value)} />
       </label>
-    </Panneau>
+    </FenetreFormulaire>
   )
 }

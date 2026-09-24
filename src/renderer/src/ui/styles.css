@@ -647,6 +647,16 @@ select {
   background: var(--surface);
   border-radius: var(--rayon);
 }
+/* Fenêtre de formulaire (création, modification, désactivation) : défile si elle est longue. */
+.fenetre-formulaire {
+  overflow-y: auto;
+}
+.fenetre-large {
+  width: min(960px, 96vw);
+}
+.formulaire-erreur {
+  flex-basis: 100%;
+}
 .fenetre-entete {
   display: flex;
   justify-content: space-between;

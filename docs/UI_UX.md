@@ -78,6 +78,14 @@ Classes existantes :
   | Échap   | Fermer la fenêtre ouverte        |
   | + / −   | Quantité de la ligne sélectionnée |
 
+- **Fenêtres modales (décision de Dev B, 2026-09-23, pour tout le projet)** : toute création,
+  modification ou désactivation s'ouvre dans une **fenêtre modale** par-dessus la page, jamais dans
+  un encadré au milieu de la page. Composant commun `ui/FenetreFormulaire.tsx` (titre, champs,
+  bouton verbe + « Fermer », variante `large` pour les formulaires avec tableau). L'erreur d'un
+  refus s'affiche **dans** la fenêtre, la saisie est gardée. Échap ou « Fermer » ferment ; un
+  toucher à côté ne ferme pas (pas de saisie perdue au doigt). Le curseur va dans le premier champ.
+  Les fenêtres propres à la caisse (recherche F2, paiement) utilisent les mêmes classes `.voile` /
+  `.fenetre`.
 - **Douchette** : écoutée par `useScanner()` sur toute la fenêtre. Elle est ignorée dans les champs
   de saisie, sauf dans ceux qui portent l'attribut `data-scan`. Un scan réussi met en évidence la
   ligne ajoutée (fond `--vert-pale` bref).
@@ -280,7 +288,8 @@ Chaque page de gestion utilise `.page` et `.page-entete`. L'en-tête contient :
 
 Le tableau est en `.tableau`, avec les colonnes numériques alignées à droite. Les états sont
 signalés par des pastilles. Les filtres se placent au-dessus du tableau. Une action destructive
-n'existe jamais : on propose « Désactiver » ou « Annuler », avec un motif.
+n'existe jamais : on propose « Désactiver » ou « Annuler », avec un motif. Les boutons « Créer… »,
+« Modifier… », « Désactiver… » ouvrent une fenêtre modale (§ 3).
 
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.

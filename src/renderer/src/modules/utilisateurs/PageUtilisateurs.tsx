@@ -10,7 +10,7 @@ import type { CompteUtilisateur } from '@shared/ipc/utilisateurs'
 import { formaterDate } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { useUtilisateur } from '@renderer/app/contexte'
-import { Panneau } from '@renderer/ui/Panneau'
+import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 
 const LIBELLES_ROLE: Record<Role, string> = { caissier: 'Caissier', gerant: 'Gérant', admin: 'Administrateur' }
 const ROLES: Role[] = ['caissier', 'gerant', 'admin']
@@ -41,17 +41,13 @@ export function PageUtilisateurs(): React.JSX.Element {
     setSucces(null)
   }
 
-  /** Exécute l'action, puis ferme le panneau et recharge la liste ; en cas de refus, garde la saisie. */
+  /** Exécute l'action, puis ferme la fenêtre et recharge la liste. Un refus remonte à la fenêtre, qui l'affiche et garde la saisie. */
   const executer = async (travail: () => Promise<unknown>, message: string): Promise<void> => {
     setErreur(null)
-    try {
-      await travail()
-      setAction(null)
-      setSucces(message)
-      charger()
-    } catch (e) {
-      setErreur((e as Error).message)
-    }
+    await travail()
+    setAction(null)
+    setSucces(message)
+    charger()
   }
 
   const actifs = comptes.filter((c) => c.actif).length
@@ -231,7 +227,7 @@ function FormulaireCreation(props: {
   const [pin, setPin] = useState('')
   const [role, setRole] = useState<Role>('caissier')
   return (
-    <Panneau
+    <FenetreFormulaire
       titre="Nouveau compte"
       libelleValider="Créer le compte"
       valide={nom.trim() !== '' && pin.length === 4}
@@ -244,7 +240,7 @@ function FormulaireCreation(props: {
       </label>
       <ChampCode libelle="Code provisoire (4 chiffres)" valeur={pin} onChange={setPin} />
       <ChampRole valeur={role} onChange={setRole} />
-    </Panneau>
+    </FenetreFormulaire>
   )
 }
 
@@ -255,7 +251,7 @@ function FormulaireCode(props: {
 }): React.JSX.Element {
   const [pin, setPin] = useState('')
   return (
-    <Panneau
+    <FenetreFormulaire
       titre={`Code provisoire pour ${props.compte.nom}`}
       libelleValider="Réinitialiser le code"
       valide={pin.length === 4}
@@ -263,7 +259,7 @@ function FormulaireCode(props: {
       onFermer={props.onFermer}
     >
       <ChampCode libelle="Code provisoire (4 chiffres)" valeur={pin} onChange={setPin} autoFocus />
-    </Panneau>
+    </FenetreFormulaire>
   )
 }
 
@@ -274,7 +270,7 @@ function FormulaireRole(props: {
 }): React.JSX.Element {
   const [role, setRole] = useState<Role>(props.compte.role)
   return (
-    <Panneau
+    <FenetreFormulaire
       titre={`Rôle de ${props.compte.nom}`}
       libelleValider="Changer le rôle"
       valide={role !== props.compte.role}
@@ -282,7 +278,7 @@ function FormulaireRole(props: {
       onFermer={props.onFermer}
     >
       <ChampRole valeur={role} onChange={setRole} />
-    </Panneau>
+    </FenetreFormulaire>
   )
 }
 
@@ -293,7 +289,7 @@ function FormulaireDesactivation(props: {
 }): React.JSX.Element {
   const [motif, setMotif] = useState('')
   return (
-    <Panneau
+    <FenetreFormulaire
       titre={`Désactiver le compte de ${props.compte.nom}`}
       libelleValider="Désactiver le compte"
       attention
@@ -305,6 +301,6 @@ function FormulaireDesactivation(props: {
         Motif (obligatoire)
         <input autoFocus placeholder="Ex. : fin de contrat" value={motif} onChange={(e) => setMotif(e.target.value)} />
       </label>
-    </Panneau>
+    </FenetreFormulaire>
   )
 }
