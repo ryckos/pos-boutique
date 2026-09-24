@@ -55,9 +55,9 @@ Le socle comprend :
 | Tâche | Intitulé                                        | Dev | Statut | Notes |
 |-------|-------------------------------------------------|-----|--------|-------|
 | A1.1  | Panier et logique de calcul                     | A   | ✅     | PR #3 — essai à la vraie douchette sur le terminal encore à faire (validé en simulation) |
-| A1.2  | Grille, recherche F2, conditionnement, attente  | A   | 🔄     | partie 1 fusionnée (PR #6 : attente, F2, raccourcis) ; partie 2 terminée sur `a/caisse-onglets` (onglets de rayons, changer le conditionnement, testée à la main) — PR vers `test` en cours |
+| A1.2  | Grille, recherche F2, conditionnement, attente  | A   | ✅     | PR #6 (attente, F2, raccourcis) et #15 (onglets de rayons, changer le conditionnement) |
 | A2    | Encaissement et enregistrement de la vente      | A   | ✅     | PR #7 (serveur) et #14 (ouverture de caisse, fenêtre de paiement) — impression et tiroir en A3 |
-| A3    | Ticket, tiroir, réglages matériel               | A   | ⏳     | `parametres:lire` livré (PR #17) ; `parametres:ecrire` (gérant pour `imprimante*`) en relecture |
+| A3    | Ticket, tiroir, réglages matériel               | A   | 🔄     | `a/caisse-ticket` — `parametres:lire` (PR #17) et `parametres:ecrire` (PR #19) livrés par B ; page de codes provisoire (D-A2, test sur site) |
 | A4    | Sessions de caisse, X et Z                      | A   | ⏳     | ouverture de session déjà livrée avec A2 ; reste clôture, X, Z |
 | A5    | Remises, droits, stabilisation                  | A   | ⏳     |       |
 | B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | ✅     | PR #4 — connexion par nom et code (D-17), verrouillage par compte, code provisoire, écrans Comptes / Mon code / premier démarrage |
@@ -120,6 +120,7 @@ Le socle comprend :
 | 2026-09-23 | A1.2  | Partie 1 : tickets en attente, recherche F2 (nom ou PLU), raccourcis clavier (PR #6) |
 | 2026-09-23 | A2    | Partie 1 : TVA ventilée, ouverture de session, `caisse:enregistrerVente` — contrat livré à B (PR #7) |
 | 2026-09-24 | A2    | Partie 2 : ouverture de caisse et fenêtre de paiement — on vend depuis l'écran (PR #14) |
+| 2026-09-24 | A1.2  | Partie 2 : onglets de rayons, changer le conditionnement d'une ligne (PR #15) |
 | 2026-09-23 | B2.1  | Catégories : rayons et sous-rayons, écran Catégories, rayon dans `ArticleCatalogue` — contrat livré à A (PR #8) |
 | 2026-09-24 | B2.2  | Partie 1 : `catalogue:conditionnementsProduit` — contrat livré à A (PR #10) |
 | 2026-09-24 | UI    | Formulaires en fenêtre modale dans tout le projet, `ui/FenetreFormulaire.tsx` (PR #11) |
