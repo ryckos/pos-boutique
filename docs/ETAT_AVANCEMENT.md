@@ -62,8 +62,8 @@ Le socle comprend :
 | A5    | Remises, droits, stabilisation                  | A   | ⏳     |       |
 | B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | ✅     | PR #4 — connexion par nom et code (D-17), verrouillage par compte, code provisoire, écrans Comptes / Mon code / premier démarrage |
 | B2.1  | Catégories                                      | B   | ✅     | PR #8 — rayons et sous-rayons, écran Catégories, `categorie` dans `ArticleCatalogue` |
-| B2.2  | Produits et conditionnements, codes internes    | B   | 🔄     | `b/produits` — partie 1 fusionnée (PR #10) ; service fiche, EAN-13, garde-fou et écrans Produits / fiche produit : PR vers `test` |
-| B2.3  | Recherche sans accents, création depuis scan    | B   | ⏳     |       |
+| B2.2  | Produits et conditionnements, codes internes    | B   | ✅     | PR #10 et #12 — écrans Produits et fiche produit, garde-fou prix, codes internes EAN-13, `conditionnementsProduit` |
+| B2.3  | Recherche sans accents, création depuis scan    | B   | ⏳     | branche `b/recherche-scan` créée, rien de commencé |
 | B3    | Import Excel du catalogue                       | B   | ⏳     |       |
 | B4    | Écran stock et historique produit               | B   | ⏳     |       |
 | B5    | Paramètres de la boutique                       | B   | ⏳     | rendez-vous fin S5 (lecture) |
@@ -122,3 +122,4 @@ Le socle comprend :
 | 2026-09-23 | B2.1  | Catégories : rayons et sous-rayons, écran Catégories, rayon dans `ArticleCatalogue` — contrat livré à A (PR #8) |
 | 2026-09-24 | B2.2  | Partie 1 : `catalogue:conditionnementsProduit` — contrat livré à A (PR #10) |
 | 2026-09-24 | UI    | Formulaires en fenêtre modale dans tout le projet, `ui/FenetreFormulaire.tsx` (PR #11) |
+| 2026-09-24 | B2.2  | Fiche produit et conditionnements, garde-fou prix, codes internes EAN-13 préfixe 20, écrans Produits (PR #12) |
