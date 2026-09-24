@@ -18,6 +18,40 @@ Format d'une entrée :
 
 ---
 
+## 2026-09-24 (suite) — a/caisse-onglets — A1.2 Grille, conditionnement (partie 2)
+**Fait** :
+- A2 fusionnée (PR #14) et passée à ✅ (commit `378bd39` en tête de cette branche).
+- `modules/caisse/grille.ts` (pur) : `ongletsDeGrille`, `filtrerGrille`, `afficherOnglets`.
+  **Choix validés par Dev A** : onglets affichés dès deux rayons ; « Tout » d'abord (par défaut),
+  rayons par ordre alphabétique français, « Sans rayon » en dernier pour les non classés. Onglets
+  **sous** la grille, comme la maquette validée (UI_UX § 5.2) ; l'onglet choisi reste actif d'une
+  vente à l'autre ; filtre local, aucune requête.
+- `FenetreConditionnement.tsx` : bouton « Changer le conditionnement » sur la ligne sélectionnée →
+  `catalogue:conditionnementsProduit` (Dev B) → liste avec prix, l'actuel marqué ; un toucher applique
+  `changerConditionnement` (quantité gardée, fusion si déjà au ticket). « Ce produit ne se vend qu'à
+  l'unité » s'il n'y a qu'un conditionnement. Douchette et raccourcis coupés pendant la fenêtre.
+- `styles.css` (zone partagée) : `.caisse-onglet*`, `.conditionnement-*` ; `.ticket-actions` passe à la ligne.
+- 6 tests (`tests/grille.test.ts`), 161 au total, build OK ; essai manuel validé par Dev A
+  (onglets, 2 unités → 2 cartons 15 000 F, fusion 3 cartons 22 500 F, baguette à l'unité).
+
+**En cours** : A1.2 🔄 — PR « partie 2 » vers `test` à ouvrir ; A1.2 → ✅ après fusion.
+
+**Prochaine étape** :
+1. Après fusion : A1.2 ✅ + ligne au journal des fusions ; supprimer la branche.
+2. **A3 — Ticket, tiroir, réglages matériel** (`/tache A3`, branche `a/caisse-ticket` depuis `test`) :
+   **demander d'abord à Dev A la page de codes gagnante du test T2 (D-A2)** ; ticket 48 colonnes via
+   `materiel/escpos.ts`, imprimé APRÈS `enregistrerVente` ; tiroir à chaque encaissement espèces ;
+   imprimante en panne = « Vente enregistrée, ticket non imprimé » + Réimprimer ; réimpression
+   « DUPLICATA » ; écran Réglages matériel (gérant). `parametres:lire` pas encore livré par Dev B :
+   en-tête en dur et configuration locale en attendant.
+
+**Questions ouvertes** :
+- Essai à la vraie douchette et affichage de la fenêtre de paiement sur le 15,6″ du terminal : sur site.
+- Rappel à Dev B : fichier temporaire `electron.vite.config.1790196666553.mjs` toujours versionné.
+- D-A1, D-A2 (bloque A3), D-A3 : inchangées.
+
+**Contrats** : aucun modifié. `categorie` et `conditionnementsProduit` (Dev B) désormais utilisés.
+
 ## 2026-09-24 — a/caisse-paiement — A2 Encaissement (partie 2 : écrans)
 **Fait** :
 - Début de session : `test` à jour (140 tests). Contrats de Dev B arrivés : `categorie` (PR #8),

@@ -55,7 +55,7 @@ Le socle comprend :
 | Tâche | Intitulé                                        | Dev | Statut | Notes |
 |-------|-------------------------------------------------|-----|--------|-------|
 | A1.1  | Panier et logique de calcul                     | A   | ✅     | PR #3 — essai à la vraie douchette sur le terminal encore à faire (validé en simulation) |
-| A1.2  | Grille, recherche F2, conditionnement, attente  | A   | 🔄     | partie 1 fusionnée (PR #6 : attente, F2, raccourcis) ; partie 2 sur `a/caisse-onglets` : onglets (PR #8) et bouton de conditionnement (PR #10), contrats reçus |
+| A1.2  | Grille, recherche F2, conditionnement, attente  | A   | 🔄     | partie 1 fusionnée (PR #6 : attente, F2, raccourcis) ; partie 2 terminée sur `a/caisse-onglets` (onglets de rayons, changer le conditionnement, testée à la main) — PR vers `test` en cours |
 | A2    | Encaissement et enregistrement de la vente      | A   | ✅     | PR #7 (serveur) et #14 (ouverture de caisse, fenêtre de paiement) — impression et tiroir en A3 |
 | A3    | Ticket, tiroir, réglages matériel               | A   | ⏳     | attend B5 (parametres:lire) |
 | A4    | Sessions de caisse, X et Z                      | A   | ⏳     | ouverture de session déjà livrée avec A2 ; reste clôture, X, Z |
