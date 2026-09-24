@@ -548,8 +548,12 @@ select {
 }
 .ticket-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+.ticket-actions .ticket-actions-conditionnement {
+  font-size: 16px;
 }
 .ticket-actions .btn {
   min-width: 56px;
@@ -578,7 +582,67 @@ select {
 }
 .caisse-ecran-client {
   align-self: flex-start;
+}
+/* Onglets des rayons, en bas de la grille comme sur la maquette (UI_UX § 5.2). */
+.caisse-onglets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--bord);
+}
+.caisse-onglet {
+  min-height: var(--cible);
+  padding: 0 20px;
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  font-weight: 600;
+  cursor: pointer;
+}
+.caisse-onglet.actif {
+  background: var(--vert);
+  border-color: var(--vert);
+  color: var(--surface);
+}
+/* Fenêtre « Changer le conditionnement ». */
+.conditionnement-choix {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.conditionnement-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 0 16px;
+  text-align: left;
+  font-size: 18px;
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  cursor: pointer;
+}
+.conditionnement-option:active {
+  background: var(--vert-pale);
+  border-color: var(--vert);
+}
+.conditionnement-option.actuel {
+  background: var(--vert-pale);
+  border-color: var(--vert);
+  cursor: default;
+}
+.conditionnement-option .pastille {
+  margin-left: 8px;
+}
+.conditionnement-option .montant {
+  color: var(--vert);
+  font-weight: 700;
 }
 .caisse-recherche {
   min-height: var(--cible);

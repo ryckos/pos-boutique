@@ -3,9 +3,9 @@
  *
  * Écran de caisse (maquette docs/UI_UX.md § 5.2) : grille tactile à gauche, ticket à droite,
  * total en très grand. L'état (ticket courant et tickets en attente) vit dans panier.ts et
- * attente.ts (fonctions pures, testées). Sans session ouverte, seul « Ouvrir la caisse » s'affiche.
- * À venir : onglets de catégories et changement de conditionnement (A1.2) · ticket et tiroir (A3) ·
- * clôture, X et Z (A4).
+ * attente.ts (fonctions pures, testées), les onglets de la grille dans grille.ts. Sans session
+ * ouverte, seul « Ouvrir la caisse » s'affiche.
+ * À venir : ticket et tiroir (A3) · clôture, X et Z (A4) · remises (A5).
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import type { ArticleCatalogue } from '@shared/types'
@@ -18,7 +18,9 @@ import { totalLigne, totalPanier, trouverLigne, versPanierClient, type ActionPan
 import { etatCaisseInitial, reducteurCaisse, resumeAttente, type EtatCaisse } from './attente'
 import { actionClavier } from './clavier'
 import { versRequete, type EtatPaiement } from './paiement'
+import { TOUT, afficherOnglets, filtrerGrille, ongletsDeGrille } from './grille'
 import { FenetreRecherche } from './FenetreRecherche'
+import { FenetreConditionnement } from './FenetreConditionnement'
 import { FenetrePaiement } from './FenetrePaiement'
 import { OuvertureCaisse } from './OuvertureCaisse'
 
@@ -41,7 +43,10 @@ export function PageCaisse(): React.JSX.Element {
   )
   const [grille, setGrille] = useState<ArticleCatalogue[]>([])
   const [message, setMessage] = useState<string | null>(null)
+  const [onglet, setOnglet] = useState(TOUT)
   const [rechercheOuverte, setRechercheOuverte] = useState(false)
+  /** conditionnementId de la ligne dont on change le conditionnement ; null = fenêtre fermée. */
+  const [conditionnementOuvert, setConditionnementOuvert] = useState<number | null>(null)
   /** Mode choisi pour ouvrir la fenêtre de paiement ; null = fenêtre fermée. */
   const [paiement, setPaiement] = useState<ModePaiementCaisse | null>(null)
   /** undefined = en cours de lecture ; null = caisse fermée. */
@@ -106,15 +111,16 @@ export function PageCaisse(): React.JSX.Element {
         }
       })
     },
-    { actif: caisseOuverte && paiement === null }
+    { actif: caisseOuverte && paiement === null && conditionnementOuvert === null }
   )
 
   // Raccourcis clavier (UI_UX § 3). Ignorés dans un champ de saisie et quand une fenêtre est
   // ouverte : elle gère ses propres touches.
   const etatCourant = useRef(etat)
   etatCourant.current = etat
+  const fenetreOuverte = rechercheOuverte || paiement !== null || conditionnementOuvert !== null
   useEffect(() => {
-    if (rechercheOuverte || paiement !== null || !caisseOuverte) return
+    if (fenetreOuverte || !caisseOuverte) return
     const surTouche = (e: KeyboardEvent): void => {
       const cible = e.target as HTMLElement | null
       if (cible && (cible.tagName === 'INPUT' || cible.tagName === 'TEXTAREA')) return
@@ -148,7 +154,7 @@ export function PageCaisse(): React.JSX.Element {
     }
     window.addEventListener('keydown', surTouche)
     return () => window.removeEventListener('keydown', surTouche)
-  }, [rechercheOuverte, paiement, caisseOuverte, agir])
+  }, [fenetreOuverte, caisseOuverte, agir])
 
   // La vente est enregistrée en base avant de vider le ticket ; un refus du service remonte dans
   // la fenêtre de paiement, qui reste ouverte avec sa saisie. Impression et tiroir : tâche A3.
@@ -198,10 +204,26 @@ export function PageCaisse(): React.JSX.Element {
           <p className="vide">Aucun bouton tactile. Scannez un article ou recherchez-le avec F2.</p>
         ) : (
           <div className="grille-boutons">
-            {grille.map((a) => (
+            {filtrerGrille(grille, onglet).map((a) => (
               <button key={a.conditionnementId} className="bouton-article" onClick={() => ajouter(a)}>
                 <span>{a.designation}</span>
                 <span className="montant">{formaterFCFA(a.prixVente)}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {/* Onglets sous la grille, comme sur la maquette validée (UI_UX § 5.2) : un par rayon. */}
+        {afficherOnglets(grille) && (
+          <div className="caisse-onglets" role="tablist" aria-label="Rayons">
+            {ongletsDeGrille(grille).map((o) => (
+              <button
+                key={o}
+                role="tab"
+                aria-selected={o === onglet}
+                className={o === onglet ? 'caisse-onglet actif' : 'caisse-onglet'}
+                onClick={() => setOnglet(o)}
+              >
+                {o}
               </button>
             ))}
           </div>
@@ -300,6 +322,12 @@ export function PageCaisse(): React.JSX.Element {
               +
             </button>
             <button
+              className="btn btn-discret ticket-actions-conditionnement"
+              onClick={() => setConditionnementOuvert(selection.article.conditionnementId)}
+            >
+              Changer le conditionnement
+            </button>
+            <button
               className="btn btn-discret ticket-actions-supprimer"
               onClick={() =>
                 agir({ type: 'supprimer', conditionnementId: selection.article.conditionnementId })
@@ -382,6 +410,18 @@ export function PageCaisse(): React.JSX.Element {
             setRechercheOuverte(false)
           }}
           onFermer={() => setRechercheOuverte(false)}
+        />
+      )}
+
+      {conditionnementOuvert !== null && trouverLigne(panier, conditionnementOuvert) && (
+        <FenetreConditionnement
+          ligne={trouverLigne(panier, conditionnementOuvert)!}
+          onChoisir={(article) => {
+            agir({ type: 'changerConditionnement', ancienId: conditionnementOuvert, article })
+            setSurlignee((s) => ({ id: article.conditionnementId, n: (s?.n ?? 0) + 1 }))
+            setConditionnementOuvert(null)
+          }}
+          onFermer={() => setConditionnementOuvert(null)}
         />
       )}
 
