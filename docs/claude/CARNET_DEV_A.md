@@ -18,6 +18,48 @@ Format d'une entrée :
 
 ---
 
+## 2026-09-24 — a/caisse-paiement — A2 Encaissement (partie 2 : écrans)
+**Fait** :
+- Début de session : `test` à jour (140 tests). Contrats de Dev B arrivés : `categorie` (PR #8),
+  `catalogue:conditionnementsProduit` (PR #10). Nouvelle règle de Dev B : formulaires en
+  `ui/FenetreFormulaire.tsx` (les fenêtres de caisse F2 et paiement gardent `.voile`/`.fenetre`).
+- `OuvertureCaisse.tsx` : sans session, « Caisse fermée » + « Ouvrir la caisse » (fond saisi dans
+  `FenetreFormulaire`, `caisse:ouvrirSession`). `PageCaisse` lit `caisse:sessionCourante` au chargement.
+- `paiement.ts` (logique pure) + `FenetrePaiement.tsx` sur deux colonnes. **Choix validés par Dev A
+  après essai** (écrits dans `UI_UX.md` § 5.3) : espèces = toujours le reste (seuls TMoney/Flooz se
+  saisissent) ; un seul champ espèces « Montant reçu du client » ; billets additionnés ; reçu vide =
+  montant exact ; F4 puis Entrée encaisse ; sélection du contenu au toucher d'un champ de montant.
+- `PageCaisse` : boutons Espèces/TMoney/Flooz actifs (Crédit jusqu'à A11), F4, douchette et
+  raccourcis coupés pendant le paiement, message « Vente T-… enregistrée. Monnaie à rendre : … »,
+  bandeau ambre `alertesStock` (D-A1).
+- **Deux bogues trouvés à l'essai et corrigés** (tests de non-régression dans `tests/paiement.test.ts`) :
+  ligne TMoney ajoutée à 0 F qui laissait encaisser en espèces seules ; frappe ajoutée au montant
+  existant (« 8500 » + « 5000 »). Le service n'a jamais rien enregistré d'incohérent (vérifié en base).
+- 15 tests de paiement, 155 au total, build OK. Essais manuels 1 à 8 validés par Dev A.
+
+**En cours** : A2 🔄 — PR « partie 2 » vers `test` à ouvrir. A2 → ✅ et journal des fusions après fusion.
+
+**Prochaine étape** :
+1. Après fusion : A2 ✅ + ligne au journal des fusions ; supprimer la branche.
+2. **A1.2 partie 2** (branche `a/caisse-onglets` depuis `test`), les deux contrats sont arrivés :
+   - onglets de catégories au-dessus de la grille : « Tout » + un par `categorie` (nom du rayon,
+     `null` = « Autres »), filtre local, pas de nouvelle requête ;
+   - bouton « Changer le conditionnement » dans `.ticket-actions` de la ligne sélectionnée →
+     `catalogue:conditionnementsProduit { produitId }` → petite fenêtre `.voile`/`.fenetre` listant les
+     conditionnements → action `{ type: 'changerConditionnement', ancienId, article }` (déjà prête).
+   Puis A1.2 → ✅.
+3. Ensuite **A3** (ticket ESC/POS, tiroir, réglages) : demander à Dev A la page de codes D-A2 ;
+   `parametres:lire` attendu de Dev B (fin S5), en attendant en-tête en dur.
+
+**Questions ouvertes** :
+- Essai à la vraie douchette sur le terminal (A1.1) et **affichage de la fenêtre de paiement sur le
+  15,6″ réel** (tient-elle sans défiler ?) : à vérifier sur site.
+- Signalé à Dev B : fichier temporaire `electron.vite.config.1790196666553.mjs` versionné par
+  `be2635f`, à supprimer et à ignorer (`.gitignore`).
+- D-A1 (stock négatif), D-A2 (page de codes), D-A3 (plafond remise) : inchangées.
+
+**Contrats** : aucun modifié. Reçus : `categorie` et `conditionnementsProduit` (Dev B).
+
 ## 2026-09-23 (fin) — a/caisse-encaissement — A2 Encaissement (partie 1 : serveur)
 > **Entrée restaurée** : perdue lors de la résolution de conflit de la PR #7 (fusionnée), remise en place
 > par `/verifier`. Branche créée depuis `test` **avant** la fusion de la PR A1.2 (`a/caisse-grille`, entrée de carnet

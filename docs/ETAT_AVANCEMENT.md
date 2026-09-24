@@ -56,7 +56,7 @@ Le socle comprend :
 |-------|-------------------------------------------------|-----|--------|-------|
 | A1.1  | Panier et logique de calcul                     | A   | ✅     | PR #3 — essai à la vraie douchette sur le terminal encore à faire (validé en simulation) |
 | A1.2  | Grille, recherche F2, conditionnement, attente  | A   | 🔄     | partie 1 fusionnée (PR #6 : attente, F2, raccourcis) ; reste onglets (débloqués par PR #8) et bouton de conditionnement (attend B2.2) |
-| A2    | Encaissement et enregistrement de la vente      | A   | 🔄     | partie 1 fusionnée (PR #7 : TVA, session minimale, `enregistrerVente`) ; reste fenêtre de paiement et ouverture de caisse à l'écran |
+| A2    | Encaissement et enregistrement de la vente      | A   | 🔄     | partie 1 fusionnée (PR #7) ; partie 2 terminée sur `a/caisse-paiement` (ouverture de caisse, fenêtre de paiement, testée à la main) — PR vers `test` en cours |
 | A3    | Ticket, tiroir, réglages matériel               | A   | ⏳     | attend B5 (parametres:lire) |
 | A4    | Sessions de caisse, X et Z                      | A   | ⏳     | ouverture de session déjà livrée avec A2 ; reste clôture, X, Z |
 | A5    | Remises, droits, stabilisation                  | A   | ⏳     |       |
