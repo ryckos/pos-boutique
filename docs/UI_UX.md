@@ -57,6 +57,10 @@ Classes existantes :
 | `.pastille`, `.pastille-alerte`             | Pastilles d'état                      |
 | `.alerte`, `.bandeau`, `.vide`              | Messages et états vides               |
 | `.montant`                                  | Montants en chiffres tabulaires       |
+| `.voile`, `.fenetre`, `.fenetre-large`, `.formulaire-bloc` | Fenêtres modales (`ui/FenetreFormulaire.tsx`) |
+| `.champ`, `.champ-large`, `.champ-etroit`, `.case` | Champs de formulaire, case à cocher de 48 px |
+| `.tableau-saisie`, `.champ-avec-action`     | Tableau dont les cellules sont des champs (conditionnements) |
+| `.filtres`                                  | Filtres au-dessus d'un tableau de gestion |
 | `.caisse*`, `.grille-boutons`, `.bouton-article`, `.ticket-*` | Écran de caisse       |
 | `.ecran-client*`                            | Écran client                          |
 | `.connexion*`, `.pave*`                     | Écran de connexion                    |

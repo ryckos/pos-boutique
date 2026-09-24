@@ -9,6 +9,14 @@ import {
   rechercherParCode,
   rechercherTexte
 } from './service'
+import {
+  creerProduit,
+  desactiverProduit,
+  ficheProduit,
+  genererCodeInterne,
+  listeProduits,
+  modifierProduit
+} from './produits'
 import { creerCategorie, desactiverCategorie, listerCategories, renommerCategorie } from './categories'
 
 export function enregistrerIpcCatalogue(): void {
@@ -32,6 +40,33 @@ export function enregistrerIpcCatalogue(): void {
     // Valeur du stock au CUMP : donnée de gestion, pas pour la caisse.
     session.exiger(['gerant'])
     return produitsAvecStock(base())
+  })
+
+  // Produits : gérant (matrice : « créer ou modifier un produit »). La caisse ne lit le catalogue
+  // que par les canaux ci-dessus.
+  gerer('catalogue:listeProduits', () => {
+    session.exiger(['gerant'])
+    return listeProduits(base())
+  })
+  gerer('catalogue:ficheProduit', ({ id }) => {
+    session.exiger(['gerant'])
+    return ficheProduit(base(), id)
+  })
+  gerer('catalogue:creerProduit', (saisie) => {
+    session.exiger(['gerant'])
+    return creerProduit(base(), saisie)
+  })
+  gerer('catalogue:modifierProduit', ({ id, ...saisie }) => {
+    const u = session.exiger(['gerant'])
+    return modifierProduit(base(), u.id, id, saisie)
+  })
+  gerer('catalogue:desactiverProduit', ({ id, motif }) => {
+    const u = session.exiger(['gerant'])
+    desactiverProduit(base(), u.id, id, motif)
+  })
+  gerer('catalogue:genererCodeInterne', () => {
+    session.exiger(['gerant'])
+    return { code: genererCodeInterne(base()) }
   })
 
   // Catégories : lecture pour tous (grille, fiches), modification par le gérant (matrice :

@@ -17,7 +17,7 @@ document à jour.
 | Table               | Rôle                                                                |
 |---------------------|---------------------------------------------------------------------|
 | `schema_migrations` | Migrations appliquées. Gérée par `db/migrations.ts`                 |
-| `sequences`         | Compteurs de numérotation par préfixe et par année. Gérée par `core/numerotation.ts` |
+| `sequences`         | Compteurs de numérotation par préfixe et par année. Gérée par `core/numerotation.ts`. Une ligne à part, `EAN-20` (sans année), compte les codes internes EAN-13 (`catalogue/produits.ts`) |
 | `parametres`        | Clé/valeur de la boutique (liste dans `REGLES_METIER.md` § 13)      |
 | `utilisateurs`      | Comptes, `pin_hash` (scrypt, **non unique** : D-17), `role`, `actif`, `pin_provisoire` (code donné par l'admin, à remplacer), état du verrouillage : `echecs_consecutifs`, `verrouillages`, `verrouille_jusqu_a` (ms) |
 | `journal_audit`     | Actions sensibles. **Immuable.** Écriture par `core/audit.ts` seulement |
