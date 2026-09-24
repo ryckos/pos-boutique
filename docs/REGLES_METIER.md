@@ -127,6 +127,9 @@ Trois moyens complémentaires, par ordre de priorité :
 2. la recherche F2 par nom ou par code PLU ;
 3. une étiquette avec code interne, si la boutique a une imprimante d'étiquettes (option).
 
+La recherche par nom ignore les accents et les majuscules : « pate », « PATE » et « Pâte » trouvent
+la même chose (une seule règle, `normaliserRecherche` dans `src/shared/texte.ts`).
+
 ---
 
 ### 2.5 Catégories (rayons et sous-rayons)

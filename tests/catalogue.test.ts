@@ -6,7 +6,10 @@ import {
   rechercherParCode,
   rechercherTexte
 } from '../src/main/modules/catalogue/service'
-import { executer } from '../src/main/db/requetes'
+import { executer, une } from '../src/main/db/requetes'
+import { desactiverProduit } from '../src/main/modules/catalogue/produits'
+import type { Db } from '../src/main/db/connexion'
+import { normaliserRecherche } from '../src/shared/texte'
 import { baseAvecDemo } from './aide'
 
 describe('Catalogue — le contrat du scan (consommé par la caisse)', () => {
@@ -74,5 +77,40 @@ describe('Catalogue — conditionnements d’un produit (changer le conditionnem
     expect(conditionnementsProduit(db, 9999)).toEqual([])
     executer(db, 'UPDATE produits SET actif = 0 WHERE id = ?', id)
     expect(conditionnementsProduit(db, id)).toEqual([])
+  })
+})
+
+describe('Catalogue — recherche sans accents ni majuscules (F2 de la caisse, B2.3)', () => {
+  const noms = (db: Db, t: string): string[] => rechercherTexte(db, t).map((a) => a.designation)
+
+  it('normalise les textes de la même façon partout', () => {
+    expect(normaliserRecherche('Pâte')).toBe('pate')
+    expect(normaliserRecherche('ÉCOLE')).toBe('ecole')
+    expect(normaliserRecherche('Œuf')).toBe('oeuf')
+  })
+
+  it('trouve un nom accentué quelle que soit la saisie', () => {
+    const db = baseAvecDemo()
+    for (const t of ['parfume', 'PARFUMÉ', 'Parfumé', 'PaRfUmE']) {
+      expect(noms(db, t)).toEqual(['Riz parfumé 5 kg'])
+    }
+    expect(noms(db, 'menage')).toEqual(['Savon de ménage'])
+  })
+
+  it('trouve tous les conditionnements d’un produit', () => {
+    expect(rechercherTexte(baseAvecDemo(), 'concentree')).toHaveLength(3)
+  })
+
+  it('cherche « % » et « _ » tels quels, pas comme des jokers', () => {
+    const db = baseAvecDemo()
+    expect(rechercherTexte(db, '%%')).toEqual([])
+    expect(rechercherTexte(db, '__')).toEqual([])
+  })
+
+  it('ignore les produits désactivés', () => {
+    const db = baseAvecDemo()
+    const admin = une<{ id: number }>(db, "SELECT id FROM utilisateurs WHERE role = 'admin'")!.id
+    desactiverProduit(db, admin, rechercherParCode(db, '6181000000035')!.produitId, 'Plus vendu')
+    expect(noms(db, 'menage')).toEqual([])
   })
 })

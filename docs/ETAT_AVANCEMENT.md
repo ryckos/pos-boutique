@@ -63,7 +63,7 @@ Le socle comprend :
 | B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | ✅     | PR #4 — connexion par nom et code (D-17), verrouillage par compte, code provisoire, écrans Comptes / Mon code / premier démarrage |
 | B2.1  | Catégories                                      | B   | ✅     | PR #8 — rayons et sous-rayons, écran Catégories, `categorie` dans `ArticleCatalogue` |
 | B2.2  | Produits et conditionnements, codes internes    | B   | ✅     | PR #10 et #12 — écrans Produits et fiche produit, garde-fou prix, codes internes EAN-13, `conditionnementsProduit` |
-| B2.3  | Recherche sans accents, création depuis scan    | B   | ⏳     | branche `b/recherche-scan` créée, rien de commencé |
+| B2.3  | Recherche sans accents, création depuis scan    | B   | 🔄     | `b/recherche-scan` : terminée, testée à la main par Dev B, PR vers `test` en cours ; F2 de la caisse sans accents sans changement de contrat |
 | B3    | Import Excel du catalogue                       | B   | ⏳     |       |
 | B4    | Écran stock et historique produit               | B   | ⏳     |       |
 | B5    | Paramètres de la boutique                       | B   | ⏳     | rendez-vous fin S5 (lecture) |

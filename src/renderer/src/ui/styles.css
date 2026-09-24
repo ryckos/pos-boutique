@@ -216,6 +216,13 @@ select {
   border-radius: var(--rayon);
   font-size: 14px;
 }
+/* Bandeau qui propose une action (« Créer le produit avec ce code ») : texte à gauche, bouton à droite. */
+.bandeau-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
 .vide {
   color: var(--encre-douce);
 }

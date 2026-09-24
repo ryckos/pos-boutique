@@ -260,6 +260,11 @@ contient :
 
 Le bouton de validation s'appelle **« Enregistrer et ajouter à la réception »**.
 
+Fait en B2.3 : la pastille et le pré-remplissage (`codeScanne` de `FenetreProduit`) : un code de 8 à 14
+chiffres devient le code-barres de l'Unité, un code de 1 à 5 chiffres son code PLU. Le bouton
+« Enregistrer et ajouter à la réception » viendra avec la réception (B8) ; depuis l'écran Produits, le
+bouton reste « Créer le produit ».
+
 ### 5.8 Péremptions (Dev B — B9)
 L'en-tête s'intitule « Péremptions — sous 15 jours » et affiche la valeur totale en jeu. Le tableau
 a les colonnes Produit · lot, Périme le, Restant, Valeur et Actions (« Promo −20 % », « Retirer »).
@@ -313,6 +318,12 @@ Le tableau est en `.tableau`, avec les colonnes numériques alignées à droite.
 signalés par des pastilles. Les filtres se placent au-dessus du tableau. Une action destructive
 n'existe jamais : on propose « Désactiver » ou « Annuler », avec un motif. Les boutons « Créer… »,
 « Modifier… », « Désactiver… » ouvrent une fenêtre modale (§ 3).
+
+**Écran Produits** : la recherche ignore accents et majuscules (« pate » trouve « Pâte »). La
+douchette y est écoutée hors des champs, et dans le champ de recherche des chiffres suivis d'Entrée
+sont traités comme un code (tapé, collé ou scanné) : un code connu ouvre la fiche du produit ; un
+code inconnu affiche « Code … inconnu » avec le bouton **« Créer le produit avec ce code »**, qui
+ouvre la fiche pré-remplie (§ 5.7). Un code d'un autre format est signalé « illisible ».
 
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
