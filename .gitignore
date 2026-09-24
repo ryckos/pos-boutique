@@ -13,3 +13,6 @@ Thumbs.db
 
 # Poste personnel de chaque développeur (créé par scripts/configurer-dev.ps1)
 CLAUDE.local.md
+
+# Fichiers temporaires laissés par electron-vite pendant la compilation
+electron.vite.config.*.mjs
