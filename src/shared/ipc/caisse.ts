@@ -1,8 +1,8 @@
 /**
  * Propriétaire : Dev A.
  *
- * Canaux de la caisse. Prévus ensuite : 'caisse:cloturerSession', 'caisse:rapportX' (A4),
- * 'caisse:reimprimerTicket' (A3). Voir docs/DEV_A_COMPTOIR.md.
+ * Canaux de la caisse. Prévus ensuite : 'caisse:cloturerSession', 'caisse:rapportX' (A4).
+ * Voir docs/DEV_A_COMPTOIR.md.
  */
 
 /** Modes acceptés à la caisse pour l'instant. Le crédit arrive avec la fiche client (A11). */
@@ -40,4 +40,12 @@ export interface ContratCaisse {
   'caisse:sessionCourante': { requete: void; reponse: SessionCaisse | null }
   'caisse:ouvrirSession': { requete: { fondOuverture: number }; reponse: SessionCaisse }
   'caisse:enregistrerVente': { requete: RequeteVente; reponse: VenteEnregistree }
+  /**
+   * Imprime le ticket d'une vente déjà enregistrée (jamais dans la transaction de vente) et ouvre
+   * le tiroir si elle comporte des espèces. Original à la première impression réussie, DUPLICATA
+   * ensuite : c'est le serveur qui décide. Un échec lève une erreur, la vente reste enregistrée.
+   */
+  'caisse:imprimerTicket': { requete: { venteId: number }; reponse: { duplicata: boolean } }
+  /** Même chose par le numéro du ticket (T-AAAA-NNNNNN). Caissière : sa session ; gérant : tous. */
+  'caisse:reimprimerTicket': { requete: { numeroTicket: string }; reponse: { duplicata: boolean } }
 }

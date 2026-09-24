@@ -616,6 +616,21 @@ select {
 .caisse-ecran-client {
   align-self: flex-start;
 }
+/* Ticket non imprimé : la vente est enregistrée, on propose Réimprimer (jamais bloquant). */
+.caisse-impression-echec {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.caisse-impression-detail {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+}
+.caisse-impression-actions {
+  display: flex;
+  gap: 8px;
+}
 /* Onglets des rayons, en bas de la grille comme sur la maquette (UI_UX § 5.2). */
 .caisse-onglets {
   display: flex;
