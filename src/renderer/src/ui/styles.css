@@ -792,6 +792,151 @@ select {
   font-weight: 600;
 }
 
+/* ─── Caisse fermée (sans session) ─── */
+.caisse-fermee {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100vh;
+  padding: 24px;
+  text-align: center;
+}
+.caisse-fermee h1 {
+  font-size: 28px;
+}
+.caisse-ouvrir {
+  min-height: 72px;
+  padding: 0 40px;
+  font-size: 22px;
+}
+
+/*
+ * ─── Fenêtre de paiement (UI_UX § 5.3) : la monnaie à rendre est l'élément fort ───
+ * Deux colonnes pour tenir sans défiler sur l'écran du terminal (15,6″, ~768 px de haut) :
+ * modes de paiement à gauche, caisse (billets, reçu, monnaie, Encaisser) à droite, toujours visible.
+ */
+.voile:has(.fenetre-paiement) {
+  place-items: center;
+  padding-top: 0;
+}
+.fenetre-paiement {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  width: min(1000px, 96vw);
+  max-height: 96vh;
+}
+.paiement-modes,
+.paiement-caisse {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+/* Seule la colonne des modes défile, si on empile trois modes sur un petit écran. */
+.paiement-modes {
+  overflow-y: auto;
+}
+.paiement-modes h2 {
+  font-size: 20px;
+}
+.paiement-caisse {
+  padding-left: 24px;
+  border-left: 1px solid var(--bord);
+}
+.paiement-part {
+  font-size: 22px;
+  font-weight: 700;
+}
+.paiement-ligne-pied {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.paiement-ajouts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.paiement-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: auto;
+}
+.paiement-a-payer,
+.paiement-reste,
+.paiement-monnaie {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-weight: 600;
+}
+.paiement-a-payer .montant {
+  font-size: 28px;
+}
+.paiement-reste {
+  color: var(--ambre);
+}
+.paiement-reste .montant {
+  font-size: 24px;
+}
+.paiement-monnaie {
+  padding-top: 10px;
+  border-top: 2px solid var(--encre);
+  font-size: 20px;
+}
+.paiement-monnaie .montant {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--vert);
+}
+.paiement-ligne {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid var(--bord);
+}
+.paiement-ligne-entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.paiement-ligne-entete h3 {
+  font-size: 18px;
+}
+.paiement-billets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.paiement-billet {
+  min-height: 72px;
+  padding: 0 8px;
+  font-size: 18px;
+}
+.paiement-billet:last-child {
+  grid-column: span 2;
+}
+.paiement-recu {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.paiement-recu .champ {
+  flex: 1;
+}
+.paiement-encaisser {
+  flex: 1;
+  min-height: 64px;
+  font-size: 22px;
+}
+
 /* ─── Écran client ─── */
 .ecran-client {
   display: flex;

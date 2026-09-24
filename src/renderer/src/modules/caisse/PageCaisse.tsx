@@ -3,20 +3,24 @@
  *
  * Écran de caisse (maquette docs/UI_UX.md § 5.2) : grille tactile à gauche, ticket à droite,
  * total en très grand. L'état (ticket courant et tickets en attente) vit dans panier.ts et
- * attente.ts (fonctions pures, testées).
- * À venir : onglets de catégories et changement de conditionnement (contrats de Dev B) ·
- * encaissement (A2) · session de caisse (A4).
+ * attente.ts (fonctions pures, testées). Sans session ouverte, seul « Ouvrir la caisse » s'affiche.
+ * À venir : onglets de catégories et changement de conditionnement (A1.2) · ticket et tiroir (A3) ·
+ * clôture, X et Z (A4).
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import type { ArticleCatalogue } from '@shared/types'
-import { formaterFCFA } from '@shared/format'
+import type { ModePaiementCaisse, SessionCaisse, VenteEnregistree } from '@shared/ipc/caisse'
+import { formaterFCFA, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
 import { useUtilisateur } from '@renderer/app/contexte'
 import { totalLigne, totalPanier, trouverLigne, versPanierClient, type ActionPanier } from './panier'
 import { etatCaisseInitial, reducteurCaisse, resumeAttente, type EtatCaisse } from './attente'
 import { actionClavier } from './clavier'
+import { versRequete, type EtatPaiement } from './paiement'
 import { FenetreRecherche } from './FenetreRecherche'
+import { FenetrePaiement } from './FenetrePaiement'
+import { OuvertureCaisse } from './OuvertureCaisse'
 
 /** Durée du surlignage d'une ligne ajoutée : un retour visuel, pas une animation décorative. */
 const DUREE_SURLIGNAGE_MS = 600
@@ -38,14 +42,29 @@ export function PageCaisse(): React.JSX.Element {
   const [grille, setGrille] = useState<ArticleCatalogue[]>([])
   const [message, setMessage] = useState<string | null>(null)
   const [rechercheOuverte, setRechercheOuverte] = useState(false)
+  /** Mode choisi pour ouvrir la fenêtre de paiement ; null = fenêtre fermée. */
+  const [paiement, setPaiement] = useState<ModePaiementCaisse | null>(null)
+  /** undefined = en cours de lecture ; null = caisse fermée. */
+  const [session, setSession] = useState<SessionCaisse | null | undefined>(undefined)
+  const [derniereVente, setDerniereVente] = useState<VenteEnregistree | null>(null)
   const [surlignee, setSurlignee] = useState<{ id: number; n: number } | null>(null)
   const fileScans = useRef<Promise<void>>(Promise.resolve())
   const ligneSelectionnee = useRef<HTMLLIElement | null>(null)
   const panier = etat.courant
+  const caisseOuverte = !!session
 
   useEffect(() => {
     memoireParUtilisateur.set(utilisateur.id, etat)
   }, [utilisateur.id, etat])
+
+  useEffect(() => {
+    appel('caisse:sessionCourante')
+      .then(setSession)
+      .catch((e: Error) => {
+        setSession(null)
+        setMessage(e.message)
+      })
+  }, [])
 
   // La grille est chargée une seule fois : pas de requête pendant la vente.
   useEffect(() => {
@@ -59,6 +78,7 @@ export function PageCaisse(): React.JSX.Element {
   const ajouter = useCallback(
     (article: ArticleCatalogue) => {
       setMessage(null)
+      setDerniereVente(null)
       agir({ type: 'ajouter', article })
       setSurlignee((s) => ({ id: article.conditionnementId, n: (s?.n ?? 0) + 1 }))
     },
@@ -73,24 +93,28 @@ export function PageCaisse(): React.JSX.Element {
 
   // Les scans sont traités un par un, dans l'ordre d'arrivée : une rafale plus rapide que les
   // réponses du catalogue ne perd ni n'inverse aucun article. Une erreur n'arrête pas la file.
-  useScanner((code) => {
-    fileScans.current = fileScans.current.then(async () => {
-      try {
-        const article = await appel('catalogue:rechercherCode', { code })
-        if (article) ajouter(article)
-        else setMessage(`Code ${code} inconnu. Créez le produit ou vérifiez le code.`)
-      } catch (e) {
-        setMessage((e as Error).message)
-      }
-    })
-  })
+  // Pendant le paiement, la douchette est ignorée : le ticket ne doit plus bouger.
+  useScanner(
+    (code) => {
+      fileScans.current = fileScans.current.then(async () => {
+        try {
+          const article = await appel('catalogue:rechercherCode', { code })
+          if (article) ajouter(article)
+          else setMessage(`Code ${code} inconnu. Créez le produit ou vérifiez le code.`)
+        } catch (e) {
+          setMessage((e as Error).message)
+        }
+      })
+    },
+    { actif: caisseOuverte && paiement === null }
+  )
 
-  // Raccourcis clavier (UI_UX § 3). Ignorés dans un champ de saisie et quand la recherche est
+  // Raccourcis clavier (UI_UX § 3). Ignorés dans un champ de saisie et quand une fenêtre est
   // ouverte : elle gère ses propres touches.
   const etatCourant = useRef(etat)
   etatCourant.current = etat
   useEffect(() => {
-    if (rechercheOuverte) return
+    if (rechercheOuverte || paiement !== null || !caisseOuverte) return
     const surTouche = (e: KeyboardEvent): void => {
       const cible = e.target as HTMLElement | null
       if (cible && (cible.tagName === 'INPUT' || cible.tagName === 'TEXTAREA')) return
@@ -118,13 +142,27 @@ export function PageCaisse(): React.JSX.Element {
           if (selection !== null) agir({ type: 'decrementer', conditionnementId: selection })
           break
         case 'encaisser':
-          // Encaissement : tâche A2.
+          if (etatCourant.current.courant.lignes.length > 0) setPaiement('especes')
           break
       }
     }
     window.addEventListener('keydown', surTouche)
     return () => window.removeEventListener('keydown', surTouche)
-  }, [rechercheOuverte, agir])
+  }, [rechercheOuverte, paiement, caisseOuverte, agir])
+
+  // La vente est enregistrée en base avant de vider le ticket ; un refus du service remonte dans
+  // la fenêtre de paiement, qui reste ouverte avec sa saisie. Impression et tiroir : tâche A3.
+  const encaisser = async (etatPaiement: EtatPaiement): Promise<void> => {
+    const lignes = panier.lignes.map((l) => ({
+      conditionnementId: l.article.conditionnementId,
+      quantite: l.quantite
+    }))
+    const vente = await appel('caisse:enregistrerVente', versRequete(etatPaiement, lignes))
+    agir({ type: 'vider' })
+    setPaiement(null)
+    setMessage(null)
+    setDerniereVente(vente)
+  }
 
   const total = totalPanier(panier)
   const selection = panier.selection !== null ? trouverLigne(panier, panier.selection) : undefined
@@ -137,6 +175,18 @@ export function PageCaisse(): React.JSX.Element {
   useEffect(() => {
     ligneSelectionnee.current?.scrollIntoView({ block: 'nearest' })
   }, [panier.selection, surlignee])
+
+  // Aucune vente sans session ouverte (règle 6.1).
+  if (session === undefined) {
+    return (
+      <div className="caisse-fermee">
+        <p className="vide">Vérification de la caisse…</p>
+      </div>
+    )
+  }
+  if (session === null) return <OuvertureCaisse nomCaissier={utilisateur.nom} onOuverte={setSession} />
+
+  const peutEncaisser = panier.lignes.length > 0
 
   return (
     <div className="caisse">
@@ -266,22 +316,43 @@ export function PageCaisse(): React.JSX.Element {
           </p>
         )}
 
+        {derniereVente && (
+          <>
+            <p className="succes" role="status">
+              Vente {derniereVente.numeroTicket} enregistrée.
+              {derniereVente.monnaieRendue > 0 &&
+                ` Monnaie à rendre : ${formaterFCFA(derniereVente.monnaieRendue)}.`}
+            </p>
+            {/* Stock négatif : jamais bloquant (D-A1 en attente), mais signalé. */}
+            {derniereVente.alertesStock.map((a) => (
+              <p key={a.produitId} className="bandeau">
+                Stock insuffisant d’après le logiciel : {a.designation} ({formaterQuantite(a.stockApres)}).
+                Prévenez le gérant pour vérifier le stock.
+              </p>
+            ))}
+          </>
+        )}
+
         <div className="ticket-total">
           <span>Total</span>
           <span className="montant">{formaterFCFA(total)}</span>
         </div>
 
-        {/* L'encaissement arrive avec A2 : les boutons sont en place mais inactifs. */}
         <div className="caisse-paiements">
-          <button className="btn caisse-paiement-principal" disabled>
-            Espèces
+          <button
+            className="btn caisse-paiement-principal"
+            disabled={!peutEncaisser}
+            onClick={() => setPaiement('especes')}
+          >
+            Espèces (F4)
           </button>
-          <button className="btn" disabled>
+          <button className="btn" disabled={!peutEncaisser} onClick={() => setPaiement('tmoney')}>
             TMoney
           </button>
-          <button className="btn" disabled>
+          <button className="btn" disabled={!peutEncaisser} onClick={() => setPaiement('flooz')}>
             Flooz
           </button>
+          {/* Vente à crédit : avec la fiche client (A11). */}
           <button className="btn" disabled>
             Crédit
           </button>
@@ -311,6 +382,15 @@ export function PageCaisse(): React.JSX.Element {
             setRechercheOuverte(false)
           }}
           onFermer={() => setRechercheOuverte(false)}
+        />
+      )}
+
+      {paiement !== null && (
+        <FenetrePaiement
+          total={total}
+          modeInitial={paiement}
+          onEncaisser={encaisser}
+          onFermer={() => setPaiement(null)}
         />
       )}
     </div>

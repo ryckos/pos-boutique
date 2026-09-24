@@ -181,6 +181,25 @@ ajoute une ligne de paiement par mode, avec l'affichage du « Reste à payer ».
 Le bouton de validation s'appelle **« Encaisser »**. Il imprime le ticket, ouvre le tiroir et vide
 le panier.
 
+**Précisions validées à l'essai (Dev A, 2026-09-24)** :
+- **Deux colonnes**, pour tenir sans défiler sur l'écran du terminal : à gauche les modes de
+  paiement (montants TMoney / Flooz, références, « Ajouter un paiement… ») ; à droite, toujours
+  visibles, « À payer », billets, montant reçu, monnaie à rendre (48 px) et « Encaisser ».
+- **Les espèces prennent toujours le reste** : on ne saisit que les montants TMoney et Flooz, la part
+  en espèces s'affiche en lecture seule. Un seul champ lié aux espèces : « Montant reçu du client »
+  (pour la monnaie). Deux champs « payé » et « reçu » prêtaient à confusion.
+- Sans espèces, avec TMoney et Flooz, l'un prend le reste de l'autre.
+- Les billets rapides **s'additionnent** (5 000 puis 2 000 = 7 000 reçus) ; « Effacer » remet à zéro ;
+  un montant reçu vide vaut le montant exact : **F4 puis Entrée** encaisse un paiement exact.
+- Toucher un champ de montant **sélectionne tout** son contenu : la frappe remplace le montant.
+- « Encaisser » reste grisé, avec la raison affichée, tant qu'un paiement est incohérent : reste à
+  payer, référence manquante, ligne TMoney/Flooz à 0 F, espèces reçues insuffisantes.
+- Pendant le paiement, la douchette et les raccourcis de la caisse sont coupés.
+- Impression du ticket et ouverture du tiroir : tâche A3 ; en attendant, « Encaisser » vide le ticket
+  et affiche « Vente T-… enregistrée. Monnaie à rendre : … ».
+- Sans session ouverte, l'écran de caisse affiche « Caisse fermée » et « Ouvrir la caisse » ; le fond
+  se saisit dans la fenêtre commune `FenetreFormulaire`.
+
 ### 5.4 Clôture de caisse (Dev A — A4)
 ```
 Clôture de caisse — session du vendredi              Caissière : Afi · ouverte à 07:45
