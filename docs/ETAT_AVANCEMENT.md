@@ -66,7 +66,7 @@ Le socle comprend :
 | B2.3  | Recherche sans accents, création depuis scan    | B   | ✅     | PR #16 — recherche F2 de la caisse sans accents sans changement de contrat |
 | B3    | Import Excel du catalogue                       | B   | ⏳     |       |
 | B4    | Écran stock et historique produit               | B   | ⏳     |       |
-| B5    | Paramètres de la boutique                       | B   | 🔄     | `b/parametres` : PR 1 `parametres:lire` (lecture, tous rôles) ; PR 2 `parametres:ecrire` et écran |
+| B5    | Paramètres de la boutique                       | B   | 🔄     | `b/parametres` : PR 1 `parametres:lire` (lecture, tous rôles) ; PR 2 sur `b/parametres-ecran` : `parametres:ecrire` (admin, gérant pour l’imprimante, journalisé), écran Paramètres, TVA par défaut dans la fiche produit |
 | B6    | Stock initial de démarrage                      | B   | ⏳     |       |
 
 ## Phase 2 — Achats, lots, retours (S9–S12)

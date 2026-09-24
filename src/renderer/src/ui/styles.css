@@ -285,6 +285,32 @@ select {
   font-size: 18px;
   margin-bottom: 14px;
 }
+/* Titre du bloc à gauche, action (« Modifier ») à droite. */
+.panneau-entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.panneau-entete h2 {
+  margin-bottom: 0;
+}
+/* Libellé : valeur, en lecture (écran Paramètres). */
+.liste-valeurs > div {
+  display: flex;
+  gap: 16px;
+  padding: 10px 0;
+  border-top: 1px solid var(--bord);
+}
+.liste-valeurs dt {
+  flex: 0 0 300px;
+  color: var(--encre-douce);
+}
+.champ-aide {
+  font-weight: 400;
+  font-size: 13px;
+}
 .formulaire {
   display: flex;
   flex-wrap: wrap;
