@@ -654,8 +654,100 @@ select {
 .fenetre-large {
   width: min(960px, 96vw);
 }
-.formulaire-erreur {
+.formulaire-erreur,
+.formulaire-bloc {
   flex-basis: 100%;
+}
+.formulaire-bloc {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.formulaire-bloc h3 {
+  font-size: 16px;
+}
+.formulaire-bloc .tableau-cadre {
+  align-self: stretch;
+}
+/* Case à cocher : toute la ligne est la cible tactile. */
+.case {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--encre-douce);
+  cursor: pointer;
+}
+.case input,
+.tableau-saisie input[type='checkbox'] {
+  width: 24px;
+  height: 24px;
+  accent-color: var(--vert);
+}
+/* Case dans une cellule de tableau : cible de 48 px avec son libellé, bordée pour se voir. */
+.case-cellule {
+  padding: 0 12px;
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  color: var(--encre);
+  white-space: nowrap;
+}
+.case-cellule:has(input:checked) {
+  background: var(--vert-pale);
+  border-color: var(--vert);
+  color: var(--vert);
+}
+.champ-etroit input {
+  width: 110px;
+}
+/* Tableau dont les cellules sont des champs (conditionnements de la fiche produit). */
+.tableau-saisie th,
+.tableau-saisie td {
+  padding: 6px 8px;
+}
+.tableau-saisie input:not([type='checkbox']) {
+  width: 100%;
+  min-width: 70px;
+  min-height: 48px;
+  padding: 0 10px;
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  color: var(--encre);
+  font-size: 16px;
+}
+.tableau-saisie input.nombre {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.tableau-saisie .champ-quantite,
+.tableau-saisie .champ-ordre {
+  width: 70px;
+}
+.tableau-saisie .champ-plu {
+  width: 80px;
+}
+.champ-avec-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.champ-avec-action input:not([type='checkbox']) {
+  min-width: 150px;
+}
+.champ-avec-action .champ-ordre {
+  min-width: 0;
+}
+/* Filtres au-dessus d'un tableau de gestion. */
+.filtres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 .fenetre-entete {
   display: flex;

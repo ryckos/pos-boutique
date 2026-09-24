@@ -1,6 +1,6 @@
 /**
  * Propriétaire : Dev B.
- * Aperçu du socle : produits et stock calculé. Écrans complets : tâches B2 et B4.
+ * Aperçu du stock calculé et de sa valeur. Écran complet : tâche B4.
  */
 import { useEffect, useState } from 'react'
 import type { ProduitStock } from '@shared/types'
@@ -20,7 +20,7 @@ export function PageCatalogue(): React.JSX.Element {
   return (
     <div className="page">
       <header className="page-entete">
-        <h1>Produits et stock</h1>
+        <h1>Stock</h1>
         <p>
           Valeur du stock : <strong className="montant">{formaterFCFA(valeurTotale)}</strong>
         </p>

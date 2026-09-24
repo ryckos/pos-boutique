@@ -62,7 +62,7 @@ Le socle comprend :
 | A5    | Remises, droits, stabilisation                  | A   | ⏳     |       |
 | B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | ✅     | PR #4 — connexion par nom et code (D-17), verrouillage par compte, code provisoire, écrans Comptes / Mon code / premier démarrage |
 | B2.1  | Catégories                                      | B   | ✅     | PR #8 — rayons et sous-rayons, écran Catégories, `categorie` dans `ArticleCatalogue` |
-| B2.2  | Produits et conditionnements, codes internes    | B   | 🔄     | `b/produits` — partie 1 fusionnée (PR #10 : conditionnementsProduit) ; partie 2 (service fiche, EAN-13, garde-fou) commitée ; reste les écrans |
+| B2.2  | Produits et conditionnements, codes internes    | B   | 🔄     | `b/produits` — partie 1 fusionnée (PR #10) ; service fiche, EAN-13, garde-fou et écrans Produits / fiche produit : PR vers `test` |
 | B2.3  | Recherche sans accents, création depuis scan    | B   | ⏳     |       |
 | B3    | Import Excel du catalogue                       | B   | ⏳     |       |
 | B4    | Écran stock et historique produit               | B   | ⏳     |       |
