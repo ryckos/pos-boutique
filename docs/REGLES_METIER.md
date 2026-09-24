@@ -41,6 +41,7 @@ Actions à journaliser avec `journaliser()` :
 | `deconnexion`                 |                    |
 | `echec_connexion_verrouillage`| n° du verrouillage, délai (au nom du compte visé) |
 | `modification_prix`           | avant/après        |
+| `desactivation_produit`       | motif, stock restant |
 | `remise`                      | montant, ticket    |
 | `annulation_ligne`            |                    |
 | `annulation_ticket`           |                    |
@@ -82,6 +83,17 @@ Actions à journaliser avec `journaliser()` :
   probablement une erreur de saisie, mais cela peut être voulu.
 - Un conditionnement peut être affiché comme **bouton tactile** de la caisse
   (`bouton_tactile`, `ordre_bouton`).
+- Le conditionnement de base s'appelle toujours **« Unité »** (nom figé) ; il ne peut pas être
+  désactivé tant que le produit est actif.
+- La **quantité de base** d'un conditionnement existant **n'est pas modifiable** : pour la changer,
+  on désactive le conditionnement et on en crée un autre. Ainsi, le sens des réceptions, ventes et
+  inventaires passés ne change jamais.
+- Tout changement de prix de vente d'un conditionnement est journalisé (`modification_prix`).
+- **Désactivation d'un produit** (gérant) : motif obligatoire, journalisée
+  (`desactivation_produit`). Autorisée même s'il reste du stock, avec un avertissement (le stock
+  restant est noté au journal).
+- Pas de photo de produit pour l'instant (reportée : elle demanderait de stocker et sauvegarder
+  des images).
 
 ### 2.3 Codes-barres
 - Un code-barres identifie une **référence**, jamais un exemplaire : toutes les boîtes d'une même
@@ -98,6 +110,12 @@ Actions à journaliser avec `journaliser()` :
     La clé de contrôle EAN-13 doit être calculée correctement. Exemple valide : `2000000000015`.
   - **Code PLU** : code court tapé au clavier pour les produits sans code-barres. Exemples :
     `101` pour la baguette, `205` pour le gari.
+- Format accepté à la saisie : code-barres de **8 à 14 chiffres**, code PLU de **1 à 5 chiffres**,
+  chiffres uniquement. La clé des codes fabricant n'est pas contrôlée (la douchette le fait déjà).
+- Un code n'apparaît qu'**une fois, toutes colonnes confondues** : le PLU d'un article ne peut pas
+  être le code-barres d'un autre (le scan cherche dans les deux).
+- Les codes internes sont générés à la suite (`2000000000015`, `2000000000022`…), en sautant ceux
+  déjà utilisés.
 - **Piège connu** : le code d'une unité est parfois visible à travers le film d'un carton, et la
   caissière scanne alors l'unité au lieu du carton. La parade : un bouton « changer de
   conditionnement » sur la ligne du panier.

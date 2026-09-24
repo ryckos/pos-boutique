@@ -18,7 +18,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 | `catalogue:rechercherCode`, `catalogue:grille`, `catalogue:rechercher` | socle | A | — | ✅ | — |
 | `core/mouvements`, `numerotation`, `audit`, `session`     | socle     | A et B      | —        | ✅     | — |
 | Contrôle des rôles sur tous les canaux                    | B         | A           | fin S3   | ✅     | revue faite (PR #4 B1) ; 2 canaux `materiel:*` corrigés par A (PR #5) |
-| `catalogue:conditionnementsProduit`                       | B         | A           | fin S4   | ⏳     | A1.2 |
+| `catalogue:conditionnementsProduit`                       | B         | A           | fin S4   | 🔄     | A1.2 — `{ produitId }` → `ArticleCatalogue[]`, Unité d'abord ; PR B2.2 partie 1 sur `b/produits` |
 | Catégorie dans `ArticleCatalogue` (`categorie`) — demandé le 2026-09-23 | B | A     | avec B2.1 | ✅    | PR #8 : nom du rayon, champ optionnel toujours renseigné — débloque les onglets de A1.2 |
 | `parametres:lire` (puis `ecrire`)                         | B         | A           | fin S5   | ⏳     | A3 |
 | `caisse:enregistrerVente` (modèle de transaction)         | A         | B (lecture) | fin S5   | ✅     | PR #7 — `service-vente.ts`, modèle de transaction à lire |
@@ -61,8 +61,8 @@ Le socle comprend :
 | A4    | Sessions de caisse, X et Z                      | A   | ⏳     | ouverture de session déjà livrée avec A2 ; reste clôture, X, Z |
 | A5    | Remises, droits, stabilisation                  | A   | ⏳     |       |
 | B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | ✅     | PR #4 — connexion par nom et code (D-17), verrouillage par compte, code provisoire, écrans Comptes / Mon code / premier démarrage |
-| B2.1  | Catégories                                      | B   | 🔄     | `b/categories` — rayons et sous-rayons, écran Catégories, `categorie` dans `ArticleCatalogue` ; PR vers `test` |
-| B2.2  | Produits et conditionnements, codes internes    | B   | ⏳     | rendez-vous fin S4 |
+| B2.1  | Catégories                                      | B   | ✅     | PR #8 — rayons et sous-rayons, écran Catégories, `categorie` dans `ArticleCatalogue` |
+| B2.2  | Produits et conditionnements, codes internes    | B   | 🔄     | `b/produits` — rendez-vous fin S4 (conditionnementsProduit) |
 | B2.3  | Recherche sans accents, création depuis scan    | B   | ⏳     |       |
 | B3    | Import Excel du catalogue                       | B   | ⏳     |       |
 | B4    | Écran stock et historique produit               | B   | ⏳     |       |
@@ -119,3 +119,4 @@ Le socle comprend :
 | 2026-09-23 | B1    | Connexion par nom et code (D-17), verrouillage par compte, comptes utilisateurs (PR #4) |
 | 2026-09-23 | A1.2  | Partie 1 : tickets en attente, recherche F2 (nom ou PLU), raccourcis clavier (PR #6) |
 | 2026-09-23 | A2    | Partie 1 : TVA ventilée, ouverture de session, `caisse:enregistrerVente` — contrat livré à B (PR #7) |
+| 2026-09-23 | B2.1  | Catégories : rayons et sous-rayons, écran Catégories, rayon dans `ArticleCatalogue` — contrat livré à A (PR #8) |
