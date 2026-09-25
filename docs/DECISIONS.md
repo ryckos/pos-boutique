@@ -148,3 +148,12 @@ cliente ou entre les deux développeurs.
   « code déjà utilisé » révélait qu'un code ouvrait un compte. Un geste de plus par connexion,
   contre un code définitif que personne d'autre ne connaît.
 - **Validée par** : le chef de projet, le 2026-09-23 (tâche B1).
+
+### D-18 — Bibliothèque `xlsx` 0.20.3, installée depuis le site de SheetJS · 2026-09-25
+- **Décision** : l'import et les exports Excel (B3, B15) utilisent `xlsx` (SheetJS) **0.20.3**,
+  installée depuis `https://cdn.sheetjs.com/`, pas depuis npm. Elle est intégrée au code du
+  principal (`electron.vite.config.ts`) : l'installateur n'a rien de plus à embarquer.
+- **Raison** : npm s'arrête à la 0.18.5, qui a deux failles connues sur la lecture de fichiers
+  (CVE-2023-30533, CVE-2024-22363) ; les versions corrigées ne sont publiées que par SheetJS. Un
+  `npm install` doit donc pouvoir joindre `cdn.sheetjs.com` (poste de développement et CI).
+- **Validée par** : Dev B, le 2026-09-25 (tâche B3).

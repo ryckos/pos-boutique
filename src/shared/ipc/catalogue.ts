@@ -68,6 +68,32 @@ export interface LigneProduit {
   actif: boolean
 }
 
+/** Sort d'une ligne du fichier d'import (REGLES_METIER § 2.6). */
+export type EtatLigneImport = 'a_creer' | 'cree' | 'ignoree' | 'erreur'
+
+export interface LigneRapportImport {
+  /** Numéro de la ligne dans Excel (celle des titres comprise), pour la retrouver dans le fichier. */
+  ligne: number
+  nom: string
+  etat: EtatLigneImport
+  /** Pourquoi la ligne est ignorée ou en erreur ; null sinon. */
+  motif: string | null
+}
+
+/** Résultat de la vérification (rien n'est écrit) ou de l'import (tout est écrit). */
+export interface RapportImport {
+  nomFichier: string
+  lignes: LigneRapportImport[]
+  /** Produits à créer (vérification) ou créés (import). */
+  nbCrees: number
+  nbIgnorees: number
+  nbErreurs: number
+  /** Rayons et sous-rayons absents du catalogue, créés par l'import (« Boissons › Jus »). */
+  nouvellesCategories: string[]
+  /** true une fois l'import enregistré. */
+  importe: boolean
+}
+
 export interface ContratCatalogue {
   /** LE canal du scan : code-barres OU code PLU → un conditionnement, ou null si inconnu. */
   'catalogue:rechercherCode': { requete: { code: string }; reponse: ArticleCatalogue | null }
@@ -104,4 +130,13 @@ export interface ContratCatalogue {
   'catalogue:renommerCategorie': { requete: { id: number; nom: string }; reponse: void }
   /** Jamais de suppression. Refusée si la catégorie contient des produits ou sous-catégories actifs. */
   'catalogue:desactiverCategorie': { requete: { id: number }; reponse: void }
+  /** Fenêtre « Enregistrer sous » puis écriture du fichier modèle. false si annulé. Gérant. */
+  'catalogue:telechargerModeleImport': { requete: void; reponse: { enregistre: boolean } }
+  /** Fenêtre « Ouvrir » puis analyse du fichier, sans rien écrire. null si annulé. Gérant. */
+  'catalogue:verifierImport': { requete: void; reponse: RapportImport | null }
+  /**
+   * Importe le dernier fichier vérifié (relu et revérifié) : tout ou rien. Refusé s'il reste une
+   * ligne en erreur ou s'il n'y a rien à créer. Gérant.
+   */
+  'catalogue:importerCatalogue': { requete: void; reponse: RapportImport }
 }

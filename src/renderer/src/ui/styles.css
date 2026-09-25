@@ -242,6 +242,11 @@ select {
   color: var(--encre-douce);
   border: 1px solid var(--bord);
 }
+/* Ligne refusée (rapport d'import) : à corriger avant de continuer. */
+.pastille-erreur {
+  background: var(--rouge-pale);
+  color: var(--rouge);
+}
 .tableau td.retrait {
   padding-left: 40px;
 }

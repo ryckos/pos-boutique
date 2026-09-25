@@ -146,6 +146,35 @@ la même chose (une seule règle, `normaliserRecherche` dans `src/shared/texte.t
   rangé dans un sous-rayon, c'est le nom du rayon parent. Les onglets de la grille sont donc les
   rayons, par ordre alphabétique.
 
+### 2.6 Import du catalogue depuis Excel (validé par Dev B le 2026-09-25)
+- Réservé au gérant (et à l'admin). Un fichier `.xlsx` (5 Mo et 5 000 produits au plus) ; seule la
+  première feuille est lue. Modèle téléchargeable : **Nom\***, Catégorie, Code-barres,
+  **Prix de vente\***, Prix d'achat, TVA, Seuil d'alerte. Les titres sont reconnus sans accents ni
+  majuscules, dans n'importe quel ordre ; les colonnes inconnues et les lignes vides sont ignorées.
+- **Deux temps** : « Vérifier le fichier » affiche le rapport ligne par ligne sans rien écrire ;
+  « Importer » relit le fichier, le revérifie et enregistre **tout ou rien**, en une transaction.
+- Sort de chaque ligne :
+  - **à créer** : un produit (unité « pièce », sans suivi de péremption) et son conditionnement
+    « Unité » ×1 au prix de vente du fichier ;
+  - **ignorée** : son code est déjà au catalogue (code-barres ou PLU, désactivés compris), ou, sans
+    code, un produit actif sans code-barres porte déjà ce nom. Réimporter un fichier ne crée donc
+    pas de doublon ;
+  - **en erreur** : nom ou prix de vente manquant, montant non entier, TVA autre que 18 ou 0,
+    code-barres hors 8 à 14 chiffres, catégorie à plus de deux niveaux, ou même code (ou même nom
+    sans code) sur deux lignes du fichier (les deux lignes sont en erreur). **Une seule ligne en
+    erreur bloque tout l'import.**
+- Valeurs par défaut : TVA = `tva_defaut` ; seuil = 0. « 1 500 » écrit en texte vaut 1 500 ; une
+  case au format pourcentage (« 18 % ») vaut 18.
+- Catégorie : « Rayon » ou « Rayon / Sous-rayon », reconnue sans accents ni majuscules. Un rayon ou
+  un sous-rayon absent est **créé** (une seule fois). Vide : produit non classé.
+- Ligne **sans code-barres** : le produit n'a pas de code (on le trouve par son nom, F2). Pas de
+  code interne généré.
+- Le **prix d'achat** est gardé à titre **indicatif** (`produits.prix_achat_indicatif`, par unité) :
+  il pré-remplira le coût du stock initial (B6). Il ne modifie jamais le CUMP et n'entre dans aucun
+  calcul de marge ou de valeur de stock.
+- L'import ne crée **aucun mouvement de stock**. Une ligne au journal : `import_catalogue` (fichier,
+  nombre de produits créés et ignorés, catégories créées).
+
 ## 3. Stock
 
 ### 3.1 Le stock est calculé
