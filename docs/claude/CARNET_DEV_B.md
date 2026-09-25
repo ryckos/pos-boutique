@@ -18,6 +18,115 @@ Format d'une entrée :
 
 ---
 
+## 2026-09-25 (suite) — b/import-excel — B3 Import Excel du catalogue
+**Fait** :
+- **B5 fusionnée** (PR #19) et passée à ✅. Branches fusionnées supprimées (local et GitHub) :
+  `b/recherche-scan`, `b/parametres`, `b/parametres-ecran`. Le commit du carnet resté seul sur
+  `b/parametres-ecran` a été repris sur `b/import-excel`.
+- **Dépendance `xlsx` accordée par Dev B**, installée en **0.20.3 depuis `cdn.sheetjs.com`**
+  (décision **D-18** : la 0.18.5 de npm a deux failles connues sur la lecture de fichiers). Intégrée
+  au code compilé du principal (`electron.vite.config.ts`, `externalizeDepsPlugin({ exclude: ['xlsx'] })`).
+- **Règles validées par Dev B** (écrites dans `REGLES_METIER.md` § 2.6) : import en deux temps
+  (vérifier sans rien écrire, puis tout ou rien) ; code déjà au catalogue = ligne ignorée ; une ligne
+  en erreur bloque tout ; rayon ou « Rayon / Sous-rayon » inconnu créé ; ligne sans code-barres =
+  produit sans code (pas de code interne généré) ; prix d'achat gardé **à titre indicatif**.
+- Migration `20260925_1100_prix_achat_indicatif.sql` : `produits.prix_achat_indicatif` (FCFA par
+  unité, facultatif), **jamais lu par le CUMP** ; il servira à pré-remplir le coût en B6.
+- Service `catalogue/import.ts` (lecture, analyse, import, modèle), 3 canaux gérant, fenêtre
+  `FenetreImport.tsx` + bouton « Importer depuis Excel » sur la page Produits (`UI_UX.md` § 5.14),
+  pastille commune `.pastille-erreur`. 225 tests verts (13 nouveaux), build OK, **scénario complet
+  testé à la main par Dev B** (fichier avec erreurs, corrigé, réimport, vente en caisse).
+- Commit `633b641` poussé sur `origin/b/import-excel`. **`gh` n'est pas installé sur ce poste** :
+  la PR s'ouvre depuis GitHub.
+
+**En cours** : PR B3 `b/import-excel` → `test` à ouvrir sur GitHub
+(https://github.com/ryckos/pos-boutique/compare/test...b/import-excel?expand=1), texte prêt
+(celui de la session : sections du modèle, zones partagées listées), puis relecture par Dev A.
+
+**Prochaine étape** :
+1. Après fusion de la PR B3 : B3 → ✅ dans `ETAT_AVANCEMENT.md` + ligne au journal des fusions
+   (« 2026-09-2x · B3 · Import Excel du catalogue, prix d'achat indicatif, xlsx 0.20.3 (PR #…) ») ;
+   supprimer `b/import-excel` (local et GitHub).
+2. **B6 Stock initial** en priorité (rendez-vous **fin S7** pour la recette de Dev A) :
+   `/tache B6`, branche `b/stock-initial` depuis `test` à jour. Mouvements `ajustement_inventaire`
+   via `core/mouvements.ts`, document `stock_initial`, le coût saisi initialise le CUMP ; **pré-remplir
+   le coût avec `produits.prix_achat_indicatif`** quand il existe. Relire `REGLES_METIER.md` § 3 et
+   `SCENARIO_REFERENCE.md` (dimanche soir) avant le plan.
+3. Puis **B4 Écran stock et historique produit**.
+
+**Questions ouvertes** :
+- Colonne « Suivi péremption » (Oui/Non) dans l'import : proposée, pas confirmée par Dev B. Pour
+  l'instant tout produit importé est créé **sans** suivi de péremption (à cocher ensuite dans la fiche).
+- Plafond de remise caissier (D-A3) : toujours en attente de la cliente.
+- Réactivation (produit, compte, catégorie) : non prévue. Photo des produits : reportée.
+
+**Contrats** :
+- **Pour Dev A — action requise après la fusion de B3 : `npm install`** (nouvelle dépendance `xlsx`
+  depuis `cdn.sheetjs.com` ; poste et CI doivent pouvoir joindre ce site).
+- Ajoutés (gérant, sans impact pour la caisse) : `catalogue:telechargerModeleImport`,
+  `catalogue:verifierImport`, `catalogue:importerCatalogue`, type `RapportImport`.
+  `ArticleCatalogue` inchangé.
+- Zones partagées touchées : `package.json`, `electron.vite.config.ts`, `ui/styles.css`
+  (`.pastille-erreur` utilisable par tous), nouvelle migration.
+- Pour la recette de Dev A : les produits peuvent maintenant être chargés en masse par Excel ; le
+  stock initial (B6, fin S7) reste à livrer.
+- Attendus inchangés : `sessionOuverte()` / `enregistrerMouvementCaisse()` (Dev A, fin S10).
+
+---
+
+## 2026-09-25 — b/parametres-ecran — B2.3 (fusionnée) et B5 Paramètres
+**Fait** :
+- **B2.3 fusionnée** (PR #16) : recherche sans accents ni casse (fonction SQL `sans_accents`
+  enregistrée sur la connexion ; F2 de la caisse en profite sans changement de contrat), création
+  d'un produit depuis un code scanné sur l'écran Produits. Le fichier temporaire
+  `electron.vite.config.<nombre>.mjs` signalé par Dev A est retiré et ignoré (`.gitignore`).
+- **B5 partie 1 fusionnée** (PR #17) : `parametres:lire` livré à Dev A (rendez-vous fin S5 tenu).
+- **Règle validée par Dev B** (écrite dans `REGLES_METIER.md` § 13) : lecture des paramètres par
+  tous les rôles ; écriture par l'admin, **le gérant pouvant aussi modifier les trois clés
+  `imprimante_*`** (écran « Réglages matériel » d'A3) ; chaque clé réellement changée est
+  journalisée (`modification_parametre`, avant/après).
+- **B5 partie 2** terminée, testée à la main par Dev B, poussée sur `b/parametres-ecran` (rebasée
+  sur `test` après #17) : `parametres:ecrire` (tout ou rien, valeurs revérifiées, `null` = retour au
+  défaut), écran « Paramètres » admin (blocs Boutique et ticket / Stock / Caisse, fenêtres
+  modales, `UI_UX.md` § 5.13), TVA par défaut proposée dans la fiche d'un nouveau produit.
+- 194 tests verts (25 nouveaux sur B5), build OK. Aucune migration.
+- Les PR #16 et #17 ont été fusionnées par commit de fusion (pas en squash) : sans conséquence,
+  mais une branche empilée se rebase alors par un simple `git rebase test`.
+
+**En cours** : PR B5 partie 2 (`b/parametres-ecran` → `test`) à ouvrir ou en relecture par Dev A.
+
+**Prochaine étape** :
+1. Après fusion de la partie 2 : B5 → ✅ dans `ETAT_AVANCEMENT.md` (ligne B5 et journal des
+   fusions), supprimer `b/parametres-ecran` ; supprimer aussi sur GitHub les branches déjà
+   fusionnées `b/recherche-scan` et `b/parametres` si ce n'est pas fait.
+2. Tâche suivante dans l'ordre du brief : **B3 Import Excel**, toujours bloquée par l'accord sur la
+   dépendance `xlsx` → la demander d'abord à Dev B. Sinon enchaîner **B4 Écran stock et
+   historique produit** (`/tache B4`, branche `b/stock` depuis `test` à jour), puis **B6 Stock
+   initial** (rendez-vous fin S7 pour la recette de Dev A).
+
+**Questions ouvertes** :
+- `xlsx` pour B3 : toujours à valider (bloque B3).
+- Plafond de remise caissier (D-A3) : toujours en attente de la cliente ; `plafondRemiseCaissier`
+  vaut `null` et l'admin pourra le saisir dans « Paramètres » dès la décision prise.
+- Réactivation (produit, compte, catégorie) : non prévue (cliente). Photo des produits : reportée.
+
+**Contrats** :
+- **Livré à Dev A** (PR #17) : `parametres:lire`, sans requête → `ParametresBoutique` : objet typé,
+  défauts appliqués (`ticketPied` « Merci de votre visite ! », `tvaDefaut` 18,
+  `peremptionSeuilJours` 15, `dormantJours` 60, `imprimanteMethode` 'spooler'), `null` si non
+  renseigné (`boutiqueNom`, `boutiqueAdresse`, `boutiqueNif`, `imprimanteCible`,
+  `plafondRemiseCaissier`, `imprimantePageCodes`). Tous les rôles connectés. **Pour le ticket
+  imprimé dans le principal, appeler directement `lireParametres(db)`** de
+  `modules/parametres/service.ts`, sans IPC. Débloque l'en-tête et le pied du ticket d'A3.
+- **En relecture** : `parametres:ecrire`, `Partial<ParametresBoutique>` → `ParametresBoutique`.
+  **Pour Dev A** : le gérant peut enregistrer `imprimanteMethode`, `imprimanteCible`,
+  `imprimantePageCodes` par ce canal → les réglages matériel d'A3 peuvent aller en base au lieu
+  d'un fichier local ; la page de codes gagnante (D-A2) aussi. Tout autre champ envoyé par un
+  gérant fait refuser l'ensemble.
+- Attendus inchangés : `sessionOuverte()` / `enregistrerMouvementCaisse()` (Dev A, fin S10).
+
+---
+
 ## 2026-09-24 — b/produits (fusionnée) — B2.2 Produits et conditionnements
 **Fait** :
 - **B2.2 terminée et fusionnée** (PR #10 partie 1, PR #12 le reste) ; branche supprimée.

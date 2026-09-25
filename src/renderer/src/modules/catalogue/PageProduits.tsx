@@ -10,6 +10,7 @@ import { normaliserRecherche } from '@shared/texte'
 import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { FenetreImport } from './FenetreImport'
 import { FenetreProduit } from './FenetreProduit'
 import { champsDepuisCodeScanne } from './saisieProduit'
 
@@ -17,6 +18,7 @@ type Action =
   | { type: 'creer'; codeScanne?: string }
   | { type: 'modifier'; produitId: number }
   | { type: 'desactiver'; produit: LigneProduit }
+  | { type: 'importer' }
   | null
 
 export function PageProduits(): React.JSX.Element {
@@ -96,9 +98,14 @@ export function PageProduits(): React.JSX.Element {
     <div className="page">
       <header className="page-entete">
         <h1>Produits</h1>
-        <button className="btn" onClick={() => ouvrir({ type: 'creer' })}>
-          Nouveau produit
-        </button>
+        <div className="tableau-actions">
+          <button className="btn btn-secondaire" onClick={() => ouvrir({ type: 'importer' })}>
+            Importer depuis Excel
+          </button>
+          <button className="btn" onClick={() => ouvrir({ type: 'creer' })}>
+            Nouveau produit
+          </button>
+        </div>
       </header>
 
       {succes && (
@@ -146,6 +153,25 @@ export function PageProduits(): React.JSX.Element {
           produitId={action.produitId}
           onFermer={() => ouvrir(null)}
           onEnregistre={(nom, a) => apresEnregistrement(`« ${nom} » est enregistré.`, a)}
+        />
+      )}
+      {action?.type === 'importer' && (
+        <FenetreImport
+          onFermer={() => ouvrir(null)}
+          onImporte={(r) => {
+            const s = r.nbCrees > 1 ? 's' : ''
+            const ignorees =
+              r.nbIgnorees > 0
+                ? ` ${r.nbIgnorees} ligne${r.nbIgnorees > 1 ? 's' : ''} ignorée${r.nbIgnorees > 1 ? 's' : ''} (déjà au catalogue).`
+                : ''
+            const categories =
+              r.nouvellesCategories.length > 0
+                ? ` Catégories créées : ${r.nouvellesCategories.join(', ')}.`
+                : ''
+            apresEnregistrement(
+              `${r.nbCrees} produit${s} importé${s} depuis « ${r.nomFichier} », en vente dès maintenant.${ignorees}${categories}`
+            )
+          }}
         />
       )}
       {action?.type === 'desactiver' && (

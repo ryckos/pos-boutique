@@ -9,7 +9,8 @@ const alias = {
 }
 
 export default defineConfig({
-  main: { plugins: [externalizeDepsPlugin()], resolve: { alias } },
+  // xlsx est intégrée au code du principal : l'installateur n'embarque que `out/`.
+  main: { plugins: [externalizeDepsPlugin({ exclude: ['xlsx'] })], resolve: { alias } },
   preload: { plugins: [externalizeDepsPlugin()], resolve: { alias } },
   renderer: {
     resolve: { alias },

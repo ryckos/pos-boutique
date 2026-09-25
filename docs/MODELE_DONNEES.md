@@ -26,7 +26,7 @@ document à jour.
 | Table              | Rôle                                                                  |
 |--------------------|-----------------------------------------------------------------------|
 | `categories`       | Rayons, sous-catégories via `parent_id`                               |
-| `produits`         | Ce qu'on stocke : unité de base, TVA, `cout_moyen_pondere`, `suivi_peremption`, `seuil_alerte` |
+| `produits`         | Ce qu'on stocke : unité de base, TVA, `cout_moyen_pondere`, `suivi_peremption`, `seuil_alerte`, `prix_achat_indicatif` (import B3, pré-remplit le stock initial ; jamais dans le CUMP) |
 | `conditionnements` | Ce qu'on vend : `quantite_base`, `prix_vente`, `code_barres` (UNIQUE), `code_plu` (UNIQUE), `est_defaut`, `bouton_tactile`, `ordre_bouton` |
 | `lots`             | Lots d'arrivage : `numero_lot`, `date_peremption`, `prix_achat_unitaire`, `reception_id` |
 | `mouvements_stock` | **Le journal du stock. Immuable.** Écriture par `core/mouvements.ts` seulement, en unités de base |
@@ -93,6 +93,7 @@ document à jour.
 | `20260922_0900_schema_initial.sql`       | Schéma v2 complet : tables, index, vues, triggers    |
 | `20260922_0910_sequences_et_boutons.sql` | Table `sequences`, boutons tactiles sur `conditionnements` |
 | `20260923_1157_securite_connexion.sql`   | `utilisateurs` : code provisoire et verrouillage par compte |
+| `20260925_1100_prix_achat_indicatif.sql` | `produits.prix_achat_indicatif` (FCFA par unité, facultatif) : prix d'achat venu de l'import |
 
 Ajouter ici chaque nouvelle migration (nom et contenu en une ligne).
 

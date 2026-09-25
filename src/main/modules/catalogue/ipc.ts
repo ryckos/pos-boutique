@@ -1,4 +1,7 @@
 /** Propriétaire : Dev B. */
+import { readFileSync, statSync, writeFileSync } from 'node:fs'
+import { basename } from 'node:path'
+import { BrowserWindow, dialog } from 'electron'
 import { base } from '../../db/connexion'
 import { gerer } from '../../ipc/gerer'
 import { session } from '../../core/session'
@@ -18,6 +21,26 @@ import {
   modifierProduit
 } from './produits'
 import { creerCategorie, desactiverCategorie, listerCategories, renommerCategorie } from './categories'
+import { importerCatalogue, modeleImport, TAILLE_MAX_OCTETS, verifierImport } from './import'
+import { ErreurMetier } from '../../core/erreurs'
+
+/**
+ * Dernier fichier vérifié. L'import relit ce chemin, choisi dans la fenêtre du système : l'écran
+ * ne transmet jamais de chemin de fichier.
+ */
+let fichierVerifie: string | null = null
+
+function lireFichierImport(chemin: string): Uint8Array {
+  try {
+    if (statSync(chemin).size > TAILLE_MAX_OCTETS) {
+      throw new ErreurMetier('Ce fichier dépasse 5 Mo : gardez seulement la feuille des produits')
+    }
+    return readFileSync(chemin)
+  } catch (e) {
+    if (e instanceof ErreurMetier) throw e
+    throw new ErreurMetier('Le fichier ne s’ouvre plus : fermez-le dans Excel, puis vérifiez-le à nouveau')
+  }
+}
 
 export function enregistrerIpcCatalogue(): void {
   gerer('catalogue:rechercherCode', ({ code }) => {
@@ -86,5 +109,58 @@ export function enregistrerIpcCatalogue(): void {
   gerer('catalogue:desactiverCategorie', ({ id }) => {
     session.exiger(['gerant'])
     desactiverCategorie(base(), id)
+  })
+
+  // Import du catalogue (B3) : gérant, comme la création d'un produit.
+  gerer('catalogue:telechargerModeleImport', async () => {
+    session.exiger(['gerant'])
+    const fenetre = BrowserWindow.getFocusedWindow()
+    const options = {
+      title: 'Enregistrer le modèle d’import',
+      defaultPath: 'Modele_catalogue.xlsx',
+      filters: [{ name: 'Classeur Excel', extensions: ['xlsx'] }]
+    }
+    const choix = fenetre
+      ? await dialog.showSaveDialog(fenetre, options)
+      : await dialog.showSaveDialog(options)
+    if (choix.canceled || !choix.filePath) return { enregistre: false }
+    try {
+      writeFileSync(choix.filePath, modeleImport())
+    } catch {
+      throw new ErreurMetier(
+        'Le modèle n’a pas pu être enregistré : fermez-le dans Excel ou choisissez un autre dossier'
+      )
+    }
+    return { enregistre: true }
+  })
+  gerer('catalogue:verifierImport', async () => {
+    session.exiger(['gerant'])
+    const fenetre = BrowserWindow.getFocusedWindow()
+    const options = {
+      title: 'Choisir le fichier du catalogue',
+      properties: ['openFile' as const],
+      filters: [{ name: 'Classeur Excel', extensions: ['xlsx', 'xls'] }]
+    }
+    const choix = fenetre
+      ? await dialog.showOpenDialog(fenetre, options)
+      : await dialog.showOpenDialog(options)
+    const chemin = choix.filePaths[0]
+    if (choix.canceled || !chemin) return null
+    fichierVerifie = null
+    const rapport = verifierImport(base(), lireFichierImport(chemin), basename(chemin))
+    fichierVerifie = chemin
+    return rapport
+  })
+  gerer('catalogue:importerCatalogue', () => {
+    const u = session.exiger(['gerant'])
+    if (!fichierVerifie) throw new ErreurMetier('Vérifiez d’abord le fichier')
+    const rapport = importerCatalogue(
+      base(),
+      u.id,
+      lireFichierImport(fichierVerifie),
+      basename(fichierVerifie)
+    )
+    fichierVerifie = null
+    return rapport
   })
 }

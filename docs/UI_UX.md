@@ -54,7 +54,7 @@ Classes existantes :
 | `.btn`, `.btn-discret`                      | Boutons                               |
 | `.page`, `.page-entete`                     | Pages de gestion                      |
 | `.tableau-cadre`, `.tableau` (+ `.nombre`)  | Tableaux (colonne numérique alignée)  |
-| `.pastille`, `.pastille-alerte`             | Pastilles d'état                      |
+| `.pastille`, `.pastille-alerte`             | Pastilles d'état (aussi `-ok`, `-inactif`, `-erreur`) |
 | `.alerte`, `.bandeau`, `.vide`              | Messages et états vides               |
 | `.montant`                                  | Montants en chiffres tabulaires       |
 | `.voile`, `.fenetre`, `.fenetre-large`, `.formulaire-bloc` | Fenêtres modales (`ui/FenetreFormulaire.tsx`) |
@@ -331,6 +331,15 @@ Trois blocs `.panneau` (« Boutique et ticket », « Stock », « Caisse »), ch
 « Modifier » qui ouvre la fenêtre du bloc. « Enregistrer » reste grisé tant que rien n'a changé.
 Chaque bloc s'enregistre à part, tout ou rien. Les réglages de l'imprimante n'y sont pas : ils sont
 dans « Réglages matériel » (Dev A, A3, gérant).
+
+### 5.14 Import du catalogue (Dev B — B3, gérant)
+Bouton « Importer depuis Excel » (secondaire) à côté de « Nouveau produit », sur la page Produits.
+Il ouvre une fenêtre large (`FenetreFormulaire`) : une phrase d'explication, puis « Télécharger le
+modèle » et « Vérifier le fichier » (fenêtres du système). Le rapport affiche le nom du fichier,
+trois pastilles de synthèse (à créer, ignorées, en erreur), les catégories qui seront créées et un
+tableau Ligne / Produit / État / Détail, **erreurs en tête**. « Importer N produits » reste grisé
+tant qu'une ligne est en erreur ou qu'il n'y a rien à créer. Après l'import, la fenêtre se ferme et
+la page affiche en vert le nombre de produits importés, de lignes ignorées et les catégories créées.
 
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
