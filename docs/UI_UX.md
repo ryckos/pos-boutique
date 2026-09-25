@@ -325,6 +325,13 @@ sont traités comme un code (tapé, collé ou scanné) : un code connu ouvre la 
 code inconnu affiche « Code … inconnu » avec le bouton **« Créer le produit avec ce code »**, qui
 ouvre la fiche pré-remplie (§ 5.7). Un code d'un autre format est signalé « illisible ».
 
+### 5.13 Paramètres (Dev B — B5, admin)
+Trois blocs `.panneau` (« Boutique et ticket », « Stock », « Caisse »), chacun en lecture
+(`.liste-valeurs` : libellé à gauche, valeur à droite, « Non renseigné » en gris) avec un bouton
+« Modifier » qui ouvre la fenêtre du bloc. « Enregistrer » reste grisé tant que rien n'a changé.
+Chaque bloc s'enregistre à part, tout ou rien. Les réglages de l'imprimante n'y sont pas : ils sont
+dans « Réglages matériel » (Dev A, A3, gérant).
+
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
 - Les messages d'erreur portent `role="alert"`.

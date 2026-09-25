@@ -70,6 +70,11 @@ export function FenetreProduit(props: PropsFenetreProduit): React.JSX.Element {
       appel('catalogue:ficheProduit', { id: props.produitId })
         .then((f) => setChamps(champsDepuisFiche(f)))
         .catch((e: Error) => setErreurChargement(e.message))
+    } else {
+      // Nouveau produit : TVA proposée selon les paramètres (18 % tant qu'ils ne sont pas lus).
+      appel('parametres:lire')
+        .then((p) => setChamps((c) => c && { ...c, tauxTva: p.tvaDefaut }))
+        .catch(() => undefined)
     }
   }, [props.produitId])
 

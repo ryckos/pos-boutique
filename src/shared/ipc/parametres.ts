@@ -35,4 +35,10 @@ export interface ParametresBoutique {
 export interface ContratParametres {
   /** Tous les rôles (la caissière imprime des tickets). */
   'parametres:lire': { requete: void; reponse: ParametresBoutique }
+  /**
+   * Enregistre les paramètres fournis (les autres ne bougent pas), tout ou rien, et renvoie les
+   * paramètres à jour. Admin ; le gérant peut aussi modifier les trois champs `imprimante*`.
+   * `null` efface la valeur (retour au défaut). Chaque changement est journalisé.
+   */
+  'parametres:ecrire': { requete: Partial<ParametresBoutique>; reponse: ParametresBoutique }
 }
