@@ -57,7 +57,7 @@ Le socle comprend :
 | A1.1  | Panier et logique de calcul                     | A   | ✅     | PR #3 — essai à la vraie douchette sur le terminal encore à faire (validé en simulation) |
 | A1.2  | Grille, recherche F2, conditionnement, attente  | A   | ✅     | PR #6 (attente, F2, raccourcis) et #15 (onglets de rayons, changer le conditionnement) |
 | A2    | Encaissement et enregistrement de la vente      | A   | ✅     | PR #7 (serveur) et #14 (ouverture de caisse, fenêtre de paiement) — impression et tiroir en A3 |
-| A3    | Ticket, tiroir, réglages matériel               | A   | 🔄     | code terminé sur `a/caisse-ticket` (ticket, tiroir, réimpression, Réglages matériel), testé sans imprimante — PR en cours ; **reste l'essai sur le terminal avec la Xprinter** (critère de fin, et page de codes D-A2) ; `parametres:lire` / `ecrire` livrés par B (PR #17, #19) : en-tête et réglages à y brancher |
+| A3    | Ticket, tiroir, réglages matériel               | A   | 🔄     | code terminé sur `a/caisse-ticket` (ticket, tiroir, réimpression, Réglages matériel), testé sans imprimante — PR en cours ; **reste l'essai sur le terminal avec la Xprinter** (critère de fin, et page de codes D-A2) ; en-tête et réglages de l'imprimante branchés sur les paramètres de B5 (PR #17, #19) |
 | A4    | Sessions de caisse, X et Z                      | A   | ⏳     | ouverture de session déjà livrée avec A2 ; reste clôture, X, Z |
 | A5    | Remises, droits, stabilisation                  | A   | ⏳     |       |
 | B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | ✅     | PR #4 — connexion par nom et code (D-17), verrouillage par compte, code provisoire, écrans Comptes / Mon code / premier démarrage |

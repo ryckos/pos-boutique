@@ -8,9 +8,9 @@ import { base } from '../../db/connexion'
 import { gerer } from '../../ipc/gerer'
 import { session } from '../../core/session'
 import { envoyerBrut } from '../../materiel/imprimante'
-import { lireReglages } from '../../materiel/reglages'
-import { ENTETE_PROVISOIRE, mettreEnPageTicket } from '../../materiel/ticket'
-import { cheminReglages } from '../../materiel/ipc'
+import { enteteDepuis, reglagesDepuis } from '../../materiel/reglages'
+import { mettreEnPageTicket } from '../../materiel/ticket'
+import { lireParametres } from '../parametres/service'
 import { ouvrirSession, sessionOuverte } from './service-session'
 import { enregistrerVente } from './service-vente'
 import {
@@ -31,8 +31,10 @@ async function imprimer(u: UtilisateurConnecte, venteId: number): Promise<{ dupl
   verifierDroitImpression(db, u, venteId)
   const ticket = lireTicket(db, venteId)
   const duplicata = dejaImprime(db, venteId)
-  const reglages = lireReglages(cheminReglages())
-  const octets = mettreEnPageTicket(ticket, ENTETE_PROVISOIRE, reglages.pageDeCodes, {
+  // En-tête, pied et imprimante : paramètres de la boutique (Dev B, B5), relus à chaque ticket.
+  const parametres = lireParametres(db)
+  const reglages = reglagesDepuis(parametres)
+  const octets = mettreEnPageTicket(ticket, enteteDepuis(parametres), reglages.pageDeCodes, {
     duplicata,
     tiroir: ouvrirTiroirPour(ticket, duplicata)
   })

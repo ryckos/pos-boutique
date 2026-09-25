@@ -65,8 +65,16 @@ n'est pas disponible pour l'instant, Dev A préviendra.
 - D-A1 (stock négatif), D-A3 (plafond remise, pour A5) : inchangées.
 
 **Contrats** : ajoutés (Dev A) : `caisse:imprimerTicket`, `caisse:reimprimerTicket`,
-`materiel:lireReglages`, `materiel:enregistrerReglages`. Attendu de Dev B : `parametres:lire`
-(fin S5) → remplacer `ENTETE_PROVISOIRE` et le fichier `materiel.json`.
+`materiel:lireReglages`, `materiel:enregistrerReglages`.
+
+**Suite (2026-09-25)** : `test` avait avancé (B2.3, B5 de Dev B). Branche **rebasée** sur `origin/test`
+(conflits de doc, routes et styles résolus en gardant les deux côtés ; 210 tests verts), puis
+**paramètres de B5 branchés** : en-tête et pied du ticket = `boutique_nom`, `boutique_adresse`,
+`ticket_pied` (« Ma Boutique » si le nom manque) ; réglages de l'imprimante = clés `imprimante_*`
+via `ecrireParametres` de Dev B (droits gérant, journal `modification_parametre`) ; **le fichier
+`materiel.json` et l'en-tête en dur sont supprimés**. Page de codes vide = `cp858` provisoire (D-A2).
+Sur le poste de Dev A, l'imprimante de test « XP-TEST » saisie avant est à ressaisir (elle vivait
+dans `materiel.json`).
 
 ## 2026-09-24 (suite) — a/caisse-onglets — A1.2 Grille, conditionnement (partie 2)
 **Fait** :

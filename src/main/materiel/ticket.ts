@@ -47,16 +47,6 @@ export interface EnteteTicket {
   pied: string
 }
 
-/**
- * En-tête provisoire : `parametres:lire` (Dev B, B5) n'est pas encore livré. À remplacer par les
- * clés boutique_nom, boutique_adresse et ticket_pied (REGLES_METIER § 13) à son arrivée.
- */
-export const ENTETE_PROVISOIRE: EnteteTicket = {
-  nom: 'Ma Boutique',
-  adresse: ['Lomé - Togo'],
-  pied: 'Merci de votre visite !'
-}
-
 export interface LigneImprimee {
   texte: string
   centre?: boolean

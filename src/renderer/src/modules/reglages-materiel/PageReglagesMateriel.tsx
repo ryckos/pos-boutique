@@ -2,8 +2,8 @@
  * Propriétaire : Dev A.
  *
  * Réglages matériel (gérant, tâche A3) : imprimante, méthode d'envoi, page de codes ; tickets de
- * test et ouverture du tiroir. Les réglages sont gardés dans un fichier local tant que
- * `parametres:*` (Dev B, B5) n'est pas livré.
+ * test et ouverture du tiroir. Les réglages sont les clés imprimante_* des paramètres de la boutique
+ * (Dev B, B5) : le gérant peut les modifier, chaque changement est journalisé.
  * La page de codes par défaut est PROVISOIRE (décision en attente D-A2) : les trois boutons de
  * ticket de test servent à trouver sur le terminal celle qui imprime tous les accents.
  */

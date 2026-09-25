@@ -1,19 +1,16 @@
-import { mkdtempSync, writeFileSync } from 'fs'
-import { tmpdir } from 'os'
-import { join } from 'path'
 import { describe, expect, it } from 'vitest'
 import type { Db } from '../src/main/db/connexion'
 import { une } from '../src/main/db/requetes'
 import { encodeText, IMPULSION_TIROIR } from '../src/main/materiel/escpos'
-import { ecrireReglages, lireReglages, REGLAGES_PAR_DEFAUT } from '../src/main/materiel/reglages'
 import {
-  couper,
-  ENTETE_PROVISOIRE,
-  LARGEUR,
-  lignesTicket,
-  mettreEnPageTicket,
-  montantTicket
-} from '../src/main/materiel/ticket'
+  ecrireReglages,
+  enteteDepuis,
+  lireEntete,
+  lireReglages,
+  PAGE_DE_CODES_PAR_DEFAUT
+} from '../src/main/materiel/reglages'
+import { ecrireParametres, lireParametres } from '../src/main/modules/parametres/service'
+import { couper, LARGEUR, lignesTicket, mettreEnPageTicket, montantTicket } from '../src/main/materiel/ticket'
 import { rechercherParCode } from '../src/main/modules/catalogue/service'
 import { ouvrirSession } from '../src/main/modules/caisse/service-session'
 import {
@@ -31,6 +28,10 @@ import { baseAvecDemo } from './aide'
 
 const AFI: UtilisateurConnecte = { id: 2, nom: 'Afi', role: 'caissier' }
 const KOSSI: UtilisateurConnecte = { id: 3, nom: 'Kossi', role: 'gerant' }
+const PATRON: UtilisateurConnecte = { id: 1, nom: 'Patron', role: 'admin' }
+
+/** En-tête des paramètres de démo (MA BOUTIQUE, Lomé, Togo). */
+const ENTETE = { nom: 'MA BOUTIQUE', adresse: ['Lomé, Togo'], pied: 'Merci de votre visite !' }
 
 const id = (db: Db, code: string): number => rechercherParCode(db, code)!.conditionnementId
 
@@ -51,7 +52,7 @@ function venteDemo(paiements?: RequeteVente['paiements']): { db: Db; venteId: nu
 }
 
 const texte = (db: Db, venteId: number, duplicata = false): string[] =>
-  lignesTicket(lireTicket(db, venteId), ENTETE_PROVISOIRE, { duplicata }).map((l) => l.texte)
+  lignesTicket(lireTicket(db, venteId), ENTETE, { duplicata }).map((l) => l.texte)
 
 /** Cherche une suite d'octets dans un tampon. */
 const contient = (b: Buffer, suite: readonly number[]): boolean => b.indexOf(Buffer.from(suite)) !== -1
@@ -77,7 +78,7 @@ describe('Ticket de caisse — contenu', () => {
 
   it('aucune ligne ne dépasse 48 colonnes (24 en double taille)', () => {
     const { db, venteId } = venteDemo()
-    for (const l of lignesTicket(lireTicket(db, venteId), ENTETE_PROVISOIRE, { duplicata: true })) {
+    for (const l of lignesTicket(lireTicket(db, venteId), ENTETE, { duplicata: true })) {
       expect(l.texte.length).toBeLessThanOrEqual(l.double ? LARGEUR / 2 : LARGEUR)
     }
   })
@@ -111,7 +112,7 @@ describe('Ticket de caisse — contenu', () => {
 describe('Ticket de caisse — octets ESC/POS', () => {
   it('cp858 : accents et tiret long encodés, aucun « ? » dans le ticket de démo', () => {
     const { db, venteId } = venteDemo()
-    const octets = mettreEnPageTicket(lireTicket(db, venteId), ENTETE_PROVISOIRE, 'cp858', {
+    const octets = mettreEnPageTicket(lireTicket(db, venteId), ENTETE, 'cp858', {
       duplicata: false,
       tiroir: true
     })
@@ -135,8 +136,8 @@ describe('Ticket de caisse — octets ESC/POS', () => {
     const tmoney = venteDemo([{ mode: 'tmoney', montant: 8500, reference: 'TM-1' }])
     expect(ouvrirTiroirPour(lireTicket(tmoney.db, tmoney.venteId), false)).toBe(false)
 
-    const avec = mettreEnPageTicket(t, ENTETE_PROVISOIRE, 'cp858', { duplicata: false, tiroir: true })
-    const sans = mettreEnPageTicket(t, ENTETE_PROVISOIRE, 'cp858', { duplicata: true, tiroir: false })
+    const avec = mettreEnPageTicket(t, ENTETE, 'cp858', { duplicata: false, tiroir: true })
+    const sans = mettreEnPageTicket(t, ENTETE, 'cp858', { duplicata: true, tiroir: false })
     expect(contient(avec, IMPULSION_TIROIR)).toBe(true)
     expect(contient(sans, IMPULSION_TIROIR)).toBe(false)
   })
@@ -178,28 +179,46 @@ describe('Impression : original, duplicata et droits', () => {
   })
 })
 
-describe('Réglages de l’imprimante (fichier local)', () => {
-  const dossier = (): string => mkdtempSync(join(tmpdir(), 'pos-reglages-'))
-
-  it('sans fichier : valeurs par défaut, page de codes cp858 provisoire (D-A2)', () => {
-    expect(lireReglages(join(dossier(), 'materiel.json'))).toEqual(REGLAGES_PAR_DEFAUT)
-    expect(REGLAGES_PAR_DEFAUT.pageDeCodes).toBe('cp858')
+describe('Réglages de l’imprimante et en-tête : paramètres de la boutique (B5)', () => {
+  it('base de démo : en-tête des paramètres, aucune imprimante, page de codes cp858 provisoire (D-A2)', () => {
+    const db = baseAvecDemo()
+    expect(lireEntete(db)).toEqual(ENTETE)
+    expect(lireReglages(db)).toEqual({ methode: 'spooler', cible: '', pageDeCodes: 'cp858' })
+    expect(PAGE_DE_CODES_PAR_DEFAUT).toBe('cp858')
   })
 
-  it('enregistrer puis relire donne les mêmes réglages', () => {
-    const chemin = join(dossier(), 'materiel.json')
-    ecrireReglages(chemin, { methode: 'share', cible: ' XP-80 ', pageDeCodes: 'cp1252' })
-    expect(lireReglages(chemin)).toEqual({ methode: 'share', cible: 'XP-80', pageDeCodes: 'cp1252' })
-  })
-
-  it('refuse une imprimante vide ; un fichier abîmé redonne les valeurs par défaut', () => {
-    const chemin = join(dossier(), 'materiel.json')
-    expect(() => ecrireReglages(chemin, { ...REGLAGES_PAR_DEFAUT, cible: '  ' })).toThrow(
-      /Choisissez l’imprimante/
+  it('le gérant enregistre l’imprimante : relue telle quelle, chaque clé journalisée', () => {
+    const db = baseAvecDemo()
+    ecrireReglages(db, KOSSI, { methode: 'share', cible: ' XP-80 ', pageDeCodes: 'cp1252' })
+    expect(lireReglages(db)).toEqual({ methode: 'share', cible: 'XP-80', pageDeCodes: 'cp1252' })
+    const n = une<{ n: number }>(
+      db,
+      "SELECT COUNT(*) AS n FROM journal_audit WHERE action = 'modification_parametre'"
     )
-    writeFileSync(chemin, '{ pas du json')
-    expect(lireReglages(chemin)).toEqual(REGLAGES_PAR_DEFAUT)
-    writeFileSync(chemin, JSON.stringify({ methode: 'fax', cible: 'XP', pageDeCodes: 'cp999' }))
-    expect(lireReglages(chemin)).toEqual({ ...REGLAGES_PAR_DEFAUT, cible: 'XP' })
+    expect(n!.n).toBe(3)
+  })
+
+  it('refuse une imprimante vide, une page de codes inconnue, et la caissière (droits de B5)', () => {
+    const db = baseAvecDemo()
+    const r = { methode: 'spooler' as const, cible: 'XP-80', pageDeCodes: 'cp858' as const }
+    expect(() => ecrireReglages(db, KOSSI, { ...r, cible: '  ' })).toThrow(/Choisissez l’imprimante/)
+    expect(() => ecrireReglages(db, KOSSI, { ...r, pageDeCodes: 'cp999' as never })).toThrow(/Page de codes/)
+    expect(() => ecrireReglages(db, AFI, r)).toThrow(/administrateur/)
+    expect(lireReglages(db).cible).toBe('')
+  })
+
+  it('une page de codes illisible en base revient à cp858', () => {
+    const db = baseAvecDemo()
+    ecrireParametres(db, PATRON, { imprimantePageCodes: 'cp999' })
+    expect(lireReglages(db).pageDeCodes).toBe('cp858')
+  })
+
+  it('en-tête : adresse sur plusieurs lignes, nom par défaut si la boutique n’en a pas', () => {
+    const p = { ...lireParametres(baseAvecDemo()), boutiqueNom: null, boutiqueAdresse: 'Bè Kpota\nLomé' }
+    expect(enteteDepuis(p)).toEqual({
+      nom: 'Ma Boutique',
+      adresse: ['Bè Kpota', 'Lomé'],
+      pied: 'Merci de votre visite !'
+    })
   })
 })

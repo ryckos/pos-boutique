@@ -1,56 +1,77 @@
 /**
  * Propriétaire : Dev A.
  *
- * Réglages de l'imprimante (méthode, cible, page de codes), gardés dans un fichier local en
- * attendant `parametres:lire` / `parametres:ecrire` (Dev B, B5) : on basculera alors sur les clés
- * imprimante_methode, imprimante_cible et imprimante_page_codes (REGLES_METIER § 13).
- * Le chemin du fichier est reçu en paramètre : ce module n'importe pas Electron et se teste.
+ * Réglages de l'imprimante et en-tête du ticket, lus et écrits dans les PARAMÈTRES de la boutique
+ * (service de Dev B, B5 ; clés imprimante_* et boutique_*, REGLES_METIER § 13). Ce module ne fait
+ * que traduire : les droits (le gérant ne modifie que les clés imprimante_*), les contrôles, la
+ * transaction et le journal (`modification_parametre`) sont ceux du service de Dev B.
+ * Remplace le fichier local `materiel.json` des débuts d'A3.
  */
-import { existsSync, readFileSync, writeFileSync } from 'fs'
-import type { CibleImprimante, MethodeImpression, PageDeCodes } from '@shared/ipc/materiel'
+import type { CibleImprimante, PageDeCodes } from '@shared/ipc/materiel'
+import type { ParametresBoutique } from '@shared/ipc/parametres'
+import type { UtilisateurConnecte } from '@shared/types'
+import type { Db } from '../db/connexion'
 import { ErreurMetier } from '../core/erreurs'
+import { ecrireParametres, lireParametres } from '../modules/parametres/service'
+import type { EnteteTicket } from './ticket'
 
 export type ReglagesImprimante = CibleImprimante
 
-const METHODES: MethodeImpression[] = ['spooler', 'share']
 const PAGES: PageDeCodes[] = ['cp858', 'cp1252', 'cp437']
 
 /**
- * `cp858` est PROVISOIRE (décision en attente D-A2) : la page gagnante du test T2 n'a pas été
- * reportée ; elle sera déterminée sur le terminal avec le ticket de test.
+ * Page de codes tant qu'aucune n'est renseignée. PROVISOIRE (décision en attente D-A2) : la page
+ * gagnante du test T2 n'a pas été reportée ; elle sera déterminée sur le terminal.
  */
-export const REGLAGES_PAR_DEFAUT: ReglagesImprimante = { methode: 'spooler', cible: '', pageDeCodes: 'cp858' }
+export const PAGE_DE_CODES_PAR_DEFAUT: PageDeCodes = 'cp858'
 
-/** Fichier absent ou abîmé : valeurs par défaut, champ par champ. Jamais d'exception. */
-export function lireReglages(chemin: string): ReglagesImprimante {
-  if (!existsSync(chemin)) return { ...REGLAGES_PAR_DEFAUT }
-  try {
-    const lu = JSON.parse(readFileSync(chemin, 'utf8')) as Partial<ReglagesImprimante>
-    return {
-      methode: METHODES.includes(lu.methode as MethodeImpression)
-        ? (lu.methode as MethodeImpression)
-        : REGLAGES_PAR_DEFAUT.methode,
-      cible: typeof lu.cible === 'string' ? lu.cible : REGLAGES_PAR_DEFAUT.cible,
-      pageDeCodes: PAGES.includes(lu.pageDeCodes as PageDeCodes)
-        ? (lu.pageDeCodes as PageDeCodes)
-        : REGLAGES_PAR_DEFAUT.pageDeCodes
-    }
-  } catch {
-    return { ...REGLAGES_PAR_DEFAUT }
+/** Nom imprimé si la boutique n'a pas encore renseigné le sien (écran Paramètres de Dev B). */
+export const NOM_BOUTIQUE_PAR_DEFAUT = 'Ma Boutique'
+
+export function reglagesDepuis(p: ParametresBoutique): ReglagesImprimante {
+  const page = p.imprimantePageCodes as PageDeCodes | null
+  return {
+    methode: p.imprimanteMethode,
+    cible: p.imprimanteCible ?? '',
+    pageDeCodes: page && PAGES.includes(page) ? page : PAGE_DE_CODES_PAR_DEFAUT
   }
 }
 
-export function ecrireReglages(chemin: string, r: ReglagesImprimante): ReglagesImprimante {
-  if (!METHODES.includes(r.methode)) throw new ErreurMetier('Méthode d’impression inconnue.')
-  if (!PAGES.includes(r.pageDeCodes)) throw new ErreurMetier('Page de codes inconnue.')
-  const propres: ReglagesImprimante = {
-    methode: r.methode,
-    cible: r.cible.trim(),
-    pageDeCodes: r.pageDeCodes
+/** En-tête et pied du ticket ; une adresse sur plusieurs lignes s'imprime sur plusieurs lignes. */
+export function enteteDepuis(p: ParametresBoutique): EnteteTicket {
+  return {
+    nom: p.boutiqueNom ?? NOM_BOUTIQUE_PAR_DEFAUT,
+    adresse: (p.boutiqueAdresse ?? '')
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean),
+    pied: p.ticketPied
   }
-  if (!propres.cible) {
+}
+
+export function lireReglages(db: Db): ReglagesImprimante {
+  return reglagesDepuis(lireParametres(db))
+}
+
+export function lireEntete(db: Db): EnteteTicket {
+  return enteteDepuis(lireParametres(db))
+}
+
+/** Contrôles propres à l'imprimante, puis écriture par le service des paramètres (droits, journal). */
+export function ecrireReglages(
+  db: Db,
+  auteur: UtilisateurConnecte,
+  r: ReglagesImprimante
+): ReglagesImprimante {
+  if (!PAGES.includes(r.pageDeCodes)) throw new ErreurMetier('Page de codes inconnue.')
+  if (!r.cible?.trim()) {
     throw new ErreurMetier('Choisissez l’imprimante dans la liste ou saisissez son nom exact.')
   }
-  writeFileSync(chemin, JSON.stringify(propres, null, 2), 'utf8')
-  return propres
+  return reglagesDepuis(
+    ecrireParametres(db, auteur, {
+      imprimanteMethode: r.methode,
+      imprimanteCible: r.cible,
+      imprimantePageCodes: r.pageDeCodes
+    })
+  )
 }

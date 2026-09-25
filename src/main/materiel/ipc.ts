@@ -1,6 +1,4 @@
 /** Propriétaire : Dev A. */
-import { app } from 'electron'
-import { join } from 'path'
 import { base } from '../db/connexion'
 import { gerer } from '../ipc/gerer'
 import { journaliser } from '../core/audit'
@@ -10,26 +8,19 @@ import { buildDrawerPulse, buildTestTicket } from './escpos'
 import { envoyerBrut, listerImprimantes } from './imprimante'
 import { ecrireReglages, lireReglages } from './reglages'
 
-/** Fichier des réglages de l'imprimante, à côté de la base (en attendant les paramètres de B5). */
-export function cheminReglages(): string {
-  return join(app.getPath('userData'), 'materiel.json')
-}
-
 export function enregistrerIpcMateriel(): void {
   enregistrerRelaisEcranClient()
 
+  // Réglages de l'imprimante = clés imprimante_* des paramètres (Dev B, B5).
   gerer('materiel:lireReglages', () => {
     session.exiger()
-    return lireReglages(cheminReglages())
+    return lireReglages(base())
   })
 
+  // Le service des paramètres revérifie le rôle et journalise chaque clé modifiée.
   gerer('materiel:enregistrerReglages', (reglages) => {
     const u = session.exiger(['gerant'])
-    const avant = lireReglages(cheminReglages())
-    const apres = ecrireReglages(cheminReglages(), reglages)
-    // Changer d'imprimante ou de page de codes touche tous les tickets : on garde la trace.
-    journaliser(base(), { utilisateurId: u.id, action: 'reglages_imprimante', avant, apres })
-    return apres
+    return ecrireReglages(base(), u, reglages)
   })
 
   // La liste des imprimantes ne sert qu'aux réglages matériel, réservés au gérant (comme le ticket test).

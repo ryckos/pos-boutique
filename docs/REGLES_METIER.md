@@ -524,11 +524,11 @@ repart à 1 chaque année.
 | `imprimante_cible`               | Nom de l'imprimante ou du partage          | —                       |
 | `imprimante_page_codes`          | Page de codes validée en Phase 0           | voir DECISIONS.md       |
 
-**Provisoire (A3)** : tant que `parametres:lire` / `parametres:ecrire` (Dev B, B5) ne sont pas
-livrés, les trois clés `imprimante_*` sont gardées dans un fichier local `materiel.json` (dossier de
-l'application, à côté de la base), modifiable par l'écran « Réglages matériel » (gérant, journalisé
-`reglages_imprimante`) ; l'en-tête du ticket est écrit en dur (« Ma Boutique », « Lomé - Togo »,
-« Merci de votre visite ! »). Bascule vers la table `parametres` à l'arrivée de B5.
+**Utilisation par la caisse (A3)** : le ticket prend son en-tête et son pied dans `boutique_nom`,
+`boutique_adresse` (une ligne imprimée par ligne saisie) et `ticket_pied` ; « Ma Boutique » s'imprime si
+le nom n'est pas renseigné. L'imprimante est réglée par les clés `imprimante_*`, depuis l'écran
+« Réglages matériel » (gérant). Tant que `imprimante_page_codes` est vide ou illisible, la page de codes
+est `cp858` (**provisoire**, D-A2).
 
 Ajouter ici toute nouvelle clé.
 
