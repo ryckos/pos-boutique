@@ -22,7 +22,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 | Catégorie dans `ArticleCatalogue` (`categorie`) — demandé le 2026-09-23 | B | A     | avec B2.1 | ✅    | PR #8 : nom du rayon, champ optionnel toujours renseigné — débloque les onglets de A1.2 |
 | `parametres:lire` (puis `ecrire`)                         | B         | A           | fin S5   | ✅     | PR #17 (lecture) — sans requête → `ParametresBoutique` (objet typé, défauts appliqués) ; `lireParametres(db)` appelable directement dans le principal pour le ticket ; `ecrire` (gérant pour `imprimante*`) livré PR #19 |
 | `caisse:enregistrerVente` (modèle de transaction)         | A         | B (lecture) | fin S5   | ✅     | PR #7 — `service-vente.ts`, modèle de transaction à lire |
-| Stock initial de démarrage                                | B         | A (recette) | fin S7   | ⏳     | recette Phase 1 |
+| Stock initial de démarrage                                | B         | A (recette) | fin S7   | 🔄     | recette Phase 1 |
 | `stock/allouerFefo(db, produitId, qteBase)`               | B         | A           | fin S10  | ⏳     | A9 |
 | `caisse/sessionOuverte()`, `enregistrerMouvementCaisse()` | A         | B           | fin S10  | ⏳     | B13 |
 | `caisse:ventesPeriode`                                    | A         | B           | fin S16  | ⏳     | B14 |
@@ -64,10 +64,10 @@ Le socle comprend :
 | B2.1  | Catégories                                      | B   | ✅     | PR #8 — rayons et sous-rayons, écran Catégories, `categorie` dans `ArticleCatalogue` |
 | B2.2  | Produits et conditionnements, codes internes    | B   | ✅     | PR #10 et #12 — écrans Produits et fiche produit, garde-fou prix, codes internes EAN-13, `conditionnementsProduit` |
 | B2.3  | Recherche sans accents, création depuis scan    | B   | ✅     | PR #16 — recherche F2 de la caisse sans accents sans changement de contrat |
-| B3    | Import Excel du catalogue                       | B   | 🔄     | `b/import-excel`, PR vers `test` en relecture — import en deux temps (vérifier puis tout ou rien), modèle, rayons créés, prix d'achat indicatif (migration), `xlsx` 0.20.3 (D-18) ; testé à la main |
+| B3    | Import Excel du catalogue                       | B   | ✅     | PR #20 — vérifier puis importer tout ou rien, modèle, rayons créés, prix d'achat indicatif (migration), `xlsx` 0.20.3 (D-18) |
 | B4    | Écran stock et historique produit               | B   | ⏳     |       |
 | B5    | Paramètres de la boutique                       | B   | ✅     | PR #17 (`parametres:lire`) et #19 (`parametres:ecrire` admin, gérant pour l’imprimante, journalisé ; écran Paramètres ; TVA par défaut dans la fiche produit) |
-| B6    | Stock initial de démarrage                      | B   | ⏳     |       |
+| B6    | Stock initial de démarrage                      | B   | 🔄     | `b/stock-initial`, PR vers `test` en relecture — comptage par conditionnement, produit par produit, CUMP = coût saisi (pré-rempli par l'import), lot si péremption, annulation par contre-passation ; testé à la main |
 
 ## Phase 2 — Achats, lots, retours (S9–S12)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
@@ -128,3 +128,4 @@ Le socle comprend :
 | 2026-09-25 | B2.3  | Recherche sans accents ni casse (F2 de la caisse comprise, sans changement de contrat), création d'un produit depuis un code scanné (PR #16) |
 | 2026-09-25 | B5    | Partie 1 : `parametres:lire` — objet typé, défauts appliqués, `lireParametres(db)` pour le ticket — contrat livré à A (PR #17) |
 | 2026-09-25 | B5    | Partie 2 : `parametres:ecrire` et écran Paramètres ; réglages de l'imprimante d'A3 en base (PR #19) |
+| 2026-09-25 | B3    | Import du catalogue depuis Excel, `produits.prix_achat_indicatif`, dépendance `xlsx` 0.20.3 depuis SheetJS — Dev A : `npm install` (PR #20) |

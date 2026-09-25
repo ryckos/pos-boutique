@@ -341,6 +341,17 @@ tableau Ligne / Produit / État / Détail, **erreurs en tête**. « Importer N p
 tant qu'une ligne est en erreur ou qu'il n'y a rien à créer. Après l'import, la fenêtre se ferme et
 la page affiche en vert le nombre de produits importés, de lignes ignorées et les catégories créées.
 
+### 5.15 Stock initial (Dev B — B6, gérant)
+Page « Stock initial » du menu. En-tête : pastille « 35 / 120 produits comptés » et valeur totale.
+Une phrase d'explication, puis les filtres : recherche (nom, ou code puis Entrée ; la douchette
+ouvre directement le produit), rayon, et « Afficher » (À compter par défaut, Déjà comptés, Tous).
+Tableau Produit / Rayon / État (pastilles « À compter » ambre, « Compté » vert, « Déjà réceptionné »
+gris) / Compté / Coût unitaire / Valeur, avec « Compter » ou « Annuler ». « Compter » ouvre une
+fenêtre : un champ par conditionnement (du carton à l'unité), le total converti en direct
+(« = 41 unités »), le coût par unité pré-rempli, la valeur, la date et le n° de lot si péremption,
+une alerte si le coût atteint le prix de vente, et **« Enregistrer le stock de ce produit »**. Après
+l'enregistrement, message vert « … Au suivant ! » et retour à la liste.
+
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
 - Les messages d'erreur portent `role="alert"`.

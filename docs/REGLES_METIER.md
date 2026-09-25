@@ -469,7 +469,30 @@ repart à 1 chaque année.
   Exemple : 2 savons manquants à 150 F = 300 F.
 - Une fois validé, un inventaire est figé.
 - **Stock initial** au démarrage : même mécanisme, avec le document `stock_initial` et le coût
-  d'achat saisi, qui initialise le CUMP.
+  d'achat saisi, qui initialise le CUMP (détail en 9.1).
+
+### 9.1 Stock initial de démarrage (validé par Dev B le 2026-09-25)
+- Gérant. On compte **produit par produit**, par conditionnement (1 carton de 24 + 5 lots de 3 +
+  2 unités = **41**) ; chaque produit est **enregistré aussitôt**, en une transaction : une coupure
+  de courant ne fait perdre que le produit en cours.
+- **Une seule fois par produit**, et seulement pour un produit **sans réception** (sinon son stock
+  et son CUMP viennent déjà des réceptions : il est « non concerné »).
+- La quantité comptée est le **stock réel**. Le comptage est un mouvement `ajustement_inventaire`
+  (document `stock_initial`, motif « Stock initial : 1 Carton de 24 + 5 Lot de 3 + 2 Unité ») ; si
+  des mouvements existaient déjà (ventes faites avant le comptage), un second mouvement les remet à
+  zéro (motif « Stock initial : remise à zéro des mouvements antérieurs au comptage »). Exemple :
+  3 ventes, puis 41 comptés → mouvements +41 et +3, stock 41.
+- **Coût d'achat par unité** obligatoire, en francs entiers, supérieur à 0, pré-rempli avec le prix
+  d'achat indicatif de l'import (§ 2.6). Le CUMP prend **exactement** cette valeur. Un coût supérieur
+  ou égal au prix de vente de l'unité déclenche une alerte, sans bloquer.
+- Produit suivi en péremption : **date de péremption obligatoire**, n° de lot facultatif ; un lot est
+  créé au coût saisi et porte la quantité comptée (pour le FEFO). Une seule date par produit au
+  stock initial.
+- Un comptage vide (0) est refusé : le produit reste « à compter ».
+- **Correction** : « Annuler le stock initial » (gérant, **motif obligatoire**, journalisé
+  `annulation_stock_initial`) contre-passe ses mouvements ; le produit repasse « à compter ».
+  Impossible une fois une réception arrivée (on corrige alors par un inventaire).
+- Chaque stock initial est journalisé (`stock_initial` : quantité, coût, détail, stock avant).
 
 ---
 
