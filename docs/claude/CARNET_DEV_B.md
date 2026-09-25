@@ -18,6 +18,62 @@ Format d'une entrée :
 
 ---
 
+## 2026-09-25 (suite) — b/import-excel — B3 Import Excel du catalogue
+**Fait** :
+- **B5 fusionnée** (PR #19) et passée à ✅. Branches fusionnées supprimées (local et GitHub) :
+  `b/recherche-scan`, `b/parametres`, `b/parametres-ecran`. Le commit du carnet resté seul sur
+  `b/parametres-ecran` a été repris sur `b/import-excel`.
+- **Dépendance `xlsx` accordée par Dev B**, installée en **0.20.3 depuis `cdn.sheetjs.com`**
+  (décision **D-18** : la 0.18.5 de npm a deux failles connues sur la lecture de fichiers). Intégrée
+  au code compilé du principal (`electron.vite.config.ts`, `externalizeDepsPlugin({ exclude: ['xlsx'] })`).
+- **Règles validées par Dev B** (écrites dans `REGLES_METIER.md` § 2.6) : import en deux temps
+  (vérifier sans rien écrire, puis tout ou rien) ; code déjà au catalogue = ligne ignorée ; une ligne
+  en erreur bloque tout ; rayon ou « Rayon / Sous-rayon » inconnu créé ; ligne sans code-barres =
+  produit sans code (pas de code interne généré) ; prix d'achat gardé **à titre indicatif**.
+- Migration `20260925_1100_prix_achat_indicatif.sql` : `produits.prix_achat_indicatif` (FCFA par
+  unité, facultatif), **jamais lu par le CUMP** ; il servira à pré-remplir le coût en B6.
+- Service `catalogue/import.ts` (lecture, analyse, import, modèle), 3 canaux gérant, fenêtre
+  `FenetreImport.tsx` + bouton « Importer depuis Excel » sur la page Produits (`UI_UX.md` § 5.14),
+  pastille commune `.pastille-erreur`. 225 tests verts (13 nouveaux), build OK, **scénario complet
+  testé à la main par Dev B** (fichier avec erreurs, corrigé, réimport, vente en caisse).
+- Commit `633b641` poussé sur `origin/b/import-excel`. **`gh` n'est pas installé sur ce poste** :
+  la PR s'ouvre depuis GitHub.
+
+**En cours** : PR B3 `b/import-excel` → `test` à ouvrir sur GitHub
+(https://github.com/ryckos/pos-boutique/compare/test...b/import-excel?expand=1), texte prêt
+(celui de la session : sections du modèle, zones partagées listées), puis relecture par Dev A.
+
+**Prochaine étape** :
+1. Après fusion de la PR B3 : B3 → ✅ dans `ETAT_AVANCEMENT.md` + ligne au journal des fusions
+   (« 2026-09-2x · B3 · Import Excel du catalogue, prix d'achat indicatif, xlsx 0.20.3 (PR #…) ») ;
+   supprimer `b/import-excel` (local et GitHub).
+2. **B6 Stock initial** en priorité (rendez-vous **fin S7** pour la recette de Dev A) :
+   `/tache B6`, branche `b/stock-initial` depuis `test` à jour. Mouvements `ajustement_inventaire`
+   via `core/mouvements.ts`, document `stock_initial`, le coût saisi initialise le CUMP ; **pré-remplir
+   le coût avec `produits.prix_achat_indicatif`** quand il existe. Relire `REGLES_METIER.md` § 3 et
+   `SCENARIO_REFERENCE.md` (dimanche soir) avant le plan.
+3. Puis **B4 Écran stock et historique produit**.
+
+**Questions ouvertes** :
+- Colonne « Suivi péremption » (Oui/Non) dans l'import : proposée, pas confirmée par Dev B. Pour
+  l'instant tout produit importé est créé **sans** suivi de péremption (à cocher ensuite dans la fiche).
+- Plafond de remise caissier (D-A3) : toujours en attente de la cliente.
+- Réactivation (produit, compte, catégorie) : non prévue. Photo des produits : reportée.
+
+**Contrats** :
+- **Pour Dev A — action requise après la fusion de B3 : `npm install`** (nouvelle dépendance `xlsx`
+  depuis `cdn.sheetjs.com` ; poste et CI doivent pouvoir joindre ce site).
+- Ajoutés (gérant, sans impact pour la caisse) : `catalogue:telechargerModeleImport`,
+  `catalogue:verifierImport`, `catalogue:importerCatalogue`, type `RapportImport`.
+  `ArticleCatalogue` inchangé.
+- Zones partagées touchées : `package.json`, `electron.vite.config.ts`, `ui/styles.css`
+  (`.pastille-erreur` utilisable par tous), nouvelle migration.
+- Pour la recette de Dev A : les produits peuvent maintenant être chargés en masse par Excel ; le
+  stock initial (B6, fin S7) reste à livrer.
+- Attendus inchangés : `sessionOuverte()` / `enregistrerMouvementCaisse()` (Dev A, fin S10).
+
+---
+
 ## 2026-09-25 — b/parametres-ecran — B2.3 (fusionnée) et B5 Paramètres
 **Fait** :
 - **B2.3 fusionnée** (PR #16) : recherche sans accents ni casse (fonction SQL `sans_accents`
