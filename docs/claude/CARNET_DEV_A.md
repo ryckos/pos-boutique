@@ -49,7 +49,7 @@ n'est pas disponible pour l'instant, Dev A préviendra.
    - Réglages matériel (Kossi `5678`) : choisir la Xprinter, imprimer les 3 tickets de test,
      garder la page où « éèêàçùôî ÉÇ € » est juste ;
    - reporter le résultat dans `DECISIONS.md` (D-A2 → décision prise) et changer
-     `REGLAGES_PAR_DEFAUT.pageDeCodes` dans `materiel/reglages.ts` si ce n'est pas cp858 ;
+     `PAGE_DE_CODES_PAR_DEFAUT` dans `materiel/reglages.ts` si ce n'est pas cp858 ;
    - vente espèces : ticket en < 3 s, accents, coupe, tiroir ouvert ; imprimante débranchée =
      vente enregistrée + bandeau ; Réimprimer = original puis DUPLICATA ;
    - vérifier aussi la fenêtre de paiement sur le 15,6″ et la douchette (20 scans).
@@ -74,7 +74,11 @@ n'est pas disponible pour l'instant, Dev A préviendra.
 via `ecrireParametres` de Dev B (droits gérant, journal `modification_parametre`) ; **le fichier
 `materiel.json` et l'en-tête en dur sont supprimés**. Page de codes vide = `cp858` provisoire (D-A2).
 Sur le poste de Dev A, l'imprimante de test « XP-TEST » saisie avant est à ressaisir (elle vivait
-dans `materiel.json`).
+dans `materiel.json`). 212 tests verts. Branche poussée (push forcé avec garde) : **PR #18**
+(`test` ← `a/caisse-ticket`), titre et description mis à jour, en attente de la relecture de Dev B.
+Pour l'essai terminal : la constante à changer si la page n'est pas cp858 s'appelle désormais
+`PAGE_DE_CODES_PAR_DEFAUT` (`materiel/reglages.ts`). Le tag local `sauvegarde-avant-rebase-a3` peut
+être supprimé après la fusion (`git tag -d sauvegarde-avant-rebase-a3`).
 
 ## 2026-09-24 (suite) — a/caisse-onglets — A1.2 Grille, conditionnement (partie 2)
 **Fait** :
