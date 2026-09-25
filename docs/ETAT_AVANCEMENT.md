@@ -57,8 +57,8 @@ Le socle comprend :
 | A1.1  | Panier et logique de calcul                     | A   | ✅     | PR #3 — essai à la vraie douchette sur le terminal encore à faire (validé en simulation) |
 | A1.2  | Grille, recherche F2, conditionnement, attente  | A   | ✅     | PR #6 (attente, F2, raccourcis) et #15 (onglets de rayons, changer le conditionnement) |
 | A2    | Encaissement et enregistrement de la vente      | A   | ✅     | PR #7 (serveur) et #14 (ouverture de caisse, fenêtre de paiement) — impression et tiroir en A3 |
-| A3    | Ticket, tiroir, réglages matériel               | A   | 🔄     | code terminé sur `a/caisse-ticket` (ticket, tiroir, réimpression, Réglages matériel), testé sans imprimante — PR en cours ; **reste l'essai sur le terminal avec la Xprinter** (critère de fin, et page de codes D-A2) ; en-tête et réglages de l'imprimante branchés sur les paramètres de B5 (PR #17, #19) |
-| A4    | Sessions de caisse, X et Z                      | A   | ⏳     | ouverture de session déjà livrée avec A2 ; reste clôture, X, Z |
+| A3    | Ticket, tiroir, réglages matériel               | A   | 🔄     | PR #18 fusionnée (ticket, tiroir, réimpression DUPLICATA, Réglages matériel ; en-tête et imprimante dans les paramètres de B5) ; **reste l'essai sur le terminal avec la Xprinter** (critère de fin, et page de codes D-A2) |
+| A4    | Sessions de caisse, X et Z                      | A   | 🔄     | `a/caisse-cloture` — partie 1 (serveur, rapports X / Z imprimés, tests 58 700 / −500) faite ; partie 2 : écran de clôture |
 | A5    | Remises, droits, stabilisation                  | A   | ⏳     |       |
 | B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | ✅     | PR #4 — connexion par nom et code (D-17), verrouillage par compte, code provisoire, écrans Comptes / Mon code / premier démarrage |
 | B2.1  | Catégories                                      | B   | ✅     | PR #8 — rayons et sous-rayons, écran Catégories, `categorie` dans `ArticleCatalogue` |
@@ -127,3 +127,4 @@ Le socle comprend :
 | 2026-09-24 | B2.2  | Fiche produit et conditionnements, garde-fou prix, codes internes EAN-13 préfixe 20, écrans Produits (PR #12) |
 | 2026-09-25 | B2.3  | Recherche sans accents ni casse (F2 de la caisse comprise, sans changement de contrat), création d'un produit depuis un code scanné (PR #16) |
 | 2026-09-25 | B5    | Partie 1 : `parametres:lire` — objet typé, défauts appliqués, `lireParametres(db)` pour le ticket — contrat livré à A (PR #17) |
+| 2026-09-25 | A3    | Ticket imprimé 48 colonnes, tiroir, réimpression DUPLICATA, écran Réglages matériel, branché sur les paramètres de B5 (PR #18) — essai Xprinter à faire |

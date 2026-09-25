@@ -76,14 +76,14 @@ export function montantTicket(n: number): string {
 const taux = (t: number): string => `${String(t).replace('.', ',')} %`
 
 /** '2026-09-24 10:42:05' → '24/09/2026 10:42' */
-function dateTicket(horodatage: string): string {
+export function dateTicket(horodatage: string): string {
   const [date = '', heure = ''] = horodatage.split(' ')
   const [a, m, j] = date.split('-')
   return `${j}/${m}/${a} ${heure.slice(0, 5)}`
 }
 
 /** Texte à gauche, montant à droite, sur `largeur` colonnes ; le texte est tronqué si besoin. */
-function colonnes(gauche: string, droite: string, largeur = LARGEUR): string {
+export function colonnes(gauche: string, droite: string, largeur = LARGEUR): string {
   const place = largeur - droite.length - 1
   const g = gauche.length > place ? gauche.slice(0, Math.max(place, 0)) : gauche
   return g + ' '.repeat(Math.max(largeur - g.length - droite.length, 1)) + droite
@@ -112,7 +112,7 @@ export function couper(texte: string, largeur = LARGEUR): string[] {
   return lignes
 }
 
-const SEPARATEUR: LigneImprimee = { texte: '-'.repeat(LARGEUR) }
+export const SEPARATEUR: LigneImprimee = { texte: '-'.repeat(LARGEUR) }
 
 /** Le ticket en lignes de texte, sans aucun octet de commande. */
 export function lignesTicket(
@@ -181,10 +181,19 @@ export function mettreEnPageTicket(
   pageDeCodes: PageDeCodes,
   options: { duplicata: boolean; tiroir: boolean }
 ): Buffer {
+  return mettreEnPage(lignesTicket(ticket, entete, options), pageDeCodes, { tiroir: options.tiroir })
+}
+
+/** Lignes de texte → octets ESC/POS (ticket, rapports X et Z), puis avance et coupe. */
+export function mettreEnPage(
+  lignes: LigneImprimee[],
+  pageDeCodes: PageDeCodes,
+  options: { tiroir: boolean } = { tiroir: false }
+): Buffer {
   const b = new Builder().init()
   if (options.tiroir) b.raw(...IMPULSION_TIROIR)
   b.codepage(pageDeCodes)
-  for (const ligne of lignesTicket(ticket, entete, options)) {
+  for (const ligne of lignes) {
     b.align(ligne.centre ? 1 : 0)
       .bold(!!ligne.gras)
       .size(!!ligne.double)

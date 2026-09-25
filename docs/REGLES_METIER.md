@@ -363,6 +363,20 @@ espèces théoriques = fond d'ouverture
 - La **clôture** enregistre dans `sessions_caisse` les espèces théoriques, les espèces comptées et
   l'écart, avec un commentaire. Elle imprime ensuite le rapport **Z**.
 
+**Précisions validées par Dev A** (2026-09-25, tâche A4) :
+- « Ventes en espèces » = la **part payée en espèces** des tickets terminés (paiements), jamais le
+  montant reçu : la monnaie rendue ne reste pas dans le tiroir. Un ticket annulé ne compte pas.
+- Les espèces théoriques sont **recalculées par le processus principal** à la clôture ; l'écran
+  n'envoie que le compté (entier ≥ 0) et le commentaire.
+- **Qui clôture** : la caissière, sa propre session ; le gérant (et l'admin), n'importe quelle
+  session ouverte (caissière absente, session oubliée la veille). Journal : `cloture_session_caisse`.
+- **Commentaire obligatoire si l'écart n'est pas nul** ; facultatif si l'écart est nul.
+- **Rapport Z** : la première impression réussie est l'original, les suivantes portent
+  **DUPLICATA** (journal, action `impression_rapport_z`). Caissière : le Z de sa dernière session
+  clôturée ; gérant : tous. Une imprimante en panne n'annule jamais la clôture. Le **X** (session
+  ouverte) porte « Provisoire » et n'est pas journalisé.
+- Une session clôturée est figée par le service (aucune vente ni seconde clôture), sans trigger.
+
 Exemple de référence :
 
 | Poste                              | Montant   |
