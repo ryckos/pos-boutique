@@ -23,6 +23,11 @@ cliente ou entre les deux développeurs.
   « éèêàçùôî ÉÇ € » sur la Xprinter M804 du client ?
 - **Contexte** : le test T2 a été validé, mais la page gagnante n'a pas encore été reportée ici.
 - **À faire** : Dev A reporte le résultat ici et le code par défaut (tâche A3).
+- **En attendant (Dev A, 2026-09-24)** : personne ne se souvient du résultat de T2. La page de codes
+  devient un **réglage modifiable** (écran « Réglages matériel », A3), avec `cp858` comme valeur de
+  départ **provisoire** (la seule qui couvre en théorie toutes les lettres françaises et le €).
+  Sur le terminal : imprimer le ticket de test avec chacune des trois pages, garder celle où
+  « éèêàçùôî ÉÇ € » est entièrement juste, puis reporter le résultat ici et fixer la valeur par défaut.
 
 ### D-A3 — Plafond de remise du caissier
 - **Question** : quel montant ou pourcentage maximal le caissier peut-il accorder sans gérant ?

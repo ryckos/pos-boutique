@@ -33,7 +33,15 @@ export async function listerImprimantes(): Promise<string[]> {
       'powershell.exe',
       ['-NoProfile', '-Command', 'Get-Printer | Select-Object -ExpandProperty Name'],
       { windowsHide: true, timeout: 30000 },
-      (err, stdout) => resolve(err ? [] : stdout.split(/\r?\n/).map((s) => s.trim()).filter(Boolean))
+      (err, stdout) =>
+        resolve(
+          err
+            ? []
+            : stdout
+                .split(/\r?\n/)
+                .map((s) => s.trim())
+                .filter(Boolean)
+        )
     )
   })
 }
@@ -63,13 +71,26 @@ export function envoyerBrut(methode: MethodeImpression, cible: string, donnees: 
     if (methode === 'spooler') {
       execFile(
         'powershell.exe',
-        ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', cheminScript(), '-PrinterName', cible, '-FilePath', fichier],
+        [
+          '-NoProfile',
+          '-ExecutionPolicy',
+          'Bypass',
+          '-File',
+          cheminScript(),
+          '-PrinterName',
+          cible,
+          '-FilePath',
+          fichier
+        ],
         { windowsHide: true, timeout: 15000 },
         (err, _out, stderr) => fin(err, stderr)
       )
     } else {
-      exec(`copy /b "${fichier}" "\\\\localhost\\${cible}"`, { windowsHide: true, timeout: 15000, shell: 'cmd.exe' },
-        (err, _out, stderr) => fin(err, stderr))
+      exec(
+        `copy /b "${fichier}" "\\\\localhost\\${cible}"`,
+        { windowsHide: true, timeout: 15000, shell: 'cmd.exe' },
+        (err, _out, stderr) => fin(err, stderr)
+      )
     }
   })
 }

@@ -18,7 +18,6 @@ import type { PageDeCodes } from '@shared/ipc/materiel'
 const ESC = 0x1b
 const GS = 0x1d
 
-
 export type Codepage = PageDeCodes
 
 /** Valeur n de la commande ESC t pour chaque page de codes (valeurs Xprinter/Epson). */
@@ -33,35 +32,89 @@ const CODEPAGE_CMD: Record<Codepage, number> = {
  * (CP850 et CP858 partagent les mêmes positions pour les lettres françaises.)
  */
 const CP850_MAP: Record<string, number> = {
-  é: 0x82, è: 0x8a, ê: 0x88, ë: 0x89,
-  à: 0x85, â: 0x83, ä: 0x84,
+  é: 0x82,
+  è: 0x8a,
+  ê: 0x88,
+  ë: 0x89,
+  à: 0x85,
+  â: 0x83,
+  ä: 0x84,
   ç: 0x87,
-  ù: 0x97, û: 0x96, ü: 0x81,
-  ô: 0x93, ö: 0x94,
-  î: 0x8c, ï: 0x8b,
-  É: 0x90, Ç: 0x80,
+  ù: 0x97,
+  û: 0x96,
+  ü: 0x81,
+  ô: 0x93,
+  ö: 0x94,
+  î: 0x8c,
+  ï: 0x8b,
+  É: 0x90,
+  Ç: 0x80,
+  // Majuscules accentuées et guillemets : CP850/858 seulement (autres signes en CP437).
+  À: 0xb7,
+  Â: 0xb6,
+  È: 0xd4,
+  Ê: 0xd2,
+  Î: 0xd7,
+  Ô: 0xe2,
+  Ù: 0xeb,
+  Û: 0xea,
+  '«': 0xae,
+  '»': 0xaf,
   '°': 0xf8,
   '€': 0xd5 // uniquement CP858 — imprimera un autre signe en CP437
 }
 
+/**
+ * Windows-1252 = Latin-1 sauf 0x80–0x9F. Sans cette table, « € » (U+20AC) sortait en « ? »
+ * (corrigé en A3).
+ */
+const CP1252_EXTRA: Record<string, number> = { '€': 0x80, Œ: 0x8c, œ: 0x9c }
+
+/**
+ * Signes typographiques absents des pages de codes de l'imprimante, remplacés par leur équivalent
+ * ASCII. Indispensable : les désignations contiennent un tiret long (« Tomate — Carton de 24 ») et
+ * les nombres formatés en français une espace fine insécable.
+ */
+const TRANSLITTERATION: Record<string, string> = {
+  '—': '-', // tiret long
+  '–': '-', // tiret moyen
+  '‘': "'",
+  '’': "'", // apostrophe typographique
+  '“': '"',
+  '”': '"',
+  // Codes explicites : écrites telles quelles, ces espaces seraient invisibles dans le source.
+  [String.fromCharCode(0x00a0)]: ' ', // espace insécable
+  [String.fromCharCode(0x202f)]: ' ', // espace fine insécable (toLocaleString('fr-FR'))
+  '…': '...',
+  '×': 'x', // signe multiplier
+  œ: 'oe',
+  Œ: 'OE'
+}
+
 /** Convertit une chaîne en octets pour la page de codes choisie. */
-function encodeText(text: string, cp: Codepage): number[] {
+export function encodeText(text: string, cp: Codepage): number[] {
   const bytes: number[] = []
   for (const ch of text) {
     const code = ch.codePointAt(0) ?? 0x3f
     if (code < 0x80) {
       bytes.push(code) // ASCII pur : identique partout
-    } else if (cp === 'cp1252') {
-      bytes.push(code <= 0xff ? code : 0x3f) // Latin-1 direct
+    } else if (cp === 'cp1252' && CP1252_EXTRA[ch] !== undefined) {
+      bytes.push(CP1252_EXTRA[ch])
+    } else if (cp === 'cp1252' && code >= 0xa0 && code <= 0xff && TRANSLITTERATION[ch] === undefined) {
+      bytes.push(code) // Latin-1 direct
+    } else if (cp !== 'cp1252' && CP850_MAP[ch] !== undefined) {
+      bytes.push(CP850_MAP[ch])
+    } else if (TRANSLITTERATION[ch] !== undefined) {
+      bytes.push(...encodeText(TRANSLITTERATION[ch], cp))
     } else {
-      bytes.push(CP850_MAP[ch] ?? 0x3f) // table CP850/858, sinon '?'
+      bytes.push(0x3f) // inconnu : '?'
     }
   }
   return bytes
 }
 
-/** Petit assembleur d'octets. */
-class Builder {
+/** Petit assembleur d'octets (utilisé aussi par ticket.ts). */
+export class Builder {
   private data: number[] = []
   raw(...bytes: number[]): this {
     this.data.push(...bytes)
@@ -163,6 +216,8 @@ export function buildTestTicket(cp: Codepage): Buffer {
  * L'imprimante convertit ces 5 octets en impulsion électrique sur son port RJ11.
  * Test valide même sans tiroir branché si la commande part sans erreur.
  */
+export const IMPULSION_TIROIR = [ESC, 0x70, 0x00, 0x19, 0xfa] as const
+
 export function buildDrawerPulse(): Buffer {
-  return Buffer.from([ESC, 0x70, 0x00, 0x19, 0xfa])
+  return Buffer.from(IMPULSION_TIROIR)
 }

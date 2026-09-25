@@ -6,9 +6,22 @@ import { session } from '../core/session'
 import { enregistrerRelaisEcranClient, ouvrirEcranClient } from '../fenetres'
 import { buildDrawerPulse, buildTestTicket } from './escpos'
 import { envoyerBrut, listerImprimantes } from './imprimante'
+import { ecrireReglages, lireReglages } from './reglages'
 
 export function enregistrerIpcMateriel(): void {
   enregistrerRelaisEcranClient()
+
+  // Réglages de l'imprimante = clés imprimante_* des paramètres (Dev B, B5).
+  gerer('materiel:lireReglages', () => {
+    session.exiger()
+    return lireReglages(base())
+  })
+
+  // Le service des paramètres revérifie le rôle et journalise chaque clé modifiée.
+  gerer('materiel:enregistrerReglages', (reglages) => {
+    const u = session.exiger(['gerant'])
+    return ecrireReglages(base(), u, reglages)
+  })
 
   // La liste des imprimantes ne sert qu'aux réglages matériel, réservés au gérant (comme le ticket test).
   gerer('materiel:imprimantes', () => {

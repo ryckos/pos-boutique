@@ -296,6 +296,19 @@ L'impression et l'ouverture du tiroir se font **après** la validation de la tra
 l'imprimante échoue, la vente reste enregistrée : afficher « Vente enregistrée, ticket non
 imprimé » et proposer la réimpression.
 
+**Ticket imprimé et réimpression** (validé par Dev A, 2026-09-24, tâche A3) :
+- La **première impression réussie** d'une vente est l'original ; **toute impression suivante porte
+  la mention DUPLICATA**. Le processus principal le déduit du journal d'audit (action
+  `impression_ticket`, notée seulement après un envoi réussi) : l'écran ne peut pas demander un
+  second original. Un « Réimprimer » après une panne d'imprimante sort donc l'original.
+- **Qui réimprime** : une caissière, les tickets de **sa session ouverte** ; le gérant (et l'admin),
+  n'importe quel ticket, par son numéro.
+- Le **tiroir** s'ouvre à l'impression de l'original d'une vente payée, même en partie, en espèces ;
+  jamais pour un duplicata ni pour une vente sans espèces. Une ouverture manuelle (Réglages
+  matériel) est journalisée (`ouverture_tiroir_hors_vente`).
+- Le ticket tient sur 48 colonnes et affiche la TVA ventilée par taux (§ 6.4), les paiements avec
+  leur référence, les espèces reçues et la monnaie rendue.
+
 ### 6.4 TVA
 Les prix sont TTC. Le calcul se fait **par taux**, puis on additionne :
 ```
@@ -510,6 +523,12 @@ repart à 1 chaque année.
 | `imprimante_methode`             | `spooler` ou `share`                       | spooler                 |
 | `imprimante_cible`               | Nom de l'imprimante ou du partage          | —                       |
 | `imprimante_page_codes`          | Page de codes validée en Phase 0           | voir DECISIONS.md       |
+
+**Utilisation par la caisse (A3)** : le ticket prend son en-tête et son pied dans `boutique_nom`,
+`boutique_adresse` (une ligne imprimée par ligne saisie) et `ticket_pied` ; « Ma Boutique » s'imprime si
+le nom n'est pas renseigné. L'imprimante est réglée par les clés `imprimante_*`, depuis l'écran
+« Réglages matériel » (gérant). Tant que `imprimante_page_codes` est vide ou illisible, la page de codes
+est `cp858` (**provisoire**, D-A2).
 
 Ajouter ici toute nouvelle clé.
 

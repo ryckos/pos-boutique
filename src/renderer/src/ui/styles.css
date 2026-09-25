@@ -311,6 +311,23 @@ select {
   font-weight: 400;
   font-size: 13px;
 }
+/* Message de succès ou d'erreur en haut d'une page de gestion. */
+.page-message {
+  margin-bottom: 16px;
+}
+/* Réglages matériel (Dev A, A3) : libellé à gauche, valeur à droite. */
+.reglages-liste {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 24px;
+}
+.reglages-liste dt {
+  color: var(--encre-douce);
+  font-weight: 600;
+}
+.reglages-aide {
+  margin-bottom: 12px;
+}
 .formulaire {
   display: flex;
   flex-wrap: wrap;
@@ -616,6 +633,21 @@ select {
 .caisse-ecran-client {
   align-self: flex-start;
 }
+/* Ticket non imprimé : la vente est enregistrée, on propose Réimprimer (jamais bloquant). */
+.caisse-impression-echec {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.caisse-impression-detail {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+}
+.caisse-impression-actions {
+  display: flex;
+  gap: 8px;
+}
 /* Onglets des rayons, en bas de la grille comme sur la maquette (UI_UX § 5.2). */
 .caisse-onglets {
   display: flex;
@@ -689,6 +721,7 @@ select {
 }
 .caisse-ticket-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .caisse-ticket-actions .btn {

@@ -18,6 +18,64 @@ Format d'une entrée :
 
 ---
 
+## 2026-09-24 (fin) — a/caisse-ticket — A3 Ticket, tiroir, réglages matériel
+**Fait** :
+- A1.2 fusionnée (PR #15) et passée à ✅. D-A2 : personne ne se souvient du résultat de T2 →
+  page de codes en **réglage modifiable**, `cp858` **provisoire**, test à faire sur le terminal
+  (noté dans `DECISIONS.md`).
+- Partie 1 (`d5d9ba3`) : `materiel/ticket.ts` (ticket 48 colonnes : en-tête provisoire, lignes,
+  TOTAL double taille, TVA ventilée, paiements + références, espèces reçues, monnaie, DUPLICATA) ;
+  `modules/caisse/service-ticket.ts` (relecture en base, original/duplicata par le journal,
+  droits) ; `materiel/reglages.ts` (fichier local `materiel.json`) ; canaux `caisse:imprimerTicket`,
+  `caisse:reimprimerTicket`, `materiel:lireReglages`, `materiel:enregistrerReglages`. Impression
+  lancée APRÈS la vente, tiroir dans le même envoi si espèces ; échec = bandeau persistant
+  « ticket non imprimé » + Réimprimer / Plus tard. **Encodeur corrigé** : `€` en cp1252, tiret long
+  et espaces fines translittérés (sinon « ? » sur chaque ticket de carton).
+- Partie 2 : page « Réglages matériel » (`modules/reglages-materiel/`, gérant) : imprimante
+  détectée ou saisie, méthode, page de codes, **trois boutons de ticket de test** (cp858, cp1252,
+  cp437), ouverture du tiroir ; « Réimprimer un ticket » par numéro dans la caisse.
+- **Règles validées par Dev A**, écrites dans `REGLES_METIER.md` § 6.3 et § 13 : 1re impression
+  réussie = original, ensuite DUPLICATA ; caissière = tickets de sa session, gérant = tous ; tiroir
+  seulement pour l'original d'une vente avec espèces.
+- 177 tests (16 nouveaux), build OK ; essais sans imprimante validés par Dev A (droits, réglages,
+  erreurs claires, réimpression, refus pour la caissière).
+
+**En cours** : A3 🔄 — PR vers `test` à ouvrir. **Essai sur le terminal en attente** : l'imprimante
+n'est pas disponible pour l'instant, Dev A préviendra.
+
+**Prochaine étape** :
+1. Après fusion de la PR : garder A3 🔄 jusqu'à l'essai terminal (ne pas passer à ✅ avant).
+2. **Essai sur le terminal**, dès que Dev A a l'imprimante :
+   - Réglages matériel (Kossi `5678`) : choisir la Xprinter, imprimer les 3 tickets de test,
+     garder la page où « éèêàçùôî ÉÇ € » est juste ;
+   - reporter le résultat dans `DECISIONS.md` (D-A2 → décision prise) et changer
+     `REGLAGES_PAR_DEFAUT.pageDeCodes` dans `materiel/reglages.ts` si ce n'est pas cp858 ;
+   - vente espèces : ticket en < 3 s, accents, coupe, tiroir ouvert ; imprimante débranchée =
+     vente enregistrée + bandeau ; Réimprimer = original puis DUPLICATA ;
+   - vérifier aussi la fenêtre de paiement sur le 15,6″ et la douchette (20 scans).
+   Puis A3 → ✅.
+3. En attendant l'imprimante : **A4 — Sessions de caisse, rapports X et Z** (`/tache A4`, branche
+   `a/caisse-cloture` depuis `test`). L'ouverture de session existe déjà (A2) ; reste clôture,
+   espèces théoriques (test : 10 000 + 46 200 + 3 500 − 1 000 = 58 700, compté 58 200 → −500),
+   écart coloré, X, impression du Z (réutiliser `materiel/ticket.ts` et `envoyerBrut`).
+
+**Questions ouvertes** :
+- Essai terminal : Xprinter (A3, D-A2), fenêtre de paiement sur 15,6″, douchette réelle (A1.1).
+- Rappel à Dev B : fichier temporaire `electron.vite.config.1790196666553.mjs` toujours versionné.
+- D-A1 (stock négatif), D-A3 (plafond remise, pour A5) : inchangées.
+
+**Contrats** : ajoutés (Dev A) : `caisse:imprimerTicket`, `caisse:reimprimerTicket`,
+`materiel:lireReglages`, `materiel:enregistrerReglages`.
+
+**Suite (2026-09-25)** : `test` avait avancé (B2.3, B5 de Dev B). Branche **rebasée** sur `origin/test`
+(conflits de doc, routes et styles résolus en gardant les deux côtés ; 210 tests verts), puis
+**paramètres de B5 branchés** : en-tête et pied du ticket = `boutique_nom`, `boutique_adresse`,
+`ticket_pied` (« Ma Boutique » si le nom manque) ; réglages de l'imprimante = clés `imprimante_*`
+via `ecrireParametres` de Dev B (droits gérant, journal `modification_parametre`) ; **le fichier
+`materiel.json` et l'en-tête en dur sont supprimés**. Page de codes vide = `cp858` provisoire (D-A2).
+Sur le poste de Dev A, l'imprimante de test « XP-TEST » saisie avant est à ressaisir (elle vivait
+dans `materiel.json`).
+
 ## 2026-09-24 (suite) — a/caisse-onglets — A1.2 Grille, conditionnement (partie 2)
 **Fait** :
 - A2 fusionnée (PR #14) et passée à ✅ (commit `378bd39` en tête de cette branche).
