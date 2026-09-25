@@ -512,3 +512,12 @@ repart à 1 chaque année.
 | `imprimante_page_codes`          | Page de codes validée en Phase 0           | voir DECISIONS.md       |
 
 Ajouter ici toute nouvelle clé.
+
+**Droits** (validé par Dev B le 2026-09-24) : lecture par tous les rôles (la caissière imprime le
+ticket) ; écriture par l'**admin**, sauf les trois clés `imprimante_*`, que le **gérant** peut aussi
+modifier (écran « Réglages matériel » de Dev A, A3). Chaque clé réellement modifiée est journalisée
+(`modification_parametre`, avant/après).
+
+**Lecture** : `parametres:lire` (ou `lireParametres(db)` dans le processus principal) renvoie un objet
+typé, défauts appliqués. Une valeur vide ou illisible vaut son défaut ; une clé sans défaut vaut
+`null` (non renseignée) — c'est le cas du plafond de remise tant que D-A3 n'est pas tranchée.
