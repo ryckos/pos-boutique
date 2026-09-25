@@ -18,6 +18,59 @@ Format d'une entrée :
 
 ---
 
+## 2026-09-25 — b/parametres-ecran — B2.3 (fusionnée) et B5 Paramètres
+**Fait** :
+- **B2.3 fusionnée** (PR #16) : recherche sans accents ni casse (fonction SQL `sans_accents`
+  enregistrée sur la connexion ; F2 de la caisse en profite sans changement de contrat), création
+  d'un produit depuis un code scanné sur l'écran Produits. Le fichier temporaire
+  `electron.vite.config.<nombre>.mjs` signalé par Dev A est retiré et ignoré (`.gitignore`).
+- **B5 partie 1 fusionnée** (PR #17) : `parametres:lire` livré à Dev A (rendez-vous fin S5 tenu).
+- **Règle validée par Dev B** (écrite dans `REGLES_METIER.md` § 13) : lecture des paramètres par
+  tous les rôles ; écriture par l'admin, **le gérant pouvant aussi modifier les trois clés
+  `imprimante_*`** (écran « Réglages matériel » d'A3) ; chaque clé réellement changée est
+  journalisée (`modification_parametre`, avant/après).
+- **B5 partie 2** terminée, testée à la main par Dev B, poussée sur `b/parametres-ecran` (rebasée
+  sur `test` après #17) : `parametres:ecrire` (tout ou rien, valeurs revérifiées, `null` = retour au
+  défaut), écran « Paramètres » admin (blocs Boutique et ticket / Stock / Caisse, fenêtres
+  modales, `UI_UX.md` § 5.13), TVA par défaut proposée dans la fiche d'un nouveau produit.
+- 194 tests verts (25 nouveaux sur B5), build OK. Aucune migration.
+- Les PR #16 et #17 ont été fusionnées par commit de fusion (pas en squash) : sans conséquence,
+  mais une branche empilée se rebase alors par un simple `git rebase test`.
+
+**En cours** : PR B5 partie 2 (`b/parametres-ecran` → `test`) à ouvrir ou en relecture par Dev A.
+
+**Prochaine étape** :
+1. Après fusion de la partie 2 : B5 → ✅ dans `ETAT_AVANCEMENT.md` (ligne B5 et journal des
+   fusions), supprimer `b/parametres-ecran` ; supprimer aussi sur GitHub les branches déjà
+   fusionnées `b/recherche-scan` et `b/parametres` si ce n'est pas fait.
+2. Tâche suivante dans l'ordre du brief : **B3 Import Excel**, toujours bloquée par l'accord sur la
+   dépendance `xlsx` → la demander d'abord à Dev B. Sinon enchaîner **B4 Écran stock et
+   historique produit** (`/tache B4`, branche `b/stock` depuis `test` à jour), puis **B6 Stock
+   initial** (rendez-vous fin S7 pour la recette de Dev A).
+
+**Questions ouvertes** :
+- `xlsx` pour B3 : toujours à valider (bloque B3).
+- Plafond de remise caissier (D-A3) : toujours en attente de la cliente ; `plafondRemiseCaissier`
+  vaut `null` et l'admin pourra le saisir dans « Paramètres » dès la décision prise.
+- Réactivation (produit, compte, catégorie) : non prévue (cliente). Photo des produits : reportée.
+
+**Contrats** :
+- **Livré à Dev A** (PR #17) : `parametres:lire`, sans requête → `ParametresBoutique` : objet typé,
+  défauts appliqués (`ticketPied` « Merci de votre visite ! », `tvaDefaut` 18,
+  `peremptionSeuilJours` 15, `dormantJours` 60, `imprimanteMethode` 'spooler'), `null` si non
+  renseigné (`boutiqueNom`, `boutiqueAdresse`, `boutiqueNif`, `imprimanteCible`,
+  `plafondRemiseCaissier`, `imprimantePageCodes`). Tous les rôles connectés. **Pour le ticket
+  imprimé dans le principal, appeler directement `lireParametres(db)`** de
+  `modules/parametres/service.ts`, sans IPC. Débloque l'en-tête et le pied du ticket d'A3.
+- **En relecture** : `parametres:ecrire`, `Partial<ParametresBoutique>` → `ParametresBoutique`.
+  **Pour Dev A** : le gérant peut enregistrer `imprimanteMethode`, `imprimanteCible`,
+  `imprimantePageCodes` par ce canal → les réglages matériel d'A3 peuvent aller en base au lieu
+  d'un fichier local ; la page de codes gagnante (D-A2) aussi. Tout autre champ envoyé par un
+  gérant fait refuser l'ensemble.
+- Attendus inchangés : `sessionOuverte()` / `enregistrerMouvementCaisse()` (Dev A, fin S10).
+
+---
+
 ## 2026-09-24 — b/produits (fusionnée) — B2.2 Produits et conditionnements
 **Fait** :
 - **B2.2 terminée et fusionnée** (PR #10 partie 1, PR #12 le reste) ; branche supprimée.
