@@ -11,6 +11,7 @@ import { formaterFCFA } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import {
+  champsDepuisCodeScanne,
   champsDepuisFiche,
   champsVides,
   lireNombre,
@@ -27,6 +28,11 @@ import {
 export interface PropsFenetreProduit {
   /** Absent : nouveau produit. */
   produitId?: number
+  /**
+   * Création après le scan d'un code inconnu : le code est déjà celui de l'Unité et s'affiche en
+   * pastille. Doit avoir un format valide (voir champsDepuisCodeScanne).
+   */
+  codeScanne?: string
   /** Après l'enregistrement : les alertes de prix éventuelles, à afficher sur la page. */
   onEnregistre: (nom: string, alertes: AlertePrix[]) => void
   onFermer: () => void
@@ -49,7 +55,9 @@ const bloquerEntree = (e: React.KeyboardEvent): void => {
 
 export function FenetreProduit(props: PropsFenetreProduit): React.JSX.Element {
   const [champs, setChamps] = useState<ChampsProduit | null>(
-    props.produitId === undefined ? champsVides() : null
+    props.produitId !== undefined
+      ? null
+      : (props.codeScanne !== undefined && champsDepuisCodeScanne(props.codeScanne)) || champsVides()
   )
   const [categories, setCategories] = useState<Categorie[]>([])
   const [erreurChargement, setErreurChargement] = useState<string | null>(null)
@@ -125,6 +133,12 @@ export function FenetreProduit(props: PropsFenetreProduit): React.JSX.Element {
     <FenetreFormulaire
       key="fiche"
       titre={creation ? 'Nouveau produit' : `Modifier « ${champs.nom} »`}
+      pastille={
+        creation &&
+        props.codeScanne !== undefined && (
+          <span className="pastille pastille-ok">Code scanné : {props.codeScanne}</span>
+        )
+      }
       libelleValider={creation ? 'Créer le produit' : 'Enregistrer les modifications'}
       valide={saisieComplete(champs)}
       large

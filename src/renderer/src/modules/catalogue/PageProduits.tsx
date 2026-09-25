@@ -6,18 +6,18 @@ import { useCallback, useEffect, useState } from 'react'
 import type { AlertePrix } from '@shared/catalogue'
 import type { Categorie, LigneProduit } from '@shared/ipc/catalogue'
 import { formaterFCFA, formaterQuantite } from '@shared/format'
+import { normaliserRecherche } from '@shared/texte'
 import { appel } from '@renderer/lib/api'
+import { useScanner } from '@renderer/lib/useScanner'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { FenetreProduit } from './FenetreProduit'
+import { champsDepuisCodeScanne } from './saisieProduit'
 
 type Action =
-  | { type: 'creer' }
+  | { type: 'creer'; codeScanne?: string }
   | { type: 'modifier'; produitId: number }
   | { type: 'desactiver'; produit: LigneProduit }
   | null
-
-/** Minuscules sans accents : « pate » trouve « Pâte ». */
-const normaliser = (t: string): string => t.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('fr')
 
 export function PageProduits(): React.JSX.Element {
   const [produits, setProduits] = useState<LigneProduit[]>([])
@@ -28,6 +28,8 @@ export function PageProduits(): React.JSX.Element {
   const [erreur, setErreur] = useState<string | null>(null)
   const [succes, setSucces] = useState<string | null>(null)
   const [alertes, setAlertes] = useState<AlertePrix[]>([])
+  /** Code scanné qui ne correspond à aucun article en vente : on propose de créer le produit. */
+  const [codeInconnu, setCodeInconnu] = useState<string | null>(null)
 
   const charger = useCallback(() => {
     appel('catalogue:listeProduits')
@@ -42,6 +44,7 @@ export function PageProduits(): React.JSX.Element {
 
   const ouvrir = (a: Action): void => {
     setAction(a)
+    setCodeInconnu(null)
     setErreur(null)
     setSucces(null)
     setAlertes([])
@@ -54,11 +57,39 @@ export function PageProduits(): React.JSX.Element {
     charger()
   }
 
-  const cle = normaliser(recherche.trim())
+  // Un code ouvre la fiche du produit, ou propose de le créer s'il est inconnu.
+  const traiterCode = (code: string): void => {
+    setRecherche('')
+    appel('catalogue:rechercherCode', { code })
+      .then((article) => {
+        if (article) ouvrir({ type: 'modifier', produitId: article.produitId })
+        else {
+          ouvrir(null)
+          setCodeInconnu(code)
+        }
+      })
+      .catch((e: Error) => setErreur(e.message))
+  }
+
+  // Douchette hors de tout champ. Coupée pendant qu'une fenêtre est ouverte : la douchette y remplit
+  // le champ de code.
+  useScanner(traiterCode, { actif: action === null })
+
+  // Dans le champ de recherche, des chiffres suivis d'Entrée sont un code : tapé, collé ou scanné (la
+  // douchette tape dans le champ puis envoie Entrée). Un nom de produit n'est jamais fait que de chiffres.
+  const surToucheRecherche = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    const code = recherche.trim()
+    if (e.key === 'Enter' && /^\d+$/.test(code)) {
+      e.preventDefault()
+      traiterCode(code)
+    }
+  }
+
+  const cle = normaliserRecherche(recherche.trim())
   const visibles = produits.filter(
     (p) =>
       (filtreRayon === '' || (p.categorie ?? '').split(' › ')[0] === filtreRayon) &&
-      (cle === '' || normaliser(p.nom).includes(cle))
+      (cle === '' || normaliserRecherche(p.nom).includes(cle))
   )
 
   return (
@@ -87,8 +118,24 @@ export function PageProduits(): React.JSX.Element {
         </p>
       )}
 
+      {codeInconnu !== null &&
+        (champsDepuisCodeScanne(codeInconnu) ? (
+          <div className="bandeau bandeau-action" role="status" style={{ marginBottom: 16 }}>
+            <span>Code {codeInconnu} inconnu : aucun produit en vente ne porte ce code.</span>
+            <button className="btn" onClick={() => ouvrir({ type: 'creer', codeScanne: codeInconnu })}>
+              Créer le produit avec ce code
+            </button>
+          </div>
+        ) : (
+          <p className="alerte" role="alert" style={{ marginBottom: 16 }}>
+            Code {codeInconnu} illisible : un code-barres a 8 à 14 chiffres, un code PLU 1 à 5. Vérifiez le
+            code ou scannez à nouveau.
+          </p>
+        ))}
+
       {action?.type === 'creer' && (
         <FenetreProduit
+          codeScanne={action.codeScanne}
           onFermer={() => ouvrir(null)}
           onEnregistre={(nom, a) => apresEnregistrement(`« ${nom} » est créé et se vend dès maintenant.`, a)}
         />
@@ -117,9 +164,10 @@ export function PageProduits(): React.JSX.Element {
         <label className="champ champ-large">
           Rechercher
           <input
-            placeholder="Nom du produit"
+            placeholder="Nom du produit, ou code puis Entrée"
             value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
+            onKeyDown={surToucheRecherche}
           />
         </label>
         <label className="champ">

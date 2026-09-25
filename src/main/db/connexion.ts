@@ -3,6 +3,7 @@
  * ZONE PARTAGÉE.
  */
 import { DatabaseSync } from 'node:sqlite'
+import { normaliserRecherche } from '@shared/texte'
 
 export type Db = DatabaseSync
 
@@ -14,6 +15,11 @@ export function ouvrirBase(chemin: string): Db {
   db.exec('PRAGMA foreign_keys = ON')
   db.exec('PRAGMA busy_timeout = 5000')
   if (chemin !== ':memory:') db.exec('PRAGMA journal_mode = WAL') // résistance aux coupures
+  // Recherche insensible aux accents : une fonction calculée plutôt qu'une colonne normalisée,
+  // qu'il faudrait tenir à jour à chaque écriture (le catalogue reste petit).
+  db.function('sans_accents', { deterministic: true }, (t) =>
+    t === null ? null : normaliserRecherche(String(t))
+  )
   return db
 }
 

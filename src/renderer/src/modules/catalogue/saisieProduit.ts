@@ -3,6 +3,7 @@
  * envoyée au processus principal (des nombres). Propriétaire : Dev B. Testée dans
  * tests/saisie-produit.test.ts. Le principal revérifie tout.
  */
+import { FORMAT_CODE_BARRES, FORMAT_CODE_PLU } from '@shared/catalogue'
 import type {
   FicheProduit,
   SaisieConditionnement,
@@ -69,6 +70,20 @@ export function champsVides(): ChampsProduit {
     uniteVente: { prix: '', codeBarres: '', codePlu: '', bouton: false, ordre: '0' },
     conditionnements: []
   }
+}
+
+/**
+ * Fiche vierge pré-remplie après le scan d'un code inconnu (UI_UX § 5.7) : le code devient celui de
+ * l'Unité, en code-barres (8 à 14 chiffres) ou en code PLU (1 à 5 chiffres). Null si le code n'a
+ * aucun de ces deux formats (REGLES_METIER § 2.3) : il ne peut pas servir à créer un produit.
+ */
+export function champsDepuisCodeScanne(code: string): ChampsProduit | null {
+  const c = code.trim()
+  const champs = champsVides()
+  if (FORMAT_CODE_BARRES.test(c)) champs.uniteVente.codeBarres = c
+  else if (FORMAT_CODE_PLU.test(c)) champs.uniteVente.codePlu = c
+  else return null
+  return champs
 }
 
 export function nouveauConditionnement(): ChampsConditionnement {

@@ -3,6 +3,7 @@
  * S'appuie sur la vue v_catalogue_vente (un scan → un conditionnement).
  */
 import type { ArticleCatalogue, ProduitStock } from '@shared/types'
+import { normaliserRecherche } from '@shared/texte'
 import type { Db } from '../../db/connexion'
 import { toutes, une } from '../../db/requetes'
 
@@ -37,16 +38,17 @@ export function rechercherParCode(db: Db, code: string): ArticleCatalogue | null
 }
 
 /**
- * Recherche par nom. TODO Dev B (B2.3) : rendre la recherche insensible aux accents
- * (« tomate » doit trouver « Tomaté », « pate » doit trouver « pâte »).
+ * Recherche par nom, insensible aux accents et à la casse (« pate » trouve « Pâte »).
+ * instr() plutôt que LIKE : un « % » ou un « _ » tapé est cherché tel quel, pas comme un joker.
  */
 export function rechercherTexte(db: Db, texte: string, limite = 20): ArticleCatalogue[] {
   const t = texte.trim()
   if (t.length < 2) return []
   return toutes<LigneArticle>(
     db,
-    `SELECT ${COLONNES} FROM v_catalogue_vente v ${JOINTURE_RAYON} WHERE v.designation LIKE ? ORDER BY v.designation LIMIT ?`,
-    `%${t}%`,
+    `SELECT ${COLONNES} FROM v_catalogue_vente v ${JOINTURE_RAYON}
+     WHERE instr(sans_accents(v.designation), ?) > 0 ORDER BY v.designation LIMIT ?`,
+    normaliserRecherche(t),
     limite
   ).map(versArticle)
 }

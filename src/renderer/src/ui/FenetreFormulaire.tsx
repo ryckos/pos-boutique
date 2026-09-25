@@ -13,6 +13,8 @@ import { useEffect, useId, useRef, useState } from 'react'
 
 export interface PropsFenetreFormulaire {
   titre: string
+  /** Pastille à droite du titre (« Code scanné : … »). */
+  pastille?: React.ReactNode
   /** Verbe qui dit l'action : « Créer la catégorie », « Désactiver le compte »… */
   libelleValider: string
   valide: boolean
@@ -68,6 +70,7 @@ export function FenetreFormulaire(props: PropsFenetreFormulaire): React.JSX.Elem
       >
         <div className="fenetre-entete">
           <h2 id={idTitre}>{props.titre}</h2>
+          {props.pastille}
         </div>
         <form ref={refFormulaire} className="formulaire" onSubmit={soumettre}>
           {props.children}

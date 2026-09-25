@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  champsDepuisCodeScanne,
   champsDepuisFiche,
   champsVides,
   lireNombre,
@@ -82,5 +83,23 @@ describe('Fiche produit : lecture des champs tapés', () => {
     ])
     modifierProduit(db, 1, 3, versSaisie(champs))
     expect(ficheProduit(db, 3).conditionnements.map((c) => c.prixVente)).toEqual([1000, 7500])
+  })
+})
+
+describe('Fiche pré-remplie après le scan d’un code inconnu (B2.3)', () => {
+  it('met un code de 8 à 14 chiffres en code-barres de l’Unité', () => {
+    const c = champsDepuisCodeScanne('6034000099999')!
+    expect(c.uniteVente).toMatchObject({ codeBarres: '6034000099999', codePlu: '' })
+    expect(c.nom).toBe('')
+  })
+
+  it('met un code de 1 à 5 chiffres en code PLU', () => {
+    expect(champsDepuisCodeScanne(' 101 ')!.uniteVente).toMatchObject({ codeBarres: '', codePlu: '101' })
+  })
+
+  it('refuse un code d’un autre format', () => {
+    expect(champsDepuisCodeScanne('123456')).toBeNull()
+    expect(champsDepuisCodeScanne('ABC12345')).toBeNull()
+    expect(champsDepuisCodeScanne('')).toBeNull()
   })
 })
