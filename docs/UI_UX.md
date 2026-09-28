@@ -360,6 +360,11 @@ et stocks bas, Dormants). Tableau Produit / Rayon / Stock / Seuil / Coût moyen 
 stock, en petit, la répartition indicative (« = 1 × Carton de 24 + 7 × Lot de 3 + 1 × Unité »). État :
 pastille « Rupture » ou « Stock bas », et « Dormant » avec la date de la dernière vente ou « Jamais
 vendu ». Le coût moyen s'affiche au dixième de franc (262,8 F), les valeurs en francs entiers.
+Chaque ligne a un bouton « Historique », qui ouvre une fenêtre large : en pastille le stock actuel et
+sa répartition ; deux dates « Du » et « Au » (30 derniers jours par défaut) et « Afficher la période » ;
+un tableau Date / Mouvement / Document / Quantité (+72, −1) / Stock / Par, qui commence par « Stock au
+début de la période » et finit, en gras, par « Stock à la fin de la période ». Sous le document, en petit :
+le lot et le motif. Les types s'affichent en clair (Vente, Réception, Ajustement, Annulation…).
 
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.

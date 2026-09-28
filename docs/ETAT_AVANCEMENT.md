@@ -65,7 +65,7 @@ Le socle comprend :
 | B2.2  | Produits et conditionnements, codes internes    | B   | ✅     | PR #10 et #12 — écrans Produits et fiche produit, garde-fou prix, codes internes EAN-13, `conditionnementsProduit` |
 | B2.3  | Recherche sans accents, création depuis scan    | B   | ✅     | PR #16 — recherche F2 de la caisse sans accents sans changement de contrat |
 | B3    | Import Excel du catalogue                       | B   | ✅     | PR #20 — vérifier puis importer tout ou rien, modèle, rayons créés, prix d'achat indicatif (migration), `xlsx` 0.20.3 (D-18) |
-| B4    | Écran stock et historique produit               | B   | 🔄     | `b/stock` — partie 1 (liste, valeur, alertes, répartition, dormants ; `stock:etat`) prête ; partie 2 : historique d'un produit |
+| B4    | Écran stock et historique produit               | B   | 🔄     | partie 1 `b/stock` (liste, valeur, alertes, répartition, dormants ; `stock:etat`) en relecture ; partie 2 `b/stock-historique` (historique d'un produit, `stock:historiqueProduit`) prête |
 | B5    | Paramètres de la boutique                       | B   | ✅     | PR #17 (`parametres:lire`) et #19 (`parametres:ecrire` admin, gérant pour l’imprimante, journalisé ; écran Paramètres ; TVA par défaut dans la fiche produit) |
 | B6    | Stock initial de démarrage                      | B   | ✅     | PR #21 — comptage par conditionnement, produit par produit, CUMP = coût saisi (pré-rempli par l'import), lot si péremption, annulation par contre-passation ; testé à la main |
 
