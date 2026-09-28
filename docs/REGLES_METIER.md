@@ -209,6 +209,21 @@ mouvement de −24.
 - **Stock bas** : stock ≤ seuil d'alerte.
 - **Produit dormant** : aucune vente depuis N jours (paramètre).
 
+Précisions validées par Dev B le 2026-09-28 (écran stock, B4) :
+- **Dormant** : seules comptent les ventes **terminées** (tickets et factures ; ni proforma, ni retour,
+  ni vente annulée). Un produit jamais vendu compte depuis sa **première entrée en stock** (à défaut,
+  sa création). Seul un produit **qui a du stock** peut être dormant : sans stock, aucun argent n'est
+  immobilisé. Seuil : `dormant_jours` (§ 13).
+- **Répartition indicative** d'un stock en conditionnements : on remplit d'abord le plus grand
+  conditionnement actif, puis le suivant, le reste en unités (46 = 1 carton de 24 + 7 lots de 3 +
+  1 unité ; 41 = 1 carton + 5 lots + 2 unités). Rien n'est affiché si le stock est ≤ 0 ou si la
+  répartition n'ajoute rien (produit sans conditionnement plus grand que l'Unité, ou stock plus petit
+  que le moindre). Au poids, le reste à virgule reste en unités.
+- **Historique d'un produit** : sur une période (30 derniers jours par défaut), il part du stock au
+  début de la période, liste chaque mouvement du plus ancien au plus récent avec le stock après chacun,
+  et finit sur le stock actuel. Document lisible : n° de ticket pour une vente, « Stock initial »,
+  « Stock de démonstration », « Annulation » avec le motif ; n° RC ou INV dès que B8 et B12 existent.
+
 ### 3.4 Stock négatif — ⚠ DÉCISION EN ATTENTE
 Le schéma autorise un stock négatif, par exemple quand on vend une baguette avant que la réception
 du matin soit saisie. La politique reste à valider avec la cliente (voir `DECISIONS.md`). **D'ici

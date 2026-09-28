@@ -1,4 +1,45 @@
-/** Propriétaire : Dev B. Stock initial de démarrage (B6) ; l'écran stock (B4) viendra ici aussi. */
+/** Propriétaire : Dev B. Écran stock (B4) et stock initial de démarrage (B6). */
+import type { PartRepartition } from '../stock'
+
+// ─── Écran stock (B4) ────────────────────────────────────────────────────────
+
+/** Rupture : stock ≤ 0. Stock bas : stock ≤ seuil d'alerte (REGLES_METIER § 3.3). */
+export type NiveauStock = 'rupture' | 'stock_bas' | 'normal'
+
+export interface LigneStock {
+  produitId: number
+  nom: string
+  /** Nom du rayon (premier niveau), null si non classé. */
+  rayon: string | null
+  unite: string
+  /** En unités de base ; peut être négatif (D-A1). */
+  stock: number
+  seuil: number
+  /** Coût moyen pondéré par unité de base. */
+  cump: number
+  /** stock × CUMP, en FCFA entiers. */
+  valeur: number
+  niveau: NiveauStock
+  /** « 1 × Carton de 24 + 7 × Lot de 3 + 1 × Unité », à titre indicatif ; null si sans intérêt. */
+  repartition: PartRepartition[] | null
+  /** Date de la dernière vente (AAAA-MM-JJ HH:MM:SS), null si jamais vendu. */
+  derniereVente: string | null
+  /** Du stock, mais aucune vente depuis `dormantJours` jours. */
+  dormant: boolean
+}
+
+export interface EtatStock {
+  lignes: LigneStock[]
+  /** Somme des valeurs, en FCFA. */
+  valeurTotale: number
+  nbRuptures: number
+  nbStockBas: number
+  nbDormants: number
+  /** Seuil des produits dormants (paramètre `dormant_jours`). */
+  dormantJours: number
+}
+
+// ─── Stock initial (B6) ──────────────────────────────────────────────────────
 
 /**
  * - `a_faire` : jamais compté, sans réception : on peut saisir son stock initial.
@@ -62,6 +103,8 @@ export interface SaisieStockInitial {
 }
 
 export interface ContratStock {
+  /** Stock de tous les produits actifs, valeur, alertes, dormants. Gérant (valeur au CUMP). */
+  'stock:etat': { requete: void; reponse: EtatStock }
   /** Tous les produits actifs avec leur état de stock initial. Gérant. */
   'stock:stockInitial': { requete: void; reponse: EtatStockInitialBoutique }
   'stock:ficheStockInitial': { requete: { produitId: number }; reponse: FicheStockInitial }

@@ -54,16 +54,6 @@ export interface ArticleCatalogue {
   categorie?: string | null
 }
 
-export interface ProduitStock {
-  id: number
-  nom: string
-  unite: string
-  stockActuel: number
-  seuilAlerte: number
-  valeurStock: number
-  enAlerte: boolean
-}
-
 /** Ce que l'écran client (11,6″) affiche. */
 export interface LignePanierClient {
   designation: string
