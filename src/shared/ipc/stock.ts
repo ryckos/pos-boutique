@@ -1,5 +1,6 @@
 /** Propriétaire : Dev B. Écran stock (B4) et stock initial de démarrage (B6). */
 import type { PartRepartition } from '../stock'
+import type { TypeMouvement } from '../types'
 
 // ─── Écran stock (B4) ────────────────────────────────────────────────────────
 
@@ -37,6 +38,40 @@ export interface EtatStock {
   nbDormants: number
   /** Seuil des produits dormants (paramètre `dormant_jours`). */
   dormantJours: number
+}
+
+/** Un mouvement de l'historique d'un produit, lisible par le gérant. */
+export interface MouvementHistorique {
+  id: number
+  /** AAAA-MM-JJ HH:MM:SS, heure locale. */
+  horodatage: string
+  type: TypeMouvement
+  /** En unités de base, signée (+ entrée, − sortie). */
+  quantite: number
+  /** Stock du produit juste après ce mouvement. */
+  stockApres: number
+  /** « Ticket T-2026-000123 », « Stock initial »… ; null si aucun document. */
+  document: string | null
+  /** Numéro du lot d'arrivage (sinon sa date de péremption), null si sans lot. */
+  lot: string | null
+  motif: string | null
+  utilisateur: string
+}
+
+export interface HistoriqueProduit {
+  produitId: number
+  nom: string
+  stockActuel: number
+  repartition: PartRepartition[] | null
+  /** Période affichée, AAAA-MM-JJ, bornes comprises. */
+  du: string
+  au: string
+  /** Stock au début de la période (somme des mouvements antérieurs). */
+  stockDebut: number
+  /** Du plus ancien au plus récent. */
+  mouvements: MouvementHistorique[]
+  /** Stock à la fin de la période (= stock actuel si la période va jusqu'à aujourd'hui). */
+  stockFin: number
 }
 
 // ─── Stock initial (B6) ──────────────────────────────────────────────────────
@@ -105,6 +140,14 @@ export interface SaisieStockInitial {
 export interface ContratStock {
   /** Stock de tous les produits actifs, valeur, alertes, dormants. Gérant (valeur au CUMP). */
   'stock:etat': { requete: void; reponse: EtatStock }
+  /**
+   * Historique d'un produit sur une période (par défaut les 30 derniers jours) : « pourquoi il reste
+   * 41 boîtes ». Gérant.
+   */
+  'stock:historiqueProduit': {
+    requete: { produitId: number; du?: string | null; au?: string | null }
+    reponse: HistoriqueProduit
+  }
   /** Tous les produits actifs avec leur état de stock initial. Gérant. */
   'stock:stockInitial': { requete: void; reponse: EtatStockInitialBoutique }
   'stock:ficheStockInitial': { requete: { produitId: number }; reponse: FicheStockInitial }

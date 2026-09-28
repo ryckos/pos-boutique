@@ -2,6 +2,7 @@
  * Règles pures du stock, partagées par le service et les écrans. Propriétaire : Dev B.
  * REGLES_METIER § 3.3.
  */
+import type { TypeMouvement } from './types'
 
 export interface ConditionnementRepartition {
   nom: string
@@ -47,3 +48,16 @@ export function repartirStock(
 
 /** Évite les restes du type 0,30000000000000004 sur les produits au poids. */
 const arrondir = (n: number): number => Math.round(n * 1000) / 1000
+
+/** Libellé d'un type de mouvement pour le gérant (jamais le code technique à l'écran). */
+export const LIBELLES_MOUVEMENT: Record<TypeMouvement, string> = {
+  reception: 'Réception',
+  vente: 'Vente',
+  retour_client: 'Retour client',
+  retour_fournisseur: 'Retour fournisseur',
+  ajustement_inventaire: 'Ajustement',
+  perte_peremption: 'Périmé retiré',
+  casse: 'Casse',
+  vol: 'Vol',
+  contre_passation: 'Annulation'
+}

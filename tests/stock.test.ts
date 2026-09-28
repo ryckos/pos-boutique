@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { etatStock } from '../src/main/modules/stock/etat'
+import { historiqueProduit } from '../src/main/modules/stock/historique'
 import { repartirStock } from '../src/shared/stock'
-import { enregistrerMouvement } from '../src/main/core/mouvements'
+import { contrePasser, enregistrerMouvement } from '../src/main/core/mouvements'
 import type { Db } from '../src/main/db/connexion'
 import { executer, une } from '../src/main/db/requetes'
 import { baseAvecDemo } from './aide'
 
 // Produits de démo (tous entrés en stock aujourd'hui, jamais vendus).
 const RIZ = 1
+const LAIT = 2
 const TOMATE = 3
 const BAGUETTE = 5
 const SAVON = 7
@@ -239,5 +241,93 @@ describe('Stock — produits dormants (aucune vente depuis dormant_jours, 60 par
     const etat = etatStock(db)
     expect(etat.dormantJours).toBe(30)
     expect(etat.nbDormants).toBe(1)
+  })
+})
+
+describe('Stock — historique d’un produit (« pourquoi il reste N boîtes »)', () => {
+  const aujourdhui = (db: Db): string => une<{ d: string }>(db, "SELECT date('now','localtime') AS d")!.d
+  const venteDe = (db: Db, n: number): number =>
+    une<{ id: number }>(
+      db,
+      "SELECT id FROM mouvements_stock WHERE produit_id = ? AND type = 'vente' ORDER BY id LIMIT 1 OFFSET ?",
+      TOMATE,
+      n
+    )!.id
+
+  it('part du stock de début, suit chaque mouvement et finit sur le stock actuel', () => {
+    const db = baseAvecDemo()
+    vendre(db, TOMATE, dans(db, 0))
+    vendre(db, TOMATE, dans(db, 0))
+    vendre(db, TOMATE, dans(db, 0))
+    const kossi = une<{ id: number }>(db, "SELECT id FROM utilisateurs WHERE nom = 'Kossi'")!.id
+    contrePasser(db, venteDe(db, 1), 'Article reposé en rayon', kossi)
+
+    const h = historiqueProduit(db, TOMATE)
+    expect(h.stockDebut).toBe(0)
+    expect(h.mouvements.map((m) => [m.type, m.quantite, m.stockApres, m.utilisateur])).toEqual([
+      ['reception', 72, 72, 'Patron'],
+      ['vente', -1, 71, 'Afi'],
+      ['vente', -1, 70, 'Afi'],
+      ['vente', -1, 69, 'Afi'],
+      ['contre_passation', 1, 70, 'Kossi']
+    ])
+    expect(h.stockFin).toBe(70)
+    expect(h.stockActuel).toBe(70)
+    // 70 = 2 cartons + 7 lots + 1 unité
+    expect(h.repartition).toEqual([
+      { nom: 'Carton de 24', nombre: 2 },
+      { nom: 'Lot de 3', nombre: 7 },
+      { nom: 'Unité', nombre: 1 }
+    ])
+  })
+
+  it('donne un document lisible : ticket, stock de démonstration, annulation du même ticket avec son motif', () => {
+    const db = baseAvecDemo()
+    vendre(db, TOMATE, dans(db, 0))
+    const kossi = une<{ id: number }>(db, "SELECT id FROM utilisateurs WHERE nom = 'Kossi'")!.id
+    contrePasser(db, venteDe(db, 0), 'Erreur de saisie', kossi)
+
+    const [demo, vente, annulation] = historiqueProduit(db, TOMATE).mouvements
+    expect(demo.document).toBe('Stock de démonstration')
+    expect(vente.document).toMatch(/^Ticket T-TEST-\d+$/)
+    expect(annulation).toMatchObject({ document: vente.document, motif: 'Erreur de saisie' })
+  })
+
+  it('libellé « Stock initial » et numéro du lot d’arrivage', () => {
+    const db = baseAvecDemo()
+    const admin = une<{ id: number }>(db, "SELECT id FROM utilisateurs WHERE role = 'admin'")!.id
+    enregistrerMouvement(db, {
+      produitId: RIZ,
+      type: 'ajustement_inventaire',
+      quantite: 5,
+      coutUnitaire: 3200,
+      documentType: 'stock_initial',
+      utilisateurId: admin
+    })
+    expect(historiqueProduit(db, RIZ).mouvements[1]).toMatchObject({ document: 'Stock initial', lot: null })
+    expect(historiqueProduit(db, LAIT).mouvements[0].lot).toBe('DEMO-01')
+  })
+
+  it('un mouvement d’avant la période compte dans le stock de début', () => {
+    const db = baseAvecDemo()
+    const demain = une<{ d: string }>(db, "SELECT date('now','localtime','+1 day') AS d")!.d
+    const h = historiqueProduit(db, TOMATE, { du: demain, au: demain })
+    expect(h).toMatchObject({ stockDebut: 72, mouvements: [], stockFin: 72, du: demain, au: demain })
+  })
+
+  it('par défaut, les 30 derniers jours jusqu’à aujourd’hui', () => {
+    const db = baseAvecDemo()
+    const h = historiqueProduit(db, TOMATE)
+    expect(h.au).toBe(aujourdhui(db))
+    expect(h.du).toBe(une<{ d: string }>(db, "SELECT date('now','localtime','-30 days') AS d")!.d)
+  })
+
+  it('refuse une période à l’envers, une date illisible et un produit inconnu', () => {
+    const db = baseAvecDemo()
+    expect(() => historiqueProduit(db, TOMATE, { du: '2026-09-10', au: '2026-09-01' })).toThrow(
+      'La date de début doit précéder la date de fin'
+    )
+    expect(() => historiqueProduit(db, TOMATE, { du: '10/09/2026' })).toThrow('date de début est invalide')
+    expect(() => historiqueProduit(db, 999)).toThrow('Produit introuvable')
   })
 })

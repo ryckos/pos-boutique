@@ -5,11 +5,12 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import type { EtatStock, LigneStock } from '@shared/ipc/stock'
-import type { PartRepartition } from '@shared/stock'
 import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { normaliserRecherche } from '@shared/texte'
 import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
+import { FenetreHistorique } from './FenetreHistorique'
+import { texteRepartition } from './affichageStock'
 
 type Filtre = 'tous' | 'alertes' | 'dormants'
 
@@ -18,9 +19,6 @@ const NIVEAUX: Record<LigneStock['niveau'], { texte: string; classe: string } | 
   stock_bas: { texte: 'Stock bas', classe: 'pastille-alerte' },
   normal: null
 }
-
-const texteRepartition = (parts: PartRepartition[]): string =>
-  `= ${parts.map((p) => `${formaterQuantite(p.nombre)} × ${p.nom}`).join(' + ')}`
 
 /** Coût moyen à 0,1 F près : le CUMP n'est pas un montant payé, il peut valoir 262,8. */
 const texteCump = (cump: number): string => `${formaterQuantite(Math.round(cump * 10) / 10)} F`
@@ -31,6 +29,7 @@ export function PageStock(): React.JSX.Element {
   const [rayon, setRayon] = useState('')
   const [recherche, setRecherche] = useState('')
   const [erreur, setErreur] = useState<string | null>(null)
+  const [historique, setHistorique] = useState<LigneStock | null>(null)
 
   const charger = useCallback(() => {
     appel('stock:etat')
@@ -56,7 +55,7 @@ export function PageStock(): React.JSX.Element {
       })
       .catch((e: Error) => setErreur(e.message))
   }
-  useScanner(traiterCode)
+  useScanner(traiterCode, { actif: historique === null })
 
   const surToucheRecherche = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     const code = recherche.trim()
@@ -106,6 +105,14 @@ export function PageStock(): React.JSX.Element {
         <p className="alerte page-message" role="alert">
           {erreur}
         </p>
+      )}
+
+      {historique && (
+        <FenetreHistorique
+          produitId={historique.produitId}
+          nom={historique.nom}
+          onFermer={() => setHistorique(null)}
+        />
       )}
 
       <div className="filtres">
@@ -159,6 +166,7 @@ export function PageStock(): React.JSX.Element {
                 <th className="nombre">Coût moyen</th>
                 <th className="nombre">Valeur</th>
                 <th>État</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -185,6 +193,11 @@ export function PageStock(): React.JSX.Element {
                             : 'Jamais vendu'}
                         </span>
                       )}
+                    </td>
+                    <td>
+                      <button type="button" className="btn btn-secondaire" onClick={() => setHistorique(l)}>
+                        Historique
+                      </button>
                     </td>
                   </tr>
                 )

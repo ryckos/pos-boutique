@@ -3,6 +3,7 @@ import { base } from '../../db/connexion'
 import { gerer } from '../../ipc/gerer'
 import { session } from '../../core/session'
 import { etatStock } from './etat'
+import { historiqueProduit } from './historique'
 import {
   annulerStockInitial,
   enregistrerStockInitial,
@@ -15,6 +16,10 @@ export function enregistrerIpcStock(): void {
   gerer('stock:etat', () => {
     session.exiger(['gerant'])
     return etatStock(base())
+  })
+  gerer('stock:historiqueProduit', ({ produitId, du, au }) => {
+    session.exiger(['gerant'])
+    return historiqueProduit(base(), produitId, { du, au })
   })
 
   // Stock initial : gérant (matrice : « valider un inventaire », même mécanisme).
