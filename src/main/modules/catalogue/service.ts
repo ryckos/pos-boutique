@@ -2,7 +2,7 @@
  * Catalogue de vente. Propriétaire : Dev B. Consommé par Dev A via les canaux catalogue:*.
  * S'appuie sur la vue v_catalogue_vente (un scan → un conditionnement).
  */
-import type { ArticleCatalogue, ProduitStock } from '@shared/types'
+import type { ArticleCatalogue } from '@shared/types'
 import { normaliserRecherche } from '@shared/texte'
 import type { Db } from '../../db/connexion'
 import { toutes, une } from '../../db/requetes'
@@ -80,11 +80,3 @@ export function conditionnementsProduit(db: Db, produitId: number): ArticleCatal
   ).map(versArticle)
 }
 
-export function produitsAvecStock(db: Db): ProduitStock[] {
-  return toutes<Omit<ProduitStock, 'enAlerte'>>(
-    db,
-    `SELECT id, nom, unite, stock_actuel AS stockActuel, seuil_alerte AS seuilAlerte,
-            valeur_stock AS valeurStock
-     FROM v_stock_produits ORDER BY nom`
-  ).map((p) => ({ ...p, enAlerte: p.stockActuel <= p.seuilAlerte }))
-}

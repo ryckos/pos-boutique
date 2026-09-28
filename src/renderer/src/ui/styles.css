@@ -191,6 +191,15 @@ select {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+/* Précision sous une valeur de tableau (répartition du stock, date de dernière vente). */
+.tableau .detail {
+  display: block;
+  font-size: 13px;
+  color: var(--encre-douce);
+}
+.tableau .pastille + .pastille {
+  margin-left: 6px;
+}
 
 .pastille {
   display: inline-block;

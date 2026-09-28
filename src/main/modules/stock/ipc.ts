@@ -2,6 +2,7 @@
 import { base } from '../../db/connexion'
 import { gerer } from '../../ipc/gerer'
 import { session } from '../../core/session'
+import { etatStock } from './etat'
 import {
   annulerStockInitial,
   enregistrerStockInitial,
@@ -10,6 +11,12 @@ import {
 } from './stock-initial'
 
 export function enregistrerIpcStock(): void {
+  // Écran stock : gérant, car il montre la valeur du stock au CUMP.
+  gerer('stock:etat', () => {
+    session.exiger(['gerant'])
+    return etatStock(base())
+  })
+
   // Stock initial : gérant (matrice : « valider un inventaire », même mécanisme).
   gerer('stock:stockInitial', () => {
     session.exiger(['gerant'])

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   conditionnementsProduit,
   grille,
-  produitsAvecStock,
   rechercherParCode,
   rechercherTexte
 } from '../src/main/modules/catalogue/service'
@@ -41,11 +40,6 @@ describe('Catalogue — le contrat du scan (consommé par la caisse)', () => {
 
   it('recherche par nom', () => {
     expect(rechercherTexte(baseAvecDemo(), 'tomate')).toHaveLength(3)
-  })
-
-  it('signale les produits sous le seuil', () => {
-    const lait = produitsAvecStock(baseAvecDemo()).find((p) => p.nom.startsWith('Lait'))
-    expect(lait).toMatchObject({ stockActuel: 12, enAlerte: false, valeurStock: 25200 })
   })
 })
 

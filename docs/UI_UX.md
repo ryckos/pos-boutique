@@ -352,6 +352,15 @@ fenêtre : un champ par conditionnement (du carton à l'unité), le total conver
 une alerte si le coût atteint le prix de vente, et **« Enregistrer le stock de ce produit »**. Après
 l'enregistrement, message vert « … Au suivant ! » et retour à la liste.
 
+### 5.16 Stock (Dev B — B4, gérant)
+Page « Stock » du menu. En-tête : pastilles « N en rupture » (rouge), « N en stock bas » (ambre),
+« N dormants » (gris), puis la valeur totale au coût moyen. Filtres : recherche (nom, ou code puis
+Entrée ; la douchette affiche le produit scanné), rayon, et « Afficher » (Tous les produits, Ruptures
+et stocks bas, Dormants). Tableau Produit / Rayon / Stock / Seuil / Coût moyen / Valeur / État. Sous le
+stock, en petit, la répartition indicative (« = 1 × Carton de 24 + 7 × Lot de 3 + 1 × Unité »). État :
+pastille « Rupture » ou « Stock bas », et « Dormant » avec la date de la dernière vente ou « Jamais
+vendu ». Le coût moyen s'affiche au dixième de franc (262,8 F), les valeurs en francs entiers.
+
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
 - Les messages d'erreur portent `role="alert"`.

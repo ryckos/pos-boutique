@@ -8,7 +8,6 @@ import { session } from '../../core/session'
 import {
   conditionnementsProduit,
   grille,
-  produitsAvecStock,
   rechercherParCode,
   rechercherTexte
 } from './service'
@@ -58,11 +57,6 @@ export function enregistrerIpcCatalogue(): void {
   gerer('catalogue:conditionnementsProduit', ({ produitId }) => {
     session.exiger()
     return conditionnementsProduit(base(), produitId)
-  })
-  gerer('catalogue:produitsStock', () => {
-    // Valeur du stock au CUMP : donnée de gestion, pas pour la caisse.
-    session.exiger(['gerant'])
-    return produitsAvecStock(base())
   })
 
   // Produits : gérant (matrice : « créer ou modifier un produit »). La caisse ne lit le catalogue

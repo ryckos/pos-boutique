@@ -1,6 +1,6 @@
 /** Propriétaire : Dev B. Consommé par Dev A (écran de caisse). */
 import type { AlertePrix } from '../catalogue'
-import type { ArticleCatalogue, ProduitStock } from '../types'
+import type { ArticleCatalogue } from '../types'
 
 /** Rayon (parentId null) ou sous-rayon d'un rayon. Un seul niveau de sous-catégorie. */
 export interface Categorie {
@@ -121,8 +121,6 @@ export interface ContratCatalogue {
   'catalogue:desactiverProduit': { requete: { id: number; motif: string }; reponse: void }
   /** Prochain code interne EAN-13 à préfixe 20, jamais encore utilisé. Gérant. */
   'catalogue:genererCodeInterne': { requete: void; reponse: { code: string } }
-  /** Liste des produits avec leur stock calculé. */
-  'catalogue:produitsStock': { requete: void; reponse: ProduitStock[] }
   /** Rayons suivis de leurs sous-rayons, par ordre alphabétique (désactivées comprises). */
   'catalogue:categories': { requete: void; reponse: Categorie[] }
   /** Sans parentId : un rayon. Avec : un sous-rayon de ce rayon. Gérant. */
