@@ -5,6 +5,7 @@
  * possédé par son développeur. Ce fichier-ci ne fait qu'assembler : une ligne par module.
  * ZONE PARTAGÉE.
  */
+import type { ContratAchats } from './achats'
 import type { ContratAuth } from './auth'
 import type { ContratCaisse } from './caisse'
 import type { ContratCatalogue } from './catalogue'
@@ -22,6 +23,7 @@ export type ContratIpc = ContratSysteme &
   ContratParametres &
   ContratStock &
   ContratFournisseurs &
+  ContratAchats &
   ContratCaisse &
   ContratMateriel
 

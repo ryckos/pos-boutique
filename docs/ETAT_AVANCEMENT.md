@@ -77,8 +77,8 @@ Le socle comprend :
 | A8    | Mouvements de caisse (+ API pour B)       | A   | ⏳     |   |
 | A9    | FEFO à la vente                           | A   | ⏳     |   |
 | A10   | Facture et proforma                       | A   | ⏳     |   |
-| B7    | Fournisseurs                              | B   | 🔄     | `b/fournisseurs` — partie 1 : fiches (créer, modifier, désactiver si dette réglée, solde dû), écran Fournisseurs — testée, PR vers `test` ouverte ; partie 2 (historique des achats et des prix) avec B8 |
-| B8    | Commandes et réceptions (CUMP)            | B   | ⏳     |   |
+| B7    | Fournisseurs                              | B   | 🔄     | partie 1 fusionnée (PR #24) : fiches (créer, modifier, désactiver si dette réglée, solde dû), écran Fournisseurs ; partie 2 (historique des achats et des prix) avec B8 |
+| B8    | Commandes et réceptions (CUMP)            | B   | 🔄     | `b/receptions` — PR 1 : validation d'une réception côté serveur (lignes, lots, mouvements, CUMP, dette avec échéance, RC ; migration `date_echeance`) ; PR 2 : écran ; PR 3 : commandes |
 | B9    | Lots, FEFO, tableau des péremptions       | B   | ⏳     |   |
 | B10   | Règlements et dettes fournisseurs         | B   | ⏳     |   |
 
@@ -132,3 +132,4 @@ Le socle comprend :
 | 2026-09-28 | B6    | Stock initial de démarrage : comptage par conditionnement, CUMP = coût saisi, lot si péremption, annulation par contre-passation — rendez-vous de recette tenu (PR #21) |
 | 2026-09-28 | B4    | Partie 1 : écran Stock (valeur, ruptures, stocks bas, dormants, répartition par conditionnement) ; `catalogue:produitsStock` retiré (PR #22) |
 | 2026-09-28 | B4    | Partie 2 : historique d'un produit sur une période, stock après chaque mouvement, documents lisibles (PR #23) |
+| 2026-09-30 | B7    | Partie 1 : fiches fournisseurs, solde dû, désactivation refusée tant que la dette n'est pas réglée, écran Fournisseurs (PR #24) |
