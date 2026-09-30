@@ -18,6 +18,72 @@ Format d'une entrée :
 
 ---
 
+## 2026-09-30 — b/fournisseurs — B4 fusionnée, B7 Fournisseurs (partie 1)
+**Fait** :
+- **B4 fusionnée** (PR #22 et #23, le 28/09) et passée à ✅ dans `ETAT_AVANCEMENT.md`, avec deux lignes
+  au journal des fusions (commit `7e613c8`).
+- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 4.6 :
+  - droits : gérant (et admin) ;
+  - nom obligatoire, unique parmi les fournisseurs actifs (majuscules et espaces ignorés) ;
+  - délai de paiement entier de 0 (comptant) à 365 jours ;
+  - contact, téléphone, adresse facultatifs, en texte libre ;
+  - désactivation avec motif obligatoire, journalisée (`desactivation_fournisseur`), **refusée tant que
+    le solde dû est supérieur à 0**, sinon la dette sortirait de `v_dettes_fournisseurs`, qui ne compte
+    que les actifs ;
+  - modifications de la fiche non journalisées ;
+  - fournisseur de démo « Grossiste Hédzranawoé », 15 jours.
+- **B7 partie 1** (commit `66d9114`, poussé sur `origin/b/fournisseurs`) :
+  - module `src/main/modules/fournisseurs/` (`service.ts`, `ipc.ts`) et contrat
+    `src/shared/ipc/fournisseurs.ts` ;
+  - écran `modules/fournisseurs/PageFournisseurs.tsx` : menu « Fournisseurs » (gérant), « Total dû »,
+    fenêtres modales, `UI_UX.md` § 5.17 ;
+  - seed : le grossiste de démo, présent seulement dans une base créée à neuf.
+  - Aucune migration : la table `fournisseurs` existait déjà.
+- Le solde dû est calculé dans le service avec la même formule que la vue (réceptions − règlements),
+  pour afficher aussi celui des fournisseurs désactivés. Les avoirs (B11) ne sont pas encore déduits.
+- 277 tests verts (18 nouveaux dans `tests/fournisseurs.test.ts`) ; typecheck OK. **Essai à la main fait
+  par Dev B.** Le refus pour dette ne peut pas encore s'essayer à l'écran (pas de réception avant B8) :
+  il est couvert par les tests, avec des réceptions et des règlements insérés directement.
+
+**En cours** :
+- PR `b/fournisseurs` → `test` à ouvrir sur GitHub (`gh` absent de ce poste) :
+  https://github.com/ryckos/pos-boutique/compare/test...b/fournisseurs?expand=1. Le texte, rempli
+  selon le modèle, a été fourni à Dev B. Ensuite, relecture par Dev A.
+- Les branches déjà fusionnées `b/stock` et `b/stock-historique` sont **à supprimer par Dev B**, en local
+  et sur GitHub. La suppression a été refusée à Claude par les permissions du poste.
+
+**Prochaine étape** :
+1. Après la fusion de la PR B7 partie 1 :
+   - ajouter une ligne au journal des fusions de `ETAT_AVANCEMENT.md` ;
+   - laisser B7 en 🔄, la partie 2 restant à faire.
+2. **B8 Commandes et réceptions** (`/tache B8`), sur une branche `b/receptions` créée depuis `test` à jour.
+   - Relire `REGLES_METIER.md` § 4.1 à 4.5, `UI_UX.md` § 5.6 et 5.7, et `SCENARIO_REFERENCE.md` (lundi 8 h).
+   - Tests du CUMP : 3 cartons à 6 000 → **250** ; puis 46 boîtes en stock à 250 + 2 cartons à 6 600
+     (48 boîtes à 275) → **262,8**.
+   - La dette est égale au total de la réception, avec une échéance calculée depuis
+     `delai_paiement_jours`. Il faut regarder où la stocker : la table `receptions` n'a pas de colonne
+     d'échéance, ce qui demandera peut-être une migration.
+   - Mettre `document_type = 'reception'` pour que l'historique B4 affiche le numéro `RC`.
+   - Ne proposer à la réception que les fournisseurs **actifs**.
+3. **B7 partie 2**, avec ou juste après B8 : historique des achats et des prix d'achat d'un fournisseur
+   (lecture de `receptions` et `lignes_reception`), en fenêtre depuis la page Fournisseurs. B7 passera
+   alors à ✅.
+
+**Questions ouvertes** :
+- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
+- Plafond de remise caissier (D-A3) : en attente de la cliente.
+- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photo des produits : reportée.
+
+**Contrats** :
+- Ajoutés (gérant, **sans impact pour la caisse**) : `fournisseurs:liste` → `Fournisseur[]` (avec
+  `soldeDu` et `derniereReception`), `fournisseurs:creer`, `fournisseurs:modifier`,
+  `fournisseurs:desactiver` `{ id, motif }`. Nouveau module enregistré dans `src/main/ipc/index.ts`,
+  contrat dans `src/shared/ipc/index.ts`, menu dans `app/routes.tsx`.
+- Prochain rendez-vous à livrer : `allouerFefo()` (fin S10, B9).
+- Attendus, inchangés : `sessionOuverte()` et `enregistrerMouvementCaisse()` (Dev A, fin S10).
+
+---
+
 ## 2026-09-28 — b/stock et b/stock-historique — B4 Écran stock et historique produit
 **Fait** :
 - **B6 fusionnée** (PR #21) : B6 et le rendez-vous « Stock initial » (fin S7) passés à ✅ ; branche
