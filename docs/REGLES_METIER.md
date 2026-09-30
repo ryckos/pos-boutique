@@ -286,6 +286,19 @@ solde dû = somme des réceptions − somme des règlements − avoirs reçus
 Les règlements peuvent être partiels (espèces, mobile money, virement). La vue de référence est
 `v_dettes_fournisseurs`.
 
+### 4.6 Fiches fournisseurs (validé par Dev B le 2026-09-30)
+- **Droits** : le gérant (et l'admin), comme la réception d'une livraison.
+- **Nom** obligatoire, unique parmi les fournisseurs **actifs** (majuscules et espaces ignorés) ;
+  le nom d'un fournisseur désactivé peut être repris.
+- **Délai de paiement** : nombre entier de jours, de **0 (comptant)** à **365**. Il fixe l'échéance de
+  la dette créée par chaque réception ; le modifier ne change pas les échéances passées.
+- **Personne à contacter, téléphone, adresse** : facultatifs, texte libre (pas de format imposé).
+- **Désactivation** (jamais de suppression) : motif obligatoire, journalisée
+  (`desactivation_fournisseur`, motif). **Refusée tant que le solde dû est supérieur à 0** : désactivé,
+  le fournisseur sortirait de `v_dettes_fournisseurs` et sa dette disparaîtrait des comptes. Un
+  fournisseur désactivé ne se modifie plus et n'est plus proposé aux réceptions.
+- Les modifications de la fiche ne sont pas journalisées (comme les catégories).
+
 ---
 
 ## 5. Péremptions (Dev B, consommé par Dev A)

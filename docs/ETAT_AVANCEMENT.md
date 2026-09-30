@@ -65,7 +65,7 @@ Le socle comprend :
 | B2.2  | Produits et conditionnements, codes internes    | B   | ✅     | PR #10 et #12 — écrans Produits et fiche produit, garde-fou prix, codes internes EAN-13, `conditionnementsProduit` |
 | B2.3  | Recherche sans accents, création depuis scan    | B   | ✅     | PR #16 — recherche F2 de la caisse sans accents sans changement de contrat |
 | B3    | Import Excel du catalogue                       | B   | ✅     | PR #20 — vérifier puis importer tout ou rien, modèle, rayons créés, prix d'achat indicatif (migration), `xlsx` 0.20.3 (D-18) |
-| B4    | Écran stock et historique produit               | B   | 🔄     | partie 1 `b/stock` (liste, valeur, alertes, répartition, dormants ; `stock:etat`) en relecture ; partie 2 `b/stock-historique` (historique d'un produit, `stock:historiqueProduit`) prête |
+| B4    | Écran stock et historique produit               | B   | ✅     | PR #22 (liste, valeur, alertes, répartition indicative, dormants ; `stock:etat`) et #23 (historique d'un produit sur une période ; `stock:historiqueProduit`) |
 | B5    | Paramètres de la boutique                       | B   | ✅     | PR #17 (`parametres:lire`) et #19 (`parametres:ecrire` admin, gérant pour l’imprimante, journalisé ; écran Paramètres ; TVA par défaut dans la fiche produit) |
 | B6    | Stock initial de démarrage                      | B   | ✅     | PR #21 — comptage par conditionnement, produit par produit, CUMP = coût saisi (pré-rempli par l'import), lot si péremption, annulation par contre-passation ; testé à la main |
 
@@ -77,7 +77,7 @@ Le socle comprend :
 | A8    | Mouvements de caisse (+ API pour B)       | A   | ⏳     |   |
 | A9    | FEFO à la vente                           | A   | ⏳     |   |
 | A10   | Facture et proforma                       | A   | ⏳     |   |
-| B7    | Fournisseurs                              | B   | ⏳     |   |
+| B7    | Fournisseurs                              | B   | 🔄     | `b/fournisseurs` — partie 1 : fiches (créer, modifier, désactiver si dette réglée, solde dû), écran Fournisseurs — testée, PR vers `test` ouverte ; partie 2 (historique des achats et des prix) avec B8 |
 | B8    | Commandes et réceptions (CUMP)            | B   | ⏳     |   |
 | B9    | Lots, FEFO, tableau des péremptions       | B   | ⏳     |   |
 | B10   | Règlements et dettes fournisseurs         | B   | ⏳     |   |
@@ -130,3 +130,5 @@ Le socle comprend :
 | 2026-09-25 | B5    | Partie 2 : `parametres:ecrire` et écran Paramètres ; réglages de l'imprimante d'A3 en base (PR #19) |
 | 2026-09-25 | B3    | Import du catalogue depuis Excel, `produits.prix_achat_indicatif`, dépendance `xlsx` 0.20.3 depuis SheetJS — Dev A : `npm install` (PR #20) |
 | 2026-09-28 | B6    | Stock initial de démarrage : comptage par conditionnement, CUMP = coût saisi, lot si péremption, annulation par contre-passation — rendez-vous de recette tenu (PR #21) |
+| 2026-09-28 | B4    | Partie 1 : écran Stock (valeur, ruptures, stocks bas, dormants, répartition par conditionnement) ; `catalogue:produitsStock` retiré (PR #22) |
+| 2026-09-28 | B4    | Partie 2 : historique d'un produit sur une période, stock après chaque mouvement, documents lisibles (PR #23) |
