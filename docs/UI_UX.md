@@ -254,7 +254,9 @@ Fait en B8 (menu « Réceptions », gérant, `modules/achats/PageReceptions.tsx`
   qu'une fois la réception validée. Le brouillon est gardé sur le poste à chaque frappe ; après une
   coupure, la page rouvre la saisie avec « Réception en cours reprise… ».
 - « Ajouter un article » : scan ou code tapé puis Entrée ; à partir de 2 lettres, une liste de
-  résultats par nom. Code inconnu : bandeau « Créer le produit », qui ouvre la fiche produit avec la
+  résultats par nom. Scanner deux fois le même article ajoute **deux lignes** (validé par Dev B le
+  2026-09-30 : deux lots différents, par exemple), jamais « quantité + 1 ». Code inconnu : bandeau
+  « Créer le produit », qui ouvre la fiche produit avec la
   pastille du code et le bouton « Enregistrer et ajouter à la réception ».
 - Chaque ligne a une liste « conditionnement reçu » (Unité, Lot de 3, Carton de 24…) et un bouton
   « Modifier la fiche » : c'est ainsi qu'on ajoute le carton d'un produit reçu en carton pour la
