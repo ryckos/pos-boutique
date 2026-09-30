@@ -64,6 +64,11 @@ export interface Reception {
   lignes: LigneReception[]
 }
 
+/** Une ligne de la liste des réceptions validées. */
+export type ResumeReception = Omit<Reception, 'lignes' | 'commentaire' | 'fournisseurId'> & {
+  nbLignes: number
+}
+
 export interface ContratAchats {
   /** Conditionnement actif d'un produit actif, sinon null. Gérant. */
   'achats:articleReception': { requete: { conditionnementId: number }; reponse: ArticleReception | null }
@@ -76,4 +81,6 @@ export interface ContratAchats {
     reponse: { id: number; numero: string; total: number; dateEcheance: string }
   }
   'achats:reception': { requete: { id: number }; reponse: Reception }
+  /** Réceptions validées, les plus récentes d'abord (200 au plus). Gérant. */
+  'achats:listeReceptions': { requete: void; reponse: ResumeReception[] }
 }

@@ -246,6 +246,27 @@ Fournisseur [ Grossiste Hédzranawoé ▾ ]   Ajouter un article [ Scannez ou ta
 Le prix d'achat est pré-rempli avec le dernier prix connu. Le champ « Ajouter un article »
 porte `data-scan`.
 
+Fait en B8 (menu « Réceptions », gérant, `modules/achats/PageReceptions.tsx`) :
+- La page ouvre sur la **liste des réceptions validées** (numéro, date et auteur, fournisseur, nombre
+  d'articles, total, « À payer avant le »), avec « Voir le détail » en fenêtre, et le bouton
+  « Nouvelle réception ».
+- La saisie porte la pastille « Brouillon · numéro attribué à la validation » : le numéro RC n'existe
+  qu'une fois la réception validée. Le brouillon est gardé sur le poste à chaque frappe ; après une
+  coupure, la page rouvre la saisie avec « Réception en cours reprise… ».
+- « Ajouter un article » : scan ou code tapé puis Entrée ; à partir de 2 lettres, une liste de
+  résultats par nom. Code inconnu : bandeau « Créer le produit », qui ouvre la fiche produit avec la
+  pastille du code et le bouton « Enregistrer et ajouter à la réception ».
+- Chaque ligne a une liste « conditionnement reçu » (Unité, Lot de 3, Carton de 24…) et un bouton
+  « Modifier la fiche » : c'est ainsi qu'on ajoute le carton d'un produit reçu en carton pour la
+  première fois, puis qu'on le choisit sur la ligne.
+- Sous chaque ligne : la conversion (« ⇄ = 72 unités à 250 F l'unité », rien pour l'Unité), les champs
+  « N° de lot » et « Périme le » si le produit est suivi en péremption, les alertes non bloquantes
+  (péremption sous le seuil, coût par unité ≥ prix de vente) et ce qui reste à compléter.
+- Pied : nombre de lignes, commentaire facultatif (n° du bon de livraison), total, « Abandonner la
+  saisie » (confirmation) et « Valider la réception », grisé tant qu'il manque quelque chose (le message
+  dit quoi). La validation demande une confirmation, rappelle qu'une réception validée ne se modifie
+  plus, puis revient à la liste avec le numéro, le montant dû et l'échéance.
+
 ### 5.7 Nouveau produit (Dev B — B2.2), ouvert après le scan d'un code inconnu
 L'en-tête « Nouveau produit » affiche une pastille « Code scanné : 6034000012345 ». Le formulaire
 contient :

@@ -2,7 +2,7 @@
 import { base } from '../../db/connexion'
 import { gerer } from '../../ipc/gerer'
 import { session } from '../../core/session'
-import { articleReception, lireReception, validerReception } from './receptions'
+import { articleReception, lireReception, listerReceptions, validerReception } from './receptions'
 
 // Gérant : matrice des droits, « réceptionner une livraison ».
 export function enregistrerIpcAchats(): void {
@@ -17,5 +17,9 @@ export function enregistrerIpcAchats(): void {
   gerer('achats:reception', ({ id }) => {
     session.exiger(['gerant'])
     return lireReception(base(), id)
+  })
+  gerer('achats:listeReceptions', () => {
+    session.exiger(['gerant'])
+    return listerReceptions(base())
   })
 }
