@@ -1,5 +1,5 @@
 /**
- * Fournisseurs : liste, création, modification, désactivation. Propriétaire : Dev B.
+ * Fournisseurs : liste, création, modification, désactivation, achats. Propriétaire : Dev B.
  * Gérant. Jamais de suppression : un fournisseur se désactive, avec un motif, une fois sa dette
  * réglée (REGLES_METIER § 4.6). Les règles sont revérifiées par le processus principal.
  */
@@ -8,8 +8,10 @@ import type { Fournisseur, SaisieFournisseur } from '@shared/ipc/fournisseurs'
 import { formaterDate, formaterFCFA } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { FenetreAchats } from './FenetreAchats'
 
-type Action = { type: 'creer' } | { type: 'modifier' | 'desactiver'; fournisseur: Fournisseur } | null
+type Action =
+  { type: 'creer' } | { type: 'modifier' | 'desactiver' | 'achats'; fournisseur: Fournisseur } | null
 
 const libelleDelai = (jours: number): string => (jours === 0 ? 'Comptant' : `${jours} jours`)
 
@@ -98,6 +100,15 @@ export function PageFournisseurs(): React.JSX.Element {
         />
       )}
 
+      {action?.type === 'achats' && (
+        <FenetreAchats
+          key={action.fournisseur.id}
+          fournisseurId={action.fournisseur.id}
+          nom={action.fournisseur.nom}
+          onFermer={() => ouvrir(null)}
+        />
+      )}
+
       {erreur && (
         <p className="alerte" role="alert" style={{ marginBottom: 16 }}>
           {erreur}
@@ -139,22 +150,30 @@ export function PageFournisseurs(): React.JSX.Element {
                     </span>
                   </td>
                   <td>
-                    {f.actif && (
-                      <div className="tableau-actions">
-                        <button
-                          className="btn btn-secondaire"
-                          onClick={() => ouvrir({ type: 'modifier', fournisseur: f })}
-                        >
-                          Modifier
-                        </button>
-                        <button
-                          className="btn btn-attention"
-                          onClick={() => ouvrir({ type: 'desactiver', fournisseur: f })}
-                        >
-                          Désactiver
-                        </button>
-                      </div>
-                    )}
+                    <div className="tableau-actions">
+                      <button
+                        className="btn btn-secondaire"
+                        onClick={() => ouvrir({ type: 'achats', fournisseur: f })}
+                      >
+                        Achats
+                      </button>
+                      {f.actif && (
+                        <>
+                          <button
+                            className="btn btn-secondaire"
+                            onClick={() => ouvrir({ type: 'modifier', fournisseur: f })}
+                          >
+                            Modifier
+                          </button>
+                          <button
+                            className="btn btn-attention"
+                            onClick={() => ouvrir({ type: 'desactiver', fournisseur: f })}
+                          >
+                            Désactiver
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -193,7 +212,11 @@ function FormulaireFournisseur(props: {
     >
       <label className="champ champ-large">
         Nom
-        <input value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex. : Grossiste Hédzranawoé" />
+        <input
+          value={nom}
+          onChange={(e) => setNom(e.target.value)}
+          placeholder="Ex. : Grossiste Hédzranawoé"
+        />
       </label>
       <label className="champ">
         Personne à contacter

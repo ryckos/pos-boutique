@@ -5,6 +5,8 @@ import {
   listerFournisseurs,
   modifierFournisseur
 } from '../src/main/modules/fournisseurs/service'
+import { achatsFournisseur } from '../src/main/modules/fournisseurs/achats'
+import { validerReception } from '../src/main/modules/achats/receptions'
 import { executer, une } from '../src/main/db/requetes'
 import type { Db } from '../src/main/db/connexion'
 import { baseAvecDemo } from './aide'
@@ -157,5 +159,107 @@ describe('Fournisseurs : désactivation', () => {
 
   it('refuse un fournisseur inconnu', () => {
     expect(() => desactiverFournisseur(baseAvecDemo(), KOSSI, 999, 'Motif')).toThrow(/introuvable/)
+  })
+})
+
+describe('Fournisseurs : historique des achats et des prix (B7 partie 2, REGLES_METIER § 4.6)', () => {
+  const carton = (db: Db): number =>
+    une<{ id: number }>(db, "SELECT id FROM conditionnements WHERE code_barres = '16181000000049'")!.id
+  const lait = (db: Db): number =>
+    une<{ id: number }>(db, "SELECT id FROM conditionnements WHERE code_barres = '6181000000028'")!.id
+  const LOIN = '2099-11-15'
+
+  function lundi(db: Db): void {
+    validerReception(db, KOSSI, {
+      fournisseurId: GROSSISTE,
+      lignes: [
+        { conditionnementId: carton(db), quantite: 3, prix: 6000 },
+        { conditionnementId: lait(db), quantite: 12, prix: 2100, numeroLot: 'LOT-B03', datePeremption: LOIN }
+      ]
+    })
+  }
+
+  it('sans réception : listes vides, période des 90 derniers jours', () => {
+    const db = baseAvecDemo()
+    const a = achatsFournisseur(db, GROSSISTE)
+    const jours = une<{ du: string; au: string }>(
+      db,
+      "SELECT date('now','localtime','-90 days') AS du, date('now','localtime') AS au"
+    )!
+    expect(a).toEqual({
+      fournisseurId: GROSSISTE,
+      nom: 'Grossiste Hédzranawoé',
+      ...jours,
+      receptions: [],
+      totalPeriode: 0,
+      prix: []
+    })
+  })
+
+  it('livraison du lundi : une réception de 43 200, deux prix d’achat', () => {
+    const db = baseAvecDemo()
+    lundi(db)
+    const a = achatsFournisseur(db, GROSSISTE)
+    expect(a.totalPeriode).toBe(43200)
+    expect(a.receptions).toHaveLength(1)
+    expect(a.receptions[0]).toMatchObject({ total: 43200, nbLignes: 2, utilisateur: 'Kossi' })
+    expect(a.prix.map((p) => [p.produit, p.conditionnement, p.dernierPrix, p.prixPrecedent])).toEqual([
+      ['Lait en poudre 400 g', 'Unité', 2100, null],
+      ['Tomate concentrée 70 g', 'Carton de 24', 6000, null]
+    ])
+  })
+
+  it('carton à 6 000 puis 6 600 : écart +600 (+10 %), 275 F l’unité', () => {
+    const db = baseAvecDemo()
+    lundi(db)
+    validerReception(db, KOSSI, {
+      fournisseurId: GROSSISTE,
+      lignes: [{ conditionnementId: carton(db), quantite: 2, prix: 6600 }]
+    })
+    const tomate = achatsFournisseur(db, GROSSISTE).prix.find((p) => p.conditionnement === 'Carton de 24')!
+    expect(tomate).toMatchObject({
+      dernierPrix: 6600,
+      prixPrecedent: 6000,
+      ecart: 600,
+      ecartPourcent: 10,
+      coutBase: 275,
+      nbReceptions: 2
+    })
+  })
+
+  it('deux lots de la même livraison : le prix précédent vient d’une réception antérieure', () => {
+    const db = baseAvecDemo()
+    validerReception(db, KOSSI, {
+      fournisseurId: GROSSISTE,
+      lignes: [
+        { conditionnementId: lait(db), quantite: 6, prix: 2000, numeroLot: 'A', datePeremption: LOIN },
+        { conditionnementId: lait(db), quantite: 6, prix: 2100, numeroLot: 'B', datePeremption: LOIN }
+      ]
+    })
+    const p = achatsFournisseur(db, GROSSISTE).prix[0]
+    expect(p).toMatchObject({ dernierPrix: 2100, prixPrecedent: null, ecart: null, nbReceptions: 1 })
+  })
+
+  it('filtre les livraisons par période ; les prix gardent toute l’histoire', () => {
+    const db = baseAvecDemo()
+    lundi(db)
+    const a = achatsFournisseur(db, GROSSISTE, { du: '2020-01-01', au: '2020-12-31' })
+    expect(a.receptions).toEqual([])
+    expect(a.totalPeriode).toBe(0)
+    expect(a.prix).toHaveLength(2)
+  })
+
+  it('n’affiche pas les achats d’un autre fournisseur', () => {
+    const db = baseAvecDemo()
+    lundi(db)
+    const autre = creerFournisseur(db, { nom: 'Sodigaz', delaiPaiementJours: 0 })
+    expect(achatsFournisseur(db, autre)).toMatchObject({ receptions: [], prix: [], totalPeriode: 0 })
+  })
+
+  it('refuse une période à l’envers ou une date illisible', () => {
+    const db = baseAvecDemo()
+    expect(() => achatsFournisseur(db, GROSSISTE, { du: '2026-09-30', au: '2026-09-01' })).toThrow(/précéder/)
+    expect(() => achatsFournisseur(db, GROSSISTE, { du: '30/09/2026' })).toThrow(/invalide/)
+    expect(() => achatsFournisseur(db, 99)).toThrow(/introuvable/)
   })
 })

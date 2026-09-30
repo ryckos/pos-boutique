@@ -395,8 +395,12 @@ fournisseur ». Tableau Nom (avec, en petit, la personne à contacter et l'adres
 de paiement (« Comptant » ou « 15 jours ») / Dernière livraison / Solde dû / État. Actifs d'abord, puis
 désactivés en grisé. Boutons « Modifier » et « Désactiver » en fenêtre modale ; la fenêtre de
 désactivation prévient s'il reste une dette (la validation sera refusée) et demande un motif. Le champ
-du délai confirme la saisie en clair sous lui (« Comptant. », « 15 jours. »). L'historique des achats
-et des prix d'un fournisseur viendra avec les réceptions (B8).
+du délai confirme la saisie en clair sous lui (« Comptant. », « 15 jours. »). Bouton « Achats » sur
+chaque ligne, désactivés compris (B7 partie 2) : fenêtre large « Achats — <nom> », période Du / Au
+(90 derniers jours) et pastille « Livré sur la période » ; tableau « Livraisons » (numéro, date,
+articles, total, à payer avant le, « Voir le détail ») et tableau « Prix d'achat » (article avec la
+date et le coût par unité en petit, dernier prix, livraison précédente, écart « +600 F (+10 %) » en
+pastille ambre s'il augmente, nombre d'achats).
 
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
