@@ -77,7 +77,7 @@ Le socle comprend :
 | A8    | Mouvements de caisse (+ API pour B)       | A   | ⏳     |   |
 | A9    | FEFO à la vente                           | A   | ⏳     |   |
 | A10   | Facture et proforma                       | A   | ⏳     |   |
-| B7    | Fournisseurs                              | B   | 🔄     | `b/fournisseurs` — plan en cours |
+| B7    | Fournisseurs                              | B   | 🔄     | `b/fournisseurs` — partie 1 : fiches (créer, modifier, désactiver si dette réglée, solde dû), écran Fournisseurs ; partie 2 (historique des achats et des prix) avec B8 |
 | B8    | Commandes et réceptions (CUMP)            | B   | ⏳     |   |
 | B9    | Lots, FEFO, tableau des péremptions       | B   | ⏳     |   |
 | B10   | Règlements et dettes fournisseurs         | B   | ⏳     |   |

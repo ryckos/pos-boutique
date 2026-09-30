@@ -72,6 +72,13 @@ export function semerDonneesDemo(db: Db): boolean {
       executer(db, 'INSERT INTO categories (nom) VALUES (?)', nom)
     }
 
+    // Le fournisseur du scénario de référence (lundi 8 h).
+    executer(
+      db,
+      `INSERT INTO fournisseurs (nom, contact, telephone, adresse, delai_paiement_jours)
+       VALUES ('Grossiste Hédzranawoé', 'M. Amouzou', '90 00 00 00', 'Marché de Hédzranawoé, Lomé', 15)`
+    )
+
     let ordre = 0
     for (const p of PRODUITS) {
       const produitId = executer(

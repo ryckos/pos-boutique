@@ -366,6 +366,15 @@ un tableau Date / Mouvement / Document / Quantité (+72, −1) / Stock / Par, qu
 début de la période » et finit, en gras, par « Stock à la fin de la période ». Sous le document, en petit :
 le lot et le motif. Les types s'affichent en clair (Vente, Réception, Ajustement, Annulation…).
 
+### 5.17 Fournisseurs (Dev B — B7, gérant)
+Page « Fournisseurs » du menu. En-tête : « Total dû » (fournisseurs actifs) et « Créer un
+fournisseur ». Tableau Nom (avec, en petit, la personne à contacter et l'adresse) / Téléphone / Délai
+de paiement (« Comptant » ou « 15 jours ») / Dernière livraison / Solde dû / État. Actifs d'abord, puis
+désactivés en grisé. Boutons « Modifier » et « Désactiver » en fenêtre modale ; la fenêtre de
+désactivation prévient s'il reste une dette (la validation sera refusée) et demande un motif. Le champ
+du délai confirme la saisie en clair sous lui (« Comptant. », « 15 jours. »). L'historique des achats
+et des prix d'un fournisseur viendra avec les réceptions (B8).
+
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
 - Les messages d'erreur portent `role="alert"`.

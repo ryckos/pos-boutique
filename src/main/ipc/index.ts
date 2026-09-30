@@ -5,6 +5,7 @@
 import { enregistrerIpcAuth } from '../modules/auth/ipc'
 import { enregistrerIpcCaisse } from '../modules/caisse/ipc'
 import { enregistrerIpcCatalogue } from '../modules/catalogue/ipc'
+import { enregistrerIpcFournisseurs } from '../modules/fournisseurs/ipc'
 import { enregistrerIpcParametres } from '../modules/parametres/ipc'
 import { enregistrerIpcStock } from '../modules/stock/ipc'
 import { enregistrerIpcUtilisateurs } from '../modules/utilisateurs/ipc'
@@ -19,6 +20,7 @@ export function enregistrerTousLesIpc(options: { cheminBase: string; modeDev: bo
   enregistrerIpcCatalogue()
   enregistrerIpcParametres()
   enregistrerIpcStock()
+  enregistrerIpcFournisseurs()
   // ─── Dev A ───
   enregistrerIpcCaisse()
   enregistrerIpcMateriel()
