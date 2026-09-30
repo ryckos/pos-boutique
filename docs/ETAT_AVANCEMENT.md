@@ -78,7 +78,7 @@ Le socle comprend :
 | A9    | FEFO à la vente                           | A   | ⏳     |   |
 | A10   | Facture et proforma                       | A   | ⏳     |   |
 | B7    | Fournisseurs                              | B   | 🔄     | partie 1 fusionnée (PR #24) : fiches (créer, modifier, désactiver si dette réglée, solde dû), écran Fournisseurs ; partie 2 sur `b/fournisseurs-achats` (empilée sur `b/receptions-ecran`) : bouton « Achats », livraisons d'une période et derniers prix d'achat, canal `fournisseurs:achats` |
-| B8    | Commandes et réceptions (CUMP)            | B   | 🔄     | `b/receptions` — PR 1 : validation d'une réception côté serveur (lignes, lots, mouvements, CUMP, dette avec échéance, RC ; migration `date_echeance`) ; PR 2 (`b/receptions-ecran`, empilée sur la PR 1) : écran Réceptions (liste, saisie avec conversion en direct, brouillon gardé sur le poste, création de produit depuis un code inconnu), canal `achats:listeReceptions` ; PR 3 : commandes |
+| B8    | Commandes et réceptions (CUMP)            | B   | 🔄     | `b/receptions` — PR 1 : validation d'une réception côté serveur (lignes, lots, mouvements, CUMP, dette avec échéance, RC ; migration `date_echeance`) ; PR 2 (`b/receptions-ecran`, empilée sur la PR 1) : écran Réceptions (liste, saisie avec conversion en direct, brouillon gardé sur le poste, création de produit depuis un code inconnu), canal `achats:listeReceptions` ; les deux testées, PR à ouvrir dans l’ordre ; partie 3 : commandes (règles à obtenir de Dev B) |
 | B9    | Lots, FEFO, tableau des péremptions       | B   | ⏳     |   |
 | B10   | Règlements et dettes fournisseurs         | B   | ⏳     |   |
 

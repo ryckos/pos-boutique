@@ -18,6 +18,84 @@ Format d'une entrée :
 
 ---
 
+## 2026-09-30 (suite) — b/receptions, b/receptions-ecran, b/fournisseurs-achats — B8 parties 1 et 2, B7 partie 2
+**Fait** :
+- **B7 partie 1 fusionnée** (PR #24), inscrite au journal des fusions. `b/fournisseurs` est supprimée en
+  local ; **sur GitHub, sa suppression reste à faire par Dev B** (refusée à Claude par les permissions).
+- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 4.2 (réception) :
+  - le brouillon ne vit que dans l'écran, gardé sur le poste ; **numéro RC attribué à la validation** ;
+  - prix proposé = dernier prix payé pour ce conditionnement, sinon prix indicatif × quantité, sinon vide ;
+  - prix en francs entiers > 0 ; alerte non bloquante si coût par unité ≥ prix de vente de l'Unité ;
+  - quantité entière, décimales seulement au poids ou au volume (kg, g, litre, ml) ;
+  - lot et date obligatoires si périssable ; date passée refusée ; date sous le seuil = alerte ;
+  - échéance figée à la validation (jour + délai du fournisseur) ;
+  - **une réception validée ne se modifie ni ne s'annule** (correction par retour fournisseur ou
+    inventaire) ; pas de journal d'audit ;
+  - scanner deux fois le même article = **deux lignes** (`UI_UX.md` § 5.6).
+- Règles de l'historique des achats (`REGLES_METIER.md` § 4.6) :
+  - livraisons sur 90 jours par défaut ;
+  - prix sur toute l'histoire, écart avec la livraison précédente du **même** fournisseur ;
+  - pas de comparaison entre fournisseurs (renvoyée à B14).
+- **Trois branches empilées, poussées, testées à la main par Dev B** (sauf la PR 1, sans écran) :
+  1. `b/receptions` (commit `7db755b`) : migration `20260930_1400_echeance_reception.sql`
+     (`receptions.date_echeance`), service `modules/achats/receptions.ts`, contrat `src/shared/ipc/achats.ts`,
+     règles pures `src/shared/achats.ts` (`convertirLigne`, `nouveauCump`). Une transaction : lignes, lots,
+     mouvements `reception` (`document_type = 'reception'`), CUMP ligne après ligne, dette, RC.
+     Tests : 250 ; 262,8 ; stock ≤ 0 ; 43 200 ; panne simulée en pleine écriture → tout annulé.
+  2. `b/receptions-ecran` (commits `8495aed`, `9824d72`) : menu « Réceptions » (gérant),
+     `modules/achats/PageReceptions.tsx`, `saisieReception.ts` (logique pure testée),
+     `FenetreDetailReception.tsx`, canal `achats:listeReceptions`, `FenetreProduit` accepte
+     `libelleValider`, style commun `.tableau-saisie select`.
+  3. `b/fournisseurs-achats` (commit `9c90068`) : canal `fournisseurs:achats`, `fournisseurs/achats.ts`,
+     fenêtre `FenetreAchats.tsx` (bouton « Achats » sur la page Fournisseurs).
+- 334 tests verts ; typecheck OK.
+
+**En cours** : trois PR à ouvrir sur GitHub (`gh` absent de ce poste), **dans l'ordre**, chacune après la
+fusion de la précédente. Le texte de chacune a été fourni à Dev B dans la session.
+1. PR 1 `b/receptions` → `test` : https://github.com/ryckos/pos-boutique/compare/test...b/receptions?expand=1
+2. PR 2 `b/receptions-ecran` → `test`, après la fusion de la PR 1.
+   Si la PR 1 est fusionnée en squash :
+   `git switch b/receptions-ecran && git fetch && git rebase --onto origin/test 7db755b && git push --force-with-lease`.
+3. PR 3 `b/fournisseurs-achats` → `test`, après la fusion de la PR 2.
+   Si la PR 2 est fusionnée en squash : `git rebase --onto origin/test 9824d72`.
+   Ce carnet est commité sur cette branche.
+
+**Prochaine étape** :
+1. Suivre les fusions :
+   - à chaque fusion, une ligne au journal des fusions de `ETAT_AVANCEMENT.md` ;
+   - après la PR 3, B7 → ✅ ;
+   - supprimer les branches fusionnées.
+2. **B8 partie 3 : commandes fournisseur** (branche depuis `test` une fois les PR fusionnées, ou
+   empilée). Avant tout code, obtenir les réponses de Dev B :
+   - quantité commandée en conditionnements ou en unités de base ? `lignes_commande_achat` n'a pas de
+     `conditionnement_id`, donc commander en cartons demande une migration ;
+   - calcul de la quantité suggérée depuis les alertes de stock (`v_alertes_stock`) ;
+   - passage à `recue` : quantités atteintes, ou décision du gérant ?
+   - numéro `CA` via `prochainNumero` ; réception liée : `receptions.commande_id` ; `recue_partiel`.
+3. Puis **B9** : `allouerFefo(db, produitId, qteBase)` pour Dev A, **rendez-vous fin S10** ; et le
+   tableau des péremptions. Les lots créés par la réception portent `reception_id` et le coût par unité
+   arrondi au franc.
+
+**Questions ouvertes** :
+- Commandes (ci-dessus) : à poser à Dev B.
+- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
+- Plafond de remise caissier (D-A3) : en attente de la cliente.
+- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photo des produits : reportée.
+
+**Contrats** :
+- Ajoutés (gérant, **sans impact pour la caisse**) : `achats:articleReception`, `achats:validerReception`,
+  `achats:reception`, `achats:listeReceptions`, `fournisseurs:achats`. Nouveau module `achats` enregistré
+  dans `src/main/ipc/index.ts` et `src/shared/ipc/index.ts` ; menu « Réceptions » dans `app/routes.tsx`.
+- **Pour Dev A** :
+  - le CUMP bouge désormais à chaque réception : `coutConditionnement` de `ArticleCatalogue`
+    le reflète sans changement de contrat ;
+  - l'historique d'un produit affiche « Réception RC-… » ;
+  - nouvelle classe commune `.tableau-saisie select`.
+- Prochain rendez-vous à livrer : `allouerFefo()` (fin S10, B9). Attendus inchangés : `sessionOuverte()` et
+  `enregistrerMouvementCaisse()` (Dev A, fin S10).
+
+---
+
 ## 2026-09-30 — b/fournisseurs — B4 fusionnée, B7 Fournisseurs (partie 1)
 **Fait** :
 - **B4 fusionnée** (PR #22 et #23, le 28/09) et passée à ✅ dans `ETAT_AVANCEMENT.md`, avec deux lignes
