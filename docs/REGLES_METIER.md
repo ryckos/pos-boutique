@@ -321,6 +321,14 @@ Les règlements peuvent être partiels (espèces, mobile money, virement). La vu
   le fournisseur sortirait de `v_dettes_fournisseurs` et sa dette disparaîtrait des comptes. Un
   fournisseur désactivé ne se modifie plus et n'est plus proposé aux réceptions.
 - Les modifications de la fiche ne sont pas journalisées (comme les catégories).
+- **Historique des achats** (validé par Dev B le 2026-09-30, B7 partie 2), consultable même pour un
+  fournisseur désactivé :
+  - les **livraisons** d'une période, **90 derniers jours** par défaut, avec leur total ;
+  - les **prix d'achat** sur **toute l'histoire** : pour chaque conditionnement acheté, le dernier
+    prix payé et sa date, le coût par unité, le nombre de livraisons, et l'écart avec le prix de la
+    **livraison précédente de ce même fournisseur** (deux lots d'une même livraison ne comptent pas
+    comme deux livraisons) ;
+  - pas de comparaison entre fournisseurs ici (rapports, B14).
 
 ---
 
