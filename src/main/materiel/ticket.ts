@@ -18,6 +18,8 @@ export interface LigneTicketVente {
   designation: string
   quantite: number
   prixUnitaire: number
+  /** Remise sur la ligne (règle 6.6) ; totalLigne en est déjà net. */
+  remise: number
   totalLigne: number
 }
 
@@ -34,6 +36,8 @@ export interface TicketAImprimer {
   horodatage: string
   caissier: string
   lignes: LigneTicketVente[]
+  /** Remise sur le ticket entier ; totalTtc en est déjà net. */
+  remiseGlobale: number
   totalTtc: number
   parTaux: VentilationTaux[]
   paiements: PaiementTicket[]
@@ -132,16 +136,24 @@ export function lignesTicket(
   l.push(SEPARATEUR)
 
   for (const v of ticket.lignes) {
-    const total = montantTicket(v.totalLigne)
-    if (v.quantite === 1 && v.designation.length + 1 + total.length <= LARGEUR) {
-      l.push({ texte: colonnes(v.designation, total) })
-      continue
+    // Avec une remise, la ligne montre le prix brut puis la remise : le client voit ce qu'il gagne.
+    const brut = montantTicket(v.totalLigne + v.remise)
+    if (v.quantite === 1 && v.designation.length + 1 + brut.length <= LARGEUR) {
+      l.push({ texte: colonnes(v.designation, brut) })
+    } else {
+      for (const t of couper(v.designation)) l.push({ texte: t })
+      l.push({ texte: colonnes(`  ${v.quantite} x ${montantTicket(v.prixUnitaire)}`, brut) })
     }
-    for (const t of couper(v.designation)) l.push({ texte: t })
-    l.push({ texte: colonnes(`  ${v.quantite} x ${montantTicket(v.prixUnitaire)}`, total) })
+    if (v.remise > 0) l.push({ texte: colonnes('  Remise', `-${montantTicket(v.remise)}`) })
   }
 
   l.push(SEPARATEUR)
+  if (ticket.remiseGlobale > 0) {
+    l.push({
+      texte: colonnes('Sous-total', montantTicket(ticket.totalTtc + ticket.remiseGlobale))
+    })
+    l.push({ texte: colonnes('Remise sur le ticket', `-${montantTicket(ticket.remiseGlobale)}`) })
+  }
   l.push({
     texte: colonnes('TOTAL', montantTicket(ticket.totalTtc), LARGEUR_DOUBLE),
     gras: true,

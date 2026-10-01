@@ -422,6 +422,34 @@ Exemple : un ticket de 13 300 F TTC contient 12 700 F à 18 % et 600 F à 0 %.
 - Plafond pour le caissier : paramètre (`plafond_remise_caissier`). Au-delà, il faut un gérant.
 - **Chaque remise est journalisée.**
 
+**Précisions validées par Dev A (2026-10-01, tâche A5)** — le montant du plafond reste à fixer par la
+cliente (D-A3) :
+- Le plafond porte sur le **total des remises du ticket** (lignes + ticket), pas sur chaque remise :
+  sinon il suffirait de découper une remise pour passer dessous.
+- **Plafond non renseigné** (`null`) : la caissière ne peut accorder **aucune** remise sans gérant.
+  Plafond à 0 : même effet. Le gérant et l'admin ne sont pas plafonnés.
+- **Autorisation du gérant** : il tape son code sur la caisse, sans déconnecter la caissière. Le code
+  passe par la même vérification que la connexion (verrouillage après 5 codes faux). La remise reste
+  au nom de la caissière ; le journal note qui l'a autorisée. L'accord vaut **pour ce ticket, cette
+  caissière et jusqu'au total de remises affiché au gérant** : au-delà, il retape son code. Il sert une
+  seule fois (consommé par la vente encaissée) et tombe si le ticket est vidé ou si l'application
+  redémarre.
+- Une remise est un montant entier ≥ 0, jamais supérieur à sa ligne (remise de ligne) ou au total des
+  lignes (remise sur le ticket). `total_ligne` = quantité × prix − remise de ligne ; total du ticket
+  = somme des lignes − `remise_globale`. Un ticket ne peut pas tomber à 0 F (un don est une sortie de
+  stock).
+- **TVA d'une remise sur le ticket** : elle est répartie entre les taux **au prorata du TTC de chaque
+  taux** (partie entière), le reste de la division allant au taux le plus élevé ; puis la règle 6.4
+  s'applique au TTC net de chaque taux. Exemple : 12 700 F à 18 % + 600 F à 0 %, remise de 1 000 F →
+  955 F sur le 18 % et 45 F sur le 0 % ; TTC 11 745 + 555 = 12 300, HT 9 953 + 555 = 10 508,
+  TVA 1 792.
+- Journal : une entrée `remise` par remise appliquée, écrite **dans la transaction de vente** (montant,
+  ticket, ligne ou ticket entier, autorisée par). Une remise saisie puis retirée avant l'encaissement
+  n'est pas journalisée.
+- **Annulation de ligne** (`annulation_ligne`) : l'écran client montre le ticket en permanence, donc
+  toute **suppression d'une ligne** et tout **abandon d'un ticket non vide** avant encaissement sont
+  journalisés (désignation, quantité, montant). Une simple baisse de quantité ne l'est pas.
+
 ### 6.7 Annulation d'un ticket
 - Réservée au gérant, avec un motif obligatoire.
 - Le ticket passe au statut `annulee`.

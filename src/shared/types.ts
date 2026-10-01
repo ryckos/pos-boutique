@@ -58,11 +58,16 @@ export interface ArticleCatalogue {
 export interface LignePanierClient {
   designation: string
   quantite: number
+  /** Remise déduite. */
   total: number
+  /** Remise sur la ligne (A5), affichée au client. */
+  remise?: number
 }
 
 export interface PanierClient {
   lignes: LignePanierClient[]
+  /** Remise sur le ticket entier (A5). */
+  remiseTicket?: number
   total: number
   message?: string
 }

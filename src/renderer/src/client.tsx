@@ -25,8 +25,16 @@ function EcranClient(): React.JSX.Element {
               <span>{formaterQuantite(l.quantite)} ×</span>
               <span>{l.designation}</span>
               <span className="montant">{formaterFCFA(l.total)}</span>
+              {!!l.remise && <span className="ecran-client-remise">Remise : −{formaterFCFA(l.remise)}</span>}
             </li>
           ))}
+          {!!panier.remiseTicket && (
+            <li className="ecran-client-remise-ticket">
+              <span />
+              <span>Remise sur le ticket</span>
+              <span className="montant">−{formaterFCFA(panier.remiseTicket)}</span>
+            </li>
+          )}
         </ul>
       )}
       <div className="ecran-client-total">

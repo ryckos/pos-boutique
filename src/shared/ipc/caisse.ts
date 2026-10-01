@@ -18,10 +18,42 @@ export interface SessionCaisse {
 
 /** Ce que l'écran envoie : des identifiants et des quantités, jamais de prix ni de coût. */
 export interface RequeteVente {
-  lignes: { conditionnementId: number; quantite: number }[]
+  /** `remise` : remise sur la ligne en FCFA (règle 6.6), absente = 0. */
+  lignes: { conditionnementId: number; quantite: number; remise?: number }[]
+  /** Remise sur le ticket entier en FCFA, absente = 0. */
+  remiseGlobale?: number
   paiements: { mode: ModePaiementCaisse; montant: number; reference?: string }[]
   /** Espèces données par le client (≥ la part payée en espèces). Absent : montant exact. */
   montantRecu?: number
+  /**
+   * Remises au-delà du plafond de la caissière : jeton remis par `caisse:autoriserRemise`. La vente
+   * reste au nom de la caissière ; le journal note le gérant.
+   */
+  jetonRemise?: string
+}
+
+/** Le gérant tape son code sur la caisse pour autoriser jusqu'à `montant` F de remises sur le ticket. */
+export interface RequeteAccordRemise {
+  utilisateurId: number
+  code: string
+  montant: number
+}
+
+/** Accord à usage unique, valable pour la caissière connectée et jusqu'à `montantMax`. */
+export interface AccordRemiseDonne {
+  jeton: string
+  /** Nom du gérant, affiché sur le ticket en cours. */
+  gerant: string
+  montantMax: number
+}
+
+/**
+ * Une ligne retirée du ticket avant encaissement (journal `annulation_ligne`, règle 6.6). Désignation
+ * et prix sont relus en base.
+ */
+export interface LigneAnnulee {
+  conditionnementId: number
+  quantite: number
 }
 
 export interface VenteEnregistree {
@@ -88,6 +120,18 @@ export interface ContratCaisse {
   'caisse:sessionCourante': { requete: void; reponse: SessionCaisse | null }
   'caisse:ouvrirSession': { requete: { fondOuverture: number }; reponse: SessionCaisse }
   'caisse:enregistrerVente': { requete: RequeteVente; reponse: VenteEnregistree }
+  /**
+   * Journalise une ligne supprimée, ou toutes les lignes d'un ticket abandonné, avant encaissement.
+   * `abandon` : le ticket entier a été vidé. Rien n'est enregistré si la liste est vide.
+   */
+  /** Gérants et admins actifs : ceux qui peuvent autoriser une remise au-delà du plafond. */
+  'caisse:gerants': { requete: void; reponse: { id: number; nom: string }[] }
+  /** Vérifie le code du gérant (verrouillage de la connexion) et remet un accord à usage unique. */
+  'caisse:autoriserRemise': { requete: RequeteAccordRemise; reponse: AccordRemiseDonne }
+  'caisse:journaliserAnnulationLigne': {
+    requete: { lignes: LigneAnnulee[]; abandon: boolean }
+    reponse: void
+  }
   /**
    * Imprime le ticket d'une vente déjà enregistrée (jamais dans la transaction de vente) et ouvre
    * le tiroir si elle comporte des espèces. Original à la première impression réussie, DUPLICATA

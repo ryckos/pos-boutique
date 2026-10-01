@@ -168,6 +168,18 @@ confirmation, « Créer le compte administrateur »).
   remise (selon les droits).
 - Sans session ouverte, l'écran affiche uniquement « Ouvrir la caisse » (saisie du fond).
 
+**Remises (Dev A, A5, 2026-10-01)** :
+- Ligne sélectionnée : bouton « Faire une remise » (« Modifier la remise » s'il y en a une) ; sous le
+  ticket : « Remise sur le ticket ». Une fenêtre `FenetreFormulaire` demande le montant en francs,
+  montre le montant avant et après remise ; 0 = « Retirer la remise ».
+- Au-delà du plafond de la caissière (ou sans plafond fixé, D-A3), la même fenêtre affiche les noms des
+  gérants et un champ « Code du gérant » ; un code faux s'affiche dans la fenêtre, la saisie est gardée.
+- Ligne remisée : total net à droite, et en dessous « 7 500 F − remise 500 F » en vert. Au-dessus du
+  total : « Sous-total » et « Remise sur le ticket » s'il y en a une, puis « Remises : … · accord de
+  Kossi ». L'écran client affiche les mêmes remises.
+- « Supprimer la ligne », Suppr, « − » sur une ligne à 1 et « Vider le ticket » journalisent les lignes
+  retirées (règle 6.6), sans rien demander de plus à la caissière.
+
 ### 5.3 Paiement (Dev A — A2)
 Une fenêtre centrée s'ouvre au-dessus de la caisse. Elle contient :
 - en haut, le montant à payer ;
