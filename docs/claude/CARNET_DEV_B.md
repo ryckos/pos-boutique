@@ -18,6 +18,76 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-01 — b/commandes, b/commandes-ecran — B8 partie 3 : commandes fournisseur
+**Fait** :
+- **PR #25, #26, #27 fusionnées** (réceptions serveur, écran Réceptions, achats d'un fournisseur) :
+  B7 → ✅ dans `ETAT_AVANCEMENT.md`, trois lignes au journal des fusions. Branches `b/receptions`,
+  `b/receptions-ecran`, `b/fournisseurs-achats` supprimées **en local** ; sur GitHub, à supprimer par
+  Dev B (refusé à Claude par les permissions).
+- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 4.7 :
+  - on commande **dans le conditionnement** (3 cartons) ; comparaison avec le reçu en unités de base ;
+  - « Proposer depuis les alertes » liste les produits en rupture / stock bas, **sans quantité
+    calculée** : le gérant coche et saisit (variante simple choisie par Dev B) ;
+  - états : brouillon → « Marquer comme envoyée » (aperçu à copier pour WhatsApp, pas d'envoi
+    automatique) ; à chaque réception liée, automatiquement `recue` ou `recue_partiel` ;
+    « Clôturer » (reste qui ne viendra pas) et « Annuler » (non livrée) avec motif journalisé ;
+  - commande reçue en partie : reste ouverte, reste à recevoir pré-rempli à la réception ; le prix
+    payé à la réception l'emporte (écart affiché) ; article non commandé accepté ;
+  - numéro `CA` dès le brouillon (gardé si annulé) ; **seul le brouillon se modifie** ;
+  - une ligne par produit ; prix prévu facultatif ; liaison seulement à une commande envoyée ou reçue
+    en partie du même fournisseur ; « Clôturer » seulement si reçue en partie.
+  - Nouvelles actions au journal (§ 1.4) : `annulation_commande`, `cloture_commande`.
+- **PR 1 `b/commandes`** (commit `e6b81e2`, poussée) : migration
+  `20261001_0833_commande_conditionnement.sql` (`lignes_commande_achat.conditionnement_id`),
+  service `modules/achats/commandes.ts`, 9 canaux gérant, `commandeId` facultatif sur
+  `achats:validerReception` (statut de la commande recalculé dans la même transaction), numéro de
+  commande dans le détail d'une réception. 11 tests (`tests/commandes.test.ts`).
+- **PR 2 `b/commandes-ecran`** (commit `ae27ab3`, empilée sur la PR 1, poussée) : menu « Commandes »
+  (`PageCommandes.tsx`), logique pure `saisieCommande.ts` (10 tests), bandeau « Livrer CA-… » sur
+  l'écran Réceptions (`livrerCommande`, `changerFournisseur` dans `saisieReception.ts`), champ `unite`
+  sur les lignes de commande, classe commune `.apercu`, `UI_UX.md` § 5.18.
+- 376 tests verts, typecheck OK ; **scénario complet testé à la main par Dev B** (alertes, brouillon,
+  envoi et copie, réception partielle avec écart de prix, clôture, annulation).
+
+**En cours** : deux PR à ouvrir sur GitHub (`gh` absent de ce poste), **dans l'ordre** ; textes fournis
+à Dev B dans la session :
+1. PR 1 `b/commandes` → `test` : https://github.com/ryckos/pos-boutique/compare/test...b/commandes?expand=1
+2. PR 2 `b/commandes-ecran` → `test`, après la fusion de la PR 1. Si la PR 1 est fusionnée en squash :
+   `git switch b/commandes-ecran && git fetch && git rebase --onto origin/test e6b81e2 && git push --force-with-lease`.
+   Ce carnet est commité sur cette branche.
+
+**Prochaine étape** :
+1. Après chaque fusion : une ligne au journal des fusions de `ETAT_AVANCEMENT.md` ; après la PR 2,
+   **B8 → ✅** ; supprimer `b/commandes` et `b/commandes-ecran`.
+2. **B9 Lots, FEFO, tableau des péremptions** (`/tache B9`, branche `b/fefo` depuis `test` à jour) :
+   - d'abord **`allouerFefo(db, produitId, qteBase)`** pour Dev A (**rendez-vous fin S10**, A9) :
+     répartition par lots, date la plus proche d'abord, depuis `v_stock_lots` ; à placer dans
+     `modules/stock/` ; demander à Dev B le comportement quand les lots ne suffisent pas (stock
+     négatif : D-A1 en attente, ne jamais bloquer une vente) ;
+   - puis le tableau des péremptions (`UI_UX.md` § 5.8, horizon `peremption_seuil_jours`, valeur en
+     jeu = restant × prix d'achat du lot, actions Promo / Retirer = `perte_peremption`).
+   - Relire `REGLES_METIER.md` § 5 et `SCENARIO_REFERENCE.md` avant le plan. Les lots créés par la
+     réception portent `reception_id` et le coût par unité arrondi au franc.
+
+**Questions ouvertes** :
+- B9 : que renvoie `allouerFefo` quand la quantité dépasse les lots disponibles ? À poser à Dev B
+  (et à accorder avec Dev A, A9).
+- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
+- Plafond de remise caissier (D-A3) : en attente de la cliente.
+- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photo des produits : reportée.
+
+**Contrats** :
+- Ajoutés (gérant, **sans impact pour la caisse**) : `achats:creerCommande`, `modifierCommande`,
+  `envoyerCommande`, `annulerCommande`, `cloturerCommande`, `commande`, `listeCommandes`,
+  `commandesOuvertes`, `produitsEnAlerte` ; champ facultatif `commandeId` sur
+  `achats:validerReception` ; `Reception.commande` (numéro, facultatif).
+- **Pour Dev A** : nouvelle migration (aucune table de la caisse touchée) ; nouvelle classe commune
+  `.apercu` (texte à copier) ; menu « Commandes » ajouté par `modules/achats/routes.tsx`.
+- Prochain rendez-vous à livrer : `allouerFefo()` (fin S10, B9). Attendus : `sessionOuverte()` existe
+  déjà ; `enregistrerMouvementCaisse()` (Dev A, A8, fin S10) pas encore livré.
+
+---
+
 ## 2026-09-30 (suite) — b/receptions, b/receptions-ecran, b/fournisseurs-achats — B8 parties 1 et 2, B7 partie 2
 **Fait** :
 - **B7 partie 1 fusionnée** (PR #24), inscrite au journal des fusions. `b/fournisseurs` est supprimée en
@@ -512,16 +582,3 @@ tarder, **B2.2** pour livrer `catalogue:conditionnementsProduit` à Dev A (fin S
 Ajoutés — `auth:comptesConnexion`, `auth:definirCodePersonnel`, `auth:changerMonCode`,
 `auth:etatVerrouillage`, `auth:etatDemarrage`, `auth:creerPremierAdmin`, `utilisateurs:*` (admin).
 **Aucun impact sur le code de Dev A** ; seule la connexion de la caissière change (deux gestes).
-
----
-
-## 2026-09-22 — main — Passation initiale
-**Fait** : conception complète (voir `docs/claude/BRIEF_DEV_B.md` § 3), socle initialisé et
-vérifié (typecheck, 17 tests, build), documentation et briefs en place.
-**En cours** : rien.
-**Prochaine étape** : Démarrer **B1 — Utilisateurs, rôles et sécurité** (`/tache B1`). Branche proposée : `b/utilisateurs-roles`.
-**Questions ouvertes** :
-- Ajout de la dépendance `xlsx` pour l'import (B3) : à faire valider par l'équipe.
-- Rendez-vous serrés : `catalogue:conditionnementsProduit` fin S4, `parametres:lire` fin S5.
-- Politique de stock négatif (D-A1) : en attente de la cliente, ne jamais bloquer une vente d'ici là.
-**Contrats** : attendus — `sessionOuverte()` et `enregistrerMouvementCaisse()` (Dev A, fin S10).
