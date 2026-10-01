@@ -28,6 +28,7 @@ interface VenteEnBase {
   horodatage: string
   caissier: string
   totalTtc: number
+  remiseGlobale: number
   montantRecu: number
   monnaieRendue: number
 }
@@ -37,7 +38,7 @@ function lireVente(db: Db, venteId: number): VenteEnBase {
     db,
     `SELECT v.id, v.numero_ticket AS numeroTicket, v.session_caisse_id AS sessionCaisseId,
             v.horodatage, u.nom AS caissier, v.total_ttc AS totalTtc,
-            v.montant_recu AS montantRecu, v.monnaie_rendue AS monnaieRendue
+            v.remise_globale AS remiseGlobale, v.montant_recu AS montantRecu, v.monnaie_rendue AS monnaieRendue
      FROM ventes v JOIN utilisateurs u ON u.id = v.utilisateur_id
      WHERE v.id = ?`,
     venteId
@@ -53,11 +54,13 @@ export function lireTicket(db: Db, venteId: number): TicketAImprimer {
     designation: string
     quantite: number
     prixUnitaire: number
+    remise: number
     totalLigne: number
     tauxTva: number
   }>(
     db,
-    `SELECT designation, quantite, prix_unitaire AS prixUnitaire, total_ligne AS totalLigne, taux_tva AS tauxTva
+    `SELECT designation, quantite, prix_unitaire AS prixUnitaire, remise_ligne AS remise,
+            total_ligne AS totalLigne, taux_tva AS tauxTva
      FROM lignes_vente WHERE vente_id = ? ORDER BY id`,
     venteId
   )
@@ -74,10 +77,15 @@ export function lireTicket(db: Db, venteId: number): TicketAImprimer {
       designation: l.designation,
       quantite: l.quantite,
       prixUnitaire: l.prixUnitaire,
+      remise: l.remise,
       totalLigne: l.totalLigne
     })),
+    remiseGlobale: v.remiseGlobale,
     totalTtc: v.totalTtc,
-    parTaux: ventilerTva(lignes.map((l) => ({ totalTtc: l.totalLigne, tauxTva: l.tauxTva }))).parTaux,
+    parTaux: ventilerTva(
+      lignes.map((l) => ({ totalTtc: l.totalLigne, tauxTva: l.tauxTva })),
+      v.remiseGlobale
+    ).parTaux,
     paiements,
     montantRecu: v.montantRecu,
     monnaieRendue: v.monnaieRendue

@@ -18,10 +18,27 @@ export interface SessionCaisse {
 
 /** Ce que l'écran envoie : des identifiants et des quantités, jamais de prix ni de coût. */
 export interface RequeteVente {
-  lignes: { conditionnementId: number; quantite: number }[]
+  /** `remise` : remise sur la ligne en FCFA (règle 6.6), absente = 0. */
+  lignes: { conditionnementId: number; quantite: number; remise?: number }[]
+  /** Remise sur le ticket entier en FCFA, absente = 0. */
+  remiseGlobale?: number
   paiements: { mode: ModePaiementCaisse; montant: number; reference?: string }[]
   /** Espèces données par le client (≥ la part payée en espèces). Absent : montant exact. */
   montantRecu?: number
+  /**
+   * Remises au-delà du plafond de la caissière : le gérant tape son code sur la caisse. Le serveur
+   * vérifie le code et le rôle ; la vente reste au nom de la caissière.
+   */
+  autorisationGerant?: { utilisateurId: number; code: string }
+}
+
+/**
+ * Une ligne retirée du ticket avant encaissement (journal `annulation_ligne`, règle 6.6). Désignation
+ * et prix sont relus en base.
+ */
+export interface LigneAnnulee {
+  conditionnementId: number
+  quantite: number
 }
 
 export interface VenteEnregistree {
@@ -88,6 +105,14 @@ export interface ContratCaisse {
   'caisse:sessionCourante': { requete: void; reponse: SessionCaisse | null }
   'caisse:ouvrirSession': { requete: { fondOuverture: number }; reponse: SessionCaisse }
   'caisse:enregistrerVente': { requete: RequeteVente; reponse: VenteEnregistree }
+  /**
+   * Journalise une ligne supprimée, ou toutes les lignes d'un ticket abandonné, avant encaissement.
+   * `abandon` : le ticket entier a été vidé. Rien n'est enregistré si la liste est vide.
+   */
+  'caisse:journaliserAnnulationLigne': {
+    requete: { lignes: LigneAnnulee[]; abandon: boolean }
+    reponse: void
+  }
   /**
    * Imprime le ticket d'une vente déjà enregistrée (jamais dans la transaction de vente) et ouvre
    * le tiroir si elle comporte des espèces. Original à la première impression réussie, DUPLICATA

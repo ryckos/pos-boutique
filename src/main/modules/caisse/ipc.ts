@@ -24,7 +24,8 @@ import {
   verifierTypeRapport
 } from './service-cloture'
 import { ouvrirSession, sessionOuverte } from './service-session'
-import { enregistrerVente } from './service-vente'
+import { enregistrerVente, verifierAutorisationGerant } from './service-vente'
+import { journaliserLignesAnnulees } from './service-lignes-annulees'
 import {
   dejaImprime,
   lireTicket,
@@ -88,7 +89,16 @@ export function enregistrerIpcCaisse(): void {
   })
   gerer('caisse:enregistrerVente', (requete) => {
     const u = session.exiger(['caissier', 'gerant'])
-    return enregistrerVente(base(), u.id, requete)
+    const db = base()
+    // Code du gérant vérifié AVANT la transaction : un code faux reste compté même si la vente échoue.
+    const autoriseeParId = requete.autorisationGerant
+      ? verifierAutorisationGerant(db, requete.autorisationGerant)
+      : undefined
+    return enregistrerVente(db, u.id, requete, autoriseeParId)
+  })
+  gerer('caisse:journaliserAnnulationLigne', ({ lignes, abandon }) => {
+    const u = session.exiger(['caissier', 'gerant'])
+    journaliserLignesAnnulees(base(), u.id, lignes, abandon)
   })
   gerer('caisse:imprimerTicket', ({ venteId }) => {
     const u = session.exiger(['caissier', 'gerant'])
