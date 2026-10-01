@@ -52,6 +52,8 @@ Actions à journaliser avec `journaliser()` :
 | `desactivation_utilisateur`   | motif              |
 | `modification_pin`            | la personne a choisi son code ; jamais la valeur |
 | `reinitialisation_pin`        | l'admin a donné un code provisoire ; jamais la valeur |
+| `annulation_commande`         | numéro, statut, motif (§ 4.7) |
+| `cloture_commande`            | numéro, reste non livré, motif (§ 4.7) |
 | `validation_inventaire`       |                    |
 | `restauration_sauvegarde`     |                    |
 
@@ -300,7 +302,7 @@ Le CUMP n'est **jamais** modifié ailleurs que dans le service de réception, et
 - **Premier achat en carton** d'un produit connu : créer le conditionnement « Carton de N » depuis
   la réception.
 - **Livraison en vrac** : choisir le conditionnement « Unité ».
-- **Réception partielle** d'une commande : la commande passe au statut `recue_partiel`.
+- **Réception partielle** d'une commande : la commande passe au statut `recue_partiel` (§ 4.7).
 
 ### 4.5 Dettes fournisseurs
 ```
@@ -329,6 +331,39 @@ Les règlements peuvent être partiels (espèces, mobile money, virement). La vu
     **livraison précédente de ce même fournisseur** (deux lots d'une même livraison ne comptent pas
     comme deux livraisons) ;
   - pas de comparaison entre fournisseurs ici (rapports, B14).
+
+### 4.7 Commandes fournisseur (validé par Dev B le 2026-10-01)
+- **On commande dans le conditionnement**, comme à la réception : « 3 × Carton de 24 à 6 000 F »,
+  avec la conversion affichée en direct (« = 72 boîtes »). Le gérant ne convertit jamais de tête.
+  Les quantités commandées et reçues se comparent en **unités de base**.
+- **Prix prévu** proposé = dernier prix payé pour ce conditionnement (comme à la réception).
+- **Proposer depuis les alertes** : liste les produits en rupture ou en stock bas
+  (`v_alertes_stock`) ; le gérant coche ceux qu'il commande et **saisit lui-même la quantité**.
+  L'application ne calcule aucune quantité.
+- **États** :
+  - `brouillon` puis `envoyee` par le bouton « Marquer comme envoyée ». Il n'y a pas d'envoi
+    automatique : un **aperçu** de la commande se recopie ou se photographie (WhatsApp) ;
+    l'impression sur ticket pourra venir plus tard ;
+  - à chaque réception liée, **automatiquement** : tout est arrivé → `recue`, sinon `recue_partiel` ;
+  - « **Clôturer la commande** » (le reste ne viendra pas) : motif obligatoire, journalisé, → `recue` ;
+  - une commande pas encore livrée peut être **annulée** : motif obligatoire, journalisé, → `annulee`.
+- **Numéro `CA`** attribué dès la création du brouillon, enregistré en base (une commande peut se
+  préparer sur plusieurs jours). Un brouillon abandonné s'annule et garde son numéro : pas de trou.
+- **Une ligne par produit** dans une commande (le reste à recevoir se calcule produit par produit,
+  quel que soit le conditionnement livré). **Prix prévu facultatif** : le total prévu ne compte que
+  les lignes dont le prix est indiqué.
+- Une réception ne se lie qu'à une commande **envoyée** ou **reçue en partie** du même fournisseur.
+  « Clôturer » ne vaut que pour une commande reçue en partie ; une commande livrée en partie ne
+  s'annule plus.
+- **Seul le brouillon se modifie.** Une commande envoyée ne se modifie plus : le fournisseur en a
+  reçu une version précise ; on l'annule et on en fait une autre.
+- **Commande reçue en partie** : elle reste ouverte et affiche le **reste à recevoir** (« 1 carton »).
+  À la réception, l'écran propose les commandes ouvertes du fournisseur ; en choisir une
+  **pré-remplit les lignes avec le reste à recevoir**, que le gérant ajuste à ce qu'il a devant lui.
+- **Le prix payé à la réception l'emporte** sur le prix prévu (la dette vient de la réception) ;
+  l'écart s'affiche à titre d'information.
+- Un article **non commandé** peut être reçu sur une réception liée à une commande. Une réception
+  **sans commande** (achat au marché) reste possible.
 
 ---
 

@@ -77,8 +77,8 @@ Le socle comprend :
 | A8    | Mouvements de caisse (+ API pour B)       | A   | ⏳     |   |
 | A9    | FEFO à la vente                           | A   | ⏳     |   |
 | A10   | Facture et proforma                       | A   | ⏳     |   |
-| B7    | Fournisseurs                              | B   | 🔄     | partie 1 fusionnée (PR #24) : fiches (créer, modifier, désactiver si dette réglée, solde dû), écran Fournisseurs ; partie 2 sur `b/fournisseurs-achats` (empilée sur `b/receptions-ecran`) : bouton « Achats », livraisons d'une période et derniers prix d'achat, canal `fournisseurs:achats` |
-| B8    | Commandes et réceptions (CUMP)            | B   | 🔄     | `b/receptions` — PR 1 : validation d'une réception côté serveur (lignes, lots, mouvements, CUMP, dette avec échéance, RC ; migration `date_echeance`) ; PR 2 (`b/receptions-ecran`, empilée sur la PR 1) : écran Réceptions (liste, saisie avec conversion en direct, brouillon gardé sur le poste, création de produit depuis un code inconnu), canal `achats:listeReceptions` ; les deux testées, PR à ouvrir dans l’ordre ; partie 3 : commandes (règles à obtenir de Dev B) |
+| B7    | Fournisseurs                              | B   | ✅     | PR #24 (fiches, solde dû, désactivation si dette réglée, écran Fournisseurs) et #27 (bouton « Achats » : livraisons d'une période et derniers prix d'achat, canal `fournisseurs:achats`) |
+| B8    | Commandes et réceptions (CUMP)            | B   | 🔄     | réceptions fusionnées : PR #25 (validation côté serveur : lignes, lots, mouvements, CUMP, dette avec échéance, RC ; migration `date_echeance`) et #26 (écran Réceptions, conversion en direct, brouillon sur le poste, produit créé depuis un code inconnu) ; partie 3 **commandes fournisseur** sur `b/commandes` (règles validées le 2026-10-01, `REGLES_METIER.md` § 4.7) |
 | B9    | Lots, FEFO, tableau des péremptions       | B   | ⏳     |   |
 | B10   | Règlements et dettes fournisseurs         | B   | ⏳     |   |
 
@@ -134,3 +134,6 @@ Le socle comprend :
 | 2026-09-28 | B4    | Partie 1 : écran Stock (valeur, ruptures, stocks bas, dormants, répartition par conditionnement) ; `catalogue:produitsStock` retiré (PR #22) |
 | 2026-09-28 | B4    | Partie 2 : historique d'un produit sur une période, stock après chaque mouvement, documents lisibles (PR #23) |
 | 2026-09-30 | B7    | Partie 1 : fiches fournisseurs, solde dû, désactivation refusée tant que la dette n'est pas réglée, écran Fournisseurs (PR #24) |
+| 2026-09-30 | B8    | Partie 1 : validation d'une réception (CUMP ligne après ligne, lots, dette avec échéance, RC), migration `receptions.date_echeance` (PR #25) |
+| 2026-09-30 | B8    | Partie 2 : écran Réceptions, conversion en direct, brouillon gardé sur le poste, création de produit depuis un code inconnu (PR #26) |
+| 2026-09-30 | B7    | Partie 2 : historique des achats et des prix d'achat d'un fournisseur (PR #27) |

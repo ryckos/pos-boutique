@@ -45,9 +45,9 @@ document à jour.
 | Table                     | Rôle                                                            |
 |---------------------------|-----------------------------------------------------------------|
 | `fournisseurs`            | Fiche, `delai_paiement_jours`                                   |
-| `commandes_achat`         | Commande et son statut                                          |
-| `lignes_commande_achat`   | Lignes de commande                                              |
-| `receptions`              | Arrivage, `total` (qui crée la dette), `date_echeance` (figée à la validation, B8) |
+| `commandes_achat`         | Commande, numéro `CA`, `statut` (brouillon → envoyée → reçue en partie / reçue, ou annulée) ; seul le brouillon se modifie (B8) |
+| `lignes_commande_achat`   | Une ligne par produit : `conditionnement_id`, `quantite_commandee` (nombre de conditionnements), `prix_achat_prevu` (d'un conditionnement, 0 = non indiqué) |
+| `receptions`              | Arrivage, `commande_id` (commande livrée, facultatif), `total` (qui crée la dette), `date_echeance` (figée à la validation, B8) |
 | `lignes_reception`        | Saisie telle quelle : `conditionnement_id`, `quantite_recue`, `prix_achat_unitaire` (d'un conditionnement), `quantite_base_totale`, lot, péremption |
 | `reglements_fournisseurs` | Paiements aux fournisseurs                                      |
 
@@ -95,6 +95,7 @@ document à jour.
 | `20260923_1157_securite_connexion.sql`   | `utilisateurs` : code provisoire et verrouillage par compte |
 | `20260925_1100_prix_achat_indicatif.sql` | `produits.prix_achat_indicatif` (FCFA par unité, facultatif) : prix d'achat venu de l'import |
 | `20260930_1400_echeance_reception.sql` | `receptions.date_echeance` (AAAA-MM-JJ) : échéance de la dette, jour de réception + délai du fournisseur |
+| `20261001_0833_commande_conditionnement.sql` | `lignes_commande_achat.conditionnement_id` : on commande dans le conditionnement (3 cartons), comparaison en unités de base |
 
 Ajouter ici chaque nouvelle migration (nom et contenu en une ligne).
 
