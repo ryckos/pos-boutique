@@ -53,7 +53,7 @@ function lignesCommande(db: Db, commandeId: number): LigneCommande[] {
   const lignes = toutes<Omit<LigneCommande, 'prix' | 'total' | 'commandeBase' | 'resteBase'> & { prixPrevu: number }>(
     db,
     `SELECT l.produit_id AS produitId, l.conditionnement_id AS conditionnementId, p.nom AS produit,
-            c.nom AS conditionnement, c.quantite_base AS quantiteCond, l.quantite_commandee AS quantite,
+            c.nom AS conditionnement, p.unite, c.quantite_base AS quantiteCond, l.quantite_commandee AS quantite,
             l.prix_achat_prevu AS prixPrevu,
             COALESCE((SELECT SUM(lr.quantite_base_totale) FROM lignes_reception lr
                       JOIN receptions r ON r.id = lr.reception_id

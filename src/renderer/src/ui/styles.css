@@ -880,6 +880,21 @@ select {
 .champ-etroit input {
   width: 110px;
 }
+/* Texte d'un document à recopier ou copier (aperçu d'une commande fournisseur). */
+.apercu {
+  margin: 0 0 8px;
+  padding: 12px 14px;
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--encre);
+  background: var(--fond);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  user-select: text;
+}
 /* Tableau dont les cellules sont des champs (conditionnements de la fiche produit). */
 .tableau-saisie th,
 .tableau-saisie td {

@@ -96,6 +96,8 @@ export interface LigneCommande {
   conditionnementId: number
   produit: string
   conditionnement: string
+  /** Unité de base du produit : 'piece', 'kg'… */
+  unite: string
   /** Unités de base dans un conditionnement (24 pour un carton de 24). */
   quantiteCond: number
   quantite: number

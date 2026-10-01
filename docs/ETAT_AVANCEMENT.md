@@ -78,7 +78,7 @@ Le socle comprend :
 | A9    | FEFO à la vente                           | A   | ⏳     |   |
 | A10   | Facture et proforma                       | A   | ⏳     |   |
 | B7    | Fournisseurs                              | B   | ✅     | PR #24 (fiches, solde dû, désactivation si dette réglée, écran Fournisseurs) et #27 (bouton « Achats » : livraisons d'une période et derniers prix d'achat, canal `fournisseurs:achats`) |
-| B8    | Commandes et réceptions (CUMP)            | B   | 🔄     | réceptions fusionnées : PR #25 (validation côté serveur : lignes, lots, mouvements, CUMP, dette avec échéance, RC ; migration `date_echeance`) et #26 (écran Réceptions, conversion en direct, brouillon sur le poste, produit créé depuis un code inconnu) ; partie 3 **commandes fournisseur** sur `b/commandes` (règles validées le 2026-10-01, `REGLES_METIER.md` § 4.7) |
+| B8    | Commandes et réceptions (CUMP)            | B   | 🔄     | réceptions fusionnées : PR #25 (validation côté serveur : lignes, lots, mouvements, CUMP, dette avec échéance, RC ; migration `date_echeance`) et #26 (écran Réceptions, conversion en direct, brouillon sur le poste, produit créé depuis un code inconnu) ; partie 3 **commandes fournisseur** (règles validées le 2026-10-01, `REGLES_METIER.md` § 4.7) : PR 1 `b/commandes` (serveur, migration `conditionnement_id`, réception liée à une commande) puis PR 2 `b/commandes-ecran`, empilée (écran Commandes, proposer depuis les alertes, aperçu à copier, bandeau « Livrer CA-… » sur Réceptions) ; testées à la main par Dev B, PR à ouvrir dans l'ordre |
 | B9    | Lots, FEFO, tableau des péremptions       | B   | ⏳     |   |
 | B10   | Règlements et dettes fournisseurs         | B   | ⏳     |   |
 

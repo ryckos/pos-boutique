@@ -27,6 +27,7 @@ export function FenetreDetailReception(props: {
         <p className="vide">
           {r.fournisseur} · reçue le {formaterDate(r.dateReception)} par {r.utilisateur}
           {r.dateEcheance && ` · à payer avant le ${formaterDate(r.dateEcheance)}`}
+          {r.commande && ` · livre la commande ${r.commande}`}
           {r.commentaire && ` · ${r.commentaire}`}
         </p>
         <div className="tableau-cadre">
