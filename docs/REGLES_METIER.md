@@ -255,6 +255,29 @@ Tout se fait dans **une seule transaction** :
    de paiement du fournisseur.
 6. Attribue le numéro `RC-AAAA-NNNNNN`.
 
+Précisions validées par Dev B le 2026-09-30 (B8) :
+- **Brouillon** : la réception en cours de saisie ne vit que dans l'écran (gardée sur le poste pour
+  survivre à une coupure). Rien n'est écrit en base et **le numéro RC n'est attribué qu'à la
+  validation** : pas de trou dans la numérotation, pas de réception abandonnée en base.
+- **Prix proposé** pour un conditionnement : le dernier prix payé pour ce même conditionnement ; à
+  défaut, le prix d'achat indicatif de l'import × la quantité du conditionnement ; sinon le champ est
+  vide. Le prix reste modifiable : on saisit celui du bon de livraison.
+- **Prix d'achat** : francs entiers, strictement positif. Alerte non bloquante si le coût par unité
+  atteint le prix de vente de l'Unité (comme au stock initial).
+- **Quantité reçue** : entière et positive ; décimales permises seulement pour un produit au poids ou
+  au volume (kg, g, litre, ml), le total de la ligne étant alors arrondi au franc.
+- **Péremption** : n° de lot et date obligatoires ; une date déjà passée est refusée ; une date proche
+  (sous `peremption_seuil_jours`) donne une alerte non bloquante.
+- **Échéance** de la dette = jour de la réception + délai de paiement du fournisseur à ce moment,
+  figée sur la réception (`receptions.date_echeance`).
+- **Fournisseur** : seuls les actifs sont proposés et acceptés.
+- **Une réception validée ne se modifie ni ne s'annule** : une erreur se corrige par un retour
+  fournisseur (§ 8) ou par l'inventaire (§ 9). Elle n'est pas journalisée : le document est sa propre
+  trace.
+- Plusieurs lignes du même produit (deux lots de lait, par exemple) sont permises ; le CUMP se
+  recalcule ligne après ligne. Le lot créé porte le coût par unité arrondi au franc (il ne sert qu'à
+  chiffrer la valeur en jeu des péremptions) ; le CUMP garde le coût exact.
+
 ### 4.3 CUMP (coût unitaire moyen pondéré)
 ```
 coûtBase       = prix d'achat du conditionnement / quantite_base
