@@ -26,10 +26,25 @@ export interface RequeteVente {
   /** Espèces données par le client (≥ la part payée en espèces). Absent : montant exact. */
   montantRecu?: number
   /**
-   * Remises au-delà du plafond de la caissière : le gérant tape son code sur la caisse. Le serveur
-   * vérifie le code et le rôle ; la vente reste au nom de la caissière.
+   * Remises au-delà du plafond de la caissière : jeton remis par `caisse:autoriserRemise`. La vente
+   * reste au nom de la caissière ; le journal note le gérant.
    */
-  autorisationGerant?: { utilisateurId: number; code: string }
+  jetonRemise?: string
+}
+
+/** Le gérant tape son code sur la caisse pour autoriser jusqu'à `montant` F de remises sur le ticket. */
+export interface RequeteAccordRemise {
+  utilisateurId: number
+  code: string
+  montant: number
+}
+
+/** Accord à usage unique, valable pour la caissière connectée et jusqu'à `montantMax`. */
+export interface AccordRemiseDonne {
+  jeton: string
+  /** Nom du gérant, affiché sur le ticket en cours. */
+  gerant: string
+  montantMax: number
 }
 
 /**
@@ -109,6 +124,10 @@ export interface ContratCaisse {
    * Journalise une ligne supprimée, ou toutes les lignes d'un ticket abandonné, avant encaissement.
    * `abandon` : le ticket entier a été vidé. Rien n'est enregistré si la liste est vide.
    */
+  /** Gérants et admins actifs : ceux qui peuvent autoriser une remise au-delà du plafond. */
+  'caisse:gerants': { requete: void; reponse: { id: number; nom: string }[] }
+  /** Vérifie le code du gérant (verrouillage de la connexion) et remet un accord à usage unique. */
+  'caisse:autoriserRemise': { requete: RequeteAccordRemise; reponse: AccordRemiseDonne }
   'caisse:journaliserAnnulationLigne': {
     requete: { lignes: LigneAnnulee[]; abandon: boolean }
     reponse: void

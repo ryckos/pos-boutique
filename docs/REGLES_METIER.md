@@ -430,7 +430,10 @@ cliente (D-A3) :
   Plafond à 0 : même effet. Le gérant et l'admin ne sont pas plafonnés.
 - **Autorisation du gérant** : il tape son code sur la caisse, sans déconnecter la caissière. Le code
   passe par la même vérification que la connexion (verrouillage après 5 codes faux). La remise reste
-  au nom de la caissière ; le journal note qui l'a autorisée.
+  au nom de la caissière ; le journal note qui l'a autorisée. L'accord vaut **pour ce ticket, cette
+  caissière et jusqu'au total de remises affiché au gérant** : au-delà, il retape son code. Il sert une
+  seule fois (consommé par la vente encaissée) et tombe si le ticket est vidé ou si l'application
+  redémarre.
 - Une remise est un montant entier ≥ 0, jamais supérieur à sa ligne (remise de ligne) ou au total des
   lignes (remise sur le ticket). `total_ligne` = quantité × prix − remise de ligne ; total du ticket
   = somme des lignes − `remise_globale`. Un ticket ne peut pas tomber à 0 F (un don est une sortie de

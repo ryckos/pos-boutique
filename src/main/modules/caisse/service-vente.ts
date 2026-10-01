@@ -11,11 +11,18 @@
  * Remises (règle 6.6, A5) : montants contrôlés ici, plafond de la caissière relu dans les
  * paramètres, chaque remise journalisée dans la même transaction que la vente.
  */
-import type { ModePaiementCaisse, RequeteVente, VenteEnregistree } from '@shared/ipc/caisse'
+import { randomUUID } from 'node:crypto'
+import type {
+  AccordRemiseDonne,
+  ModePaiementCaisse,
+  RequeteAccordRemise,
+  RequeteVente,
+  VenteEnregistree
+} from '@shared/ipc/caisse'
 import type { Role } from '@shared/types'
 import { formaterFCFA } from '@shared/format'
 import type { Db } from '../../db/connexion'
-import { avecTransaction, executer, une } from '../../db/requetes'
+import { avecTransaction, executer, toutes, une } from '../../db/requetes'
 import { enregistrerMouvement, stockProduit } from '../../core/mouvements'
 import { prochainNumero } from '../../core/numerotation'
 import { journaliser } from '../../core/audit'
@@ -119,6 +126,45 @@ const roleDe = (db: Db, utilisateurId: number): Role | undefined =>
 const estGerant = (role: Role | undefined): boolean => role === 'gerant' || role === 'admin'
 
 /**
+ * Accord du gérant pour dépasser le plafond (règle 6.6) : le gérant tape son code sur la caisse, le
+ * principal vérifie le code tout de suite et remet un jeton à usage unique. L'écran ne garde que le
+ * jeton, jamais le code. L'accord vaut pour CETTE caissière et jusqu'à CE montant de remises : au-delà,
+ * il faut un nouvel accord. Gardé en mémoire : un redémarrage de l'application le fait redemander.
+ */
+interface AccordRemise {
+  gerantId: number
+  caissierId: number
+  montantMax: number
+}
+
+const accords = new Map<string, AccordRemise>()
+
+/** Comptes qui peuvent autoriser une remise : gérants et admins actifs, par ordre alphabétique. */
+export function gerantsActifs(db: Db): { id: number; nom: string }[] {
+  return toutes<{ id: number; nom: string }>(
+    db,
+    "SELECT id, nom FROM utilisateurs WHERE actif = 1 AND role IN ('gerant', 'admin') ORDER BY nom"
+  )
+}
+
+/**
+ * Vérifie le code du gérant (même verrouillage que la connexion) et renvoie le jeton de l'accord.
+ * Hors de toute transaction de vente : un code faux reste compté.
+ */
+export function autoriserRemise(db: Db, caissierId: number, demande: RequeteAccordRemise): AccordRemiseDonne {
+  if (!Number.isInteger(demande.montant) || demande.montant < 1) {
+    throw new ErreurMetier('Montant de remise invalide : saisissez un montant en francs, sans virgule.')
+  }
+  if (!Number.isInteger(demande.utilisateurId) || !estGerant(roleDe(db, demande.utilisateurId))) {
+    throw new ErreurMetier('Seul un gérant peut autoriser cette remise : choisissez un compte de gérant.')
+  }
+  const gerant = verifierCodeCompte(db, demande.utilisateurId, String(demande.code ?? ''))
+  const jeton = randomUUID()
+  accords.set(jeton, { gerantId: gerant.id, caissierId, montantMax: demande.montant })
+  return { jeton, gerant: gerant.nom, montantMax: demande.montant }
+}
+
+/**
  * Plafond de la caissière (règle 6.6) : il porte sur le total des remises du ticket. Non renseigné
  * (D-A3 en attente) = aucune remise sans gérant. Renvoie le gérant qui a autorisé, quand il en a
  * fallu un.
@@ -127,35 +173,23 @@ function controlerPlafond(
   db: Db,
   utilisateurId: number,
   totalRemises: number,
-  autoriseeParId: number | undefined
+  jeton: string | undefined
 ): number | undefined {
   if (totalRemises === 0 || estGerant(roleDe(db, utilisateurId))) return undefined
   const plafond = lireParametres(db).plafondRemiseCaissier ?? 0
   if (totalRemises <= plafond) return undefined
-  // Rôle relu en base : un identifiant seul ne prouve rien.
-  if (autoriseeParId !== undefined && estGerant(roleDe(db, autoriseeParId))) return autoriseeParId
+  const accord = jeton === undefined ? undefined : accords.get(jeton)
+  if (accord && accord.caissierId === utilisateurId && estGerant(roleDe(db, accord.gerantId))) {
+    if (totalRemises <= accord.montantMax) return accord.gerantId
+    throw new ErreurMetier(
+      `Remise de ${formaterFCFA(totalRemises)} au-delà de l’accord du gérant (${formaterFCFA(accord.montantMax)}) : faites-lui taper son code à nouveau.`
+    )
+  }
   throw new ErreurMetier(
     plafond === 0
       ? `Une remise de ${formaterFCFA(totalRemises)} demande l’accord du gérant : faites-lui taper son code.`
       : `Remise de ${formaterFCFA(totalRemises)} au-delà de votre plafond (${formaterFCFA(plafond)}) : faites taper le code du gérant.`
   )
-}
-
-/**
- * Vérifie le code tapé par le gérant sur la caisse (même verrouillage que la connexion) et renvoie
- * son identifiant. À appeler AVANT la transaction de vente : un code faux doit rester compté même
- * si la vente échoue ensuite.
- */
-export function verifierAutorisationGerant(
-  db: Db,
-  autorisation: NonNullable<RequeteVente['autorisationGerant']>
-): number {
-  if (!Number.isInteger(autorisation.utilisateurId))
-    throw new ErreurMetier('Choisissez le gérant qui autorise.')
-  if (!estGerant(roleDe(db, autorisation.utilisateurId))) {
-    throw new ErreurMetier('Seul un gérant peut autoriser cette remise : choisissez un compte de gérant.')
-  }
-  return verifierCodeCompte(db, autorisation.utilisateurId, String(autorisation.code ?? '')).id
 }
 
 /** Contrôle des paiements (règle 6.5). Renvoie les espèces reçues et la monnaie à rendre. */
@@ -200,17 +234,8 @@ function controlerPaiements(
   return { montantRecu, monnaieRendue: montantRecu - especes }
 }
 
-/**
- * `autoriseeParId` : le gérant dont le code a été vérifié par `verifierAutorisationGerant`, quand les
- * remises dépassent le plafond de la caissière.
- */
-export function enregistrerVente(
-  db: Db,
-  utilisateurId: number,
-  requete: RequeteVente,
-  autoriseeParId?: number
-): VenteEnregistree {
-  return avecTransaction(db, () => {
+export function enregistrerVente(db: Db, utilisateurId: number, requete: RequeteVente): VenteEnregistree {
+  const vente = avecTransaction(db, () => {
     const session = sessionOuverte(db, utilisateurId)
     if (!session) throw new ErreurMetier('Ouvrez la caisse (fond de caisse) avant d’encaisser.')
 
@@ -227,7 +252,7 @@ export function enregistrerVente(
       throw new ErreurMetier('Un ticket ne peut pas être gratuit : pour un don, faites une sortie de stock.')
     }
     const totalRemises = remiseGlobale + lignes.reduce((s, l) => s + l.remise, 0)
-    const autorisePar = controlerPlafond(db, utilisateurId, totalRemises, autoriseeParId)
+    const autorisePar = controlerPlafond(db, utilisateurId, totalRemises, requete.jetonRemise)
     const { montantRecu, monnaieRendue } = controlerPaiements(requete, totaux.totalTtc)
 
     // Le numéro n'est pris qu'une fois tout contrôlé ; en cas d'échec plus loin, le rollback le rend.
@@ -318,4 +343,7 @@ export function enregistrerVente(
 
     return { venteId, numeroTicket, totalTtc: totaux.totalTtc, monnaieRendue, alertesStock }
   })
+  // Usage unique : l'accord tombe avec la vente qu'il a permise (pas avant, un refus de paiement le garde).
+  if (requete.jetonRemise !== undefined) accords.delete(requete.jetonRemise)
+  return vente
 }

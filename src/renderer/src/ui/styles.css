@@ -593,6 +593,39 @@ select {
   align-items: center;
   gap: 4px 8px;
 }
+/* Remises (A5) : prix brut et remise sous la ligne, sous-total et remise sur le ticket au-dessus du total. */
+.ticket-lignes li.ticket-ligne {
+  flex-wrap: wrap;
+}
+.ticket-ligne-remise {
+  flex-basis: 100%;
+  text-align: right;
+  font-size: 13px;
+  color: var(--vert);
+}
+.ticket-remises {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  padding: 8px 0;
+  font-size: 15px;
+}
+.ticket-remises > .vide {
+  grid-column: 1 / -1;
+}
+.remise-apercu {
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+}
+.remise-accord {
+  width: 100%;
+}
+.remise-gerants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .ticket-ligne-selectionnee {
   background: var(--vert-pale);
   box-shadow: inset 4px 0 0 var(--vert);
@@ -1124,6 +1157,14 @@ select {
   gap: 12px;
   font-size: 24px;
   padding: 8px 0;
+}
+.ecran-client-remise {
+  grid-column: 2 / -1;
+  font-size: 18px;
+  opacity: 0.8;
+}
+.ecran-client-remise-ticket {
+  opacity: 0.9;
 }
 .ecran-client-total {
   display: flex;

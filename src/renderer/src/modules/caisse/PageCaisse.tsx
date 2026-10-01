@@ -5,7 +5,8 @@
  * total en très grand. L'état (ticket courant et tickets en attente) vit dans panier.ts et
  * attente.ts (fonctions pures, testées), les onglets de la grille dans grille.ts. Sans session
  * ouverte, seul « Ouvrir la caisse » s'affiche.
- * La clôture, les rapports X et Z sont dans PageClotureCaisse (A4). À venir : remises (A5).
+ * La clôture, les rapports X et Z sont dans PageClotureCaisse (A4). Remises et journal des lignes
+ * retirées : A5 (règle 6.6).
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -15,7 +16,18 @@ import { formaterFCFA, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
 import { useUtilisateur } from '@renderer/app/contexte'
-import { totalLigne, totalPanier, trouverLigne, versPanierClient, type ActionPanier } from './panier'
+import {
+  brutLigne,
+  sousTotal,
+  totalLigne,
+  totalPanier,
+  totalRemises,
+  trouverLigne,
+  versLignesVente,
+  versPanierClient,
+  type ActionPanier,
+  type LignePanier
+} from './panier'
 import { etatCaisseInitial, reducteurCaisse, resumeAttente, type EtatCaisse } from './attente'
 import { actionClavier } from './clavier'
 import { versRequete, type EtatPaiement } from './paiement'
@@ -24,6 +36,7 @@ import { FenetreRecherche } from './FenetreRecherche'
 import { FenetreConditionnement } from './FenetreConditionnement'
 import { FenetreReimpression } from './FenetreReimpression'
 import { FenetrePaiement } from './FenetrePaiement'
+import { FenetreRemise } from './FenetreRemise'
 import { OuvertureCaisse } from './OuvertureCaisse'
 
 /** Durée du surlignage d'une ligne ajoutée : un retour visuel, pas une animation décorative. */
@@ -51,6 +64,10 @@ export function PageCaisse(): React.JSX.Element {
   /** conditionnementId de la ligne dont on change le conditionnement ; null = fenêtre fermée. */
   const [conditionnementOuvert, setConditionnementOuvert] = useState<number | null>(null)
   const [reimpressionOuverte, setReimpressionOuverte] = useState(false)
+  /** Remise en cours de saisie : sur une ligne (son conditionnementId) ou sur le ticket ; null = fermée. */
+  const [remiseOuverte, setRemiseOuverte] = useState<{ ligne: number | null } | null>(null)
+  /** Plafond de remise de la caissière (paramètres de B5) ; null = non fixé (D-A3). */
+  const [plafondRemise, setPlafondRemise] = useState<number | null>(null)
   /** Confirmation d'une réimpression par numéro, effacée au scan suivant. */
   const [reimprime, setReimprime] = useState<string | null>(null)
   /** Mode choisi pour ouvrir la fenêtre de paiement ; null = fenêtre fermée. */
@@ -92,6 +109,10 @@ export function PageCaisse(): React.JSX.Element {
     appel('catalogue:grille')
       .then(setGrille)
       .catch((e: Error) => setMessage(e.message))
+    // Sans plafond lisible, on reste prudent : toute remise de la caissière demandera le gérant.
+    appel('parametres:lire')
+      .then((p) => setPlafondRemise(p.plafondRemiseCaissier))
+      .catch(() => setPlafondRemise(null))
   }, [])
 
   const agir = useCallback((action: ActionPanier) => dispatch({ type: 'panier', action }), [])
@@ -128,15 +149,55 @@ export function PageCaisse(): React.JSX.Element {
         }
       })
     },
-    { actif: caisseOuverte && paiement === null && conditionnementOuvert === null && !reimpressionOuverte }
+    {
+      actif:
+        caisseOuverte &&
+        paiement === null &&
+        conditionnementOuvert === null &&
+        !reimpressionOuverte &&
+        remiseOuverte === null
+    }
+  )
+
+  const etatCourant = useRef(etat)
+  etatCourant.current = etat
+
+  // Lignes retirées sous les yeux du client (règle 6.6) : journalisées, sans bloquer la caisse.
+  const journaliserRetrait = useCallback((lignes: LignePanier[], abandon: boolean) => {
+    if (lignes.length === 0) return
+    appel('caisse:journaliserAnnulationLigne', {
+      lignes: lignes.map((l) => ({ conditionnementId: l.article.conditionnementId, quantite: l.quantite })),
+      abandon
+    }).catch((e: Error) => setMessage(e.message))
+  }, [])
+
+  const supprimer = useCallback(
+    (conditionnementId: number) => {
+      const ligne = trouverLigne(etatCourant.current.courant, conditionnementId)
+      if (ligne) journaliserRetrait([ligne], false)
+      agir({ type: 'supprimer', conditionnementId })
+    },
+    [agir, journaliserRetrait]
+  )
+
+  /** « − » sur une ligne à 1 la supprime : c'est alors une ligne retirée, journalisée. */
+  const diminuer = useCallback(
+    (conditionnementId: number) => {
+      const ligne = trouverLigne(etatCourant.current.courant, conditionnementId)
+      if (ligne?.quantite === 1) journaliserRetrait([ligne], false)
+      agir({ type: 'decrementer', conditionnementId })
+    },
+    [agir, journaliserRetrait]
   )
 
   // Raccourcis clavier (UI_UX § 3). Ignorés dans un champ de saisie et quand une fenêtre est
   // ouverte : elle gère ses propres touches.
-  const etatCourant = useRef(etat)
-  etatCourant.current = etat
   const fenetreOuverte =
-    rechercheOuverte || paiement !== null || conditionnementOuvert !== null || reimpressionOuverte
+    rechercheOuverte ||
+    paiement !== null ||
+    conditionnementOuvert !== null ||
+    reimpressionOuverte ||
+    remiseOuverte !== null
   useEffect(() => {
     if (fenetreOuverte || !caisseOuverte) return
     const surTouche = (e: KeyboardEvent): void => {
@@ -157,13 +218,13 @@ export function PageCaisse(): React.JSX.Element {
           agir({ type: 'selectionner', conditionnementId: null })
           break
         case 'supprimerLigne':
-          if (selection !== null) agir({ type: 'supprimer', conditionnementId: selection })
+          if (selection !== null) supprimer(selection)
           break
         case 'plus':
           if (selection !== null) agir({ type: 'incrementer', conditionnementId: selection })
           break
         case 'moins':
-          if (selection !== null) agir({ type: 'decrementer', conditionnementId: selection })
+          if (selection !== null) diminuer(selection)
           break
         case 'encaisser':
           if (etatCourant.current.courant.lignes.length > 0) setPaiement('especes')
@@ -172,16 +233,16 @@ export function PageCaisse(): React.JSX.Element {
     }
     window.addEventListener('keydown', surTouche)
     return () => window.removeEventListener('keydown', surTouche)
-  }, [fenetreOuverte, caisseOuverte, agir])
+  }, [fenetreOuverte, caisseOuverte, agir, supprimer, diminuer])
 
   // La vente est enregistrée en base avant de vider le ticket ; un refus du service remonte dans
   // la fenêtre de paiement, qui reste ouverte avec sa saisie.
   const encaisser = async (etatPaiement: EtatPaiement): Promise<void> => {
-    const lignes = panier.lignes.map((l) => ({
-      conditionnementId: l.article.conditionnementId,
-      quantite: l.quantite
-    }))
-    const vente = await appel('caisse:enregistrerVente', versRequete(etatPaiement, lignes))
+    const vente = await appel('caisse:enregistrerVente', {
+      ...versRequete(etatPaiement, versLignesVente(panier)),
+      ...((panier.remiseGlobale ?? 0) > 0 && { remiseGlobale: panier.remiseGlobale }),
+      ...(panier.accord && { jetonRemise: panier.accord.jeton })
+    })
     agir({ type: 'vider' })
     setPaiement(null)
     setMessage(null)
@@ -326,6 +387,11 @@ export function PageCaisse(): React.JSX.Element {
                     )}
                   </span>
                   <span className="montant">{formaterFCFA(totalLigne(l))}</span>
+                  {!!l.remise && (
+                    <span className="ticket-ligne-remise">
+                      {formaterFCFA(brutLigne(l))} − remise {formaterFCFA(l.remise)}
+                    </span>
+                  )}
                 </li>
               )
             })}
@@ -337,9 +403,7 @@ export function PageCaisse(): React.JSX.Element {
             <button
               className="btn btn-discret"
               aria-label="Diminuer la quantité (−)"
-              onClick={() =>
-                agir({ type: 'decrementer', conditionnementId: selection.article.conditionnementId })
-              }
+              onClick={() => diminuer(selection.article.conditionnementId)}
             >
               −
             </button>
@@ -360,10 +424,14 @@ export function PageCaisse(): React.JSX.Element {
               Changer le conditionnement
             </button>
             <button
+              className="btn btn-discret"
+              onClick={() => setRemiseOuverte({ ligne: selection.article.conditionnementId })}
+            >
+              {selection.remise ? 'Modifier la remise' : 'Faire une remise'}
+            </button>
+            <button
               className="btn btn-discret ticket-actions-supprimer"
-              onClick={() =>
-                agir({ type: 'supprimer', conditionnementId: selection.article.conditionnementId })
-              }
+              onClick={() => supprimer(selection.article.conditionnementId)}
             >
               Supprimer la ligne (Suppr)
             </button>
@@ -427,6 +495,23 @@ export function PageCaisse(): React.JSX.Element {
           </div>
         )}
 
+        {totalRemises(panier) > 0 && (
+          <div className="ticket-remises">
+            {!!panier.remiseGlobale && (
+              <>
+                <span>Sous-total</span>
+                <span className="montant">{formaterFCFA(sousTotal(panier))}</span>
+                <span>Remise sur le ticket</span>
+                <span className="montant">−{formaterFCFA(panier.remiseGlobale)}</span>
+              </>
+            )}
+            <span className="vide">
+              Remises : {formaterFCFA(totalRemises(panier))}
+              {panier.accord && ` · accord de ${panier.accord.gerant}`}
+            </span>
+          </div>
+        )}
+
         <div className="ticket-total">
           <span>Total</span>
           <span className="montant">{formaterFCFA(total)}</span>
@@ -462,7 +547,17 @@ export function PageCaisse(): React.JSX.Element {
           <button
             className="btn btn-discret"
             disabled={panier.lignes.length === 0}
-            onClick={() => agir({ type: 'vider' })}
+            onClick={() => setRemiseOuverte({ ligne: null })}
+          >
+            {panier.remiseGlobale ? 'Modifier la remise sur le ticket' : 'Remise sur le ticket'}
+          </button>
+          <button
+            className="btn btn-discret"
+            disabled={panier.lignes.length === 0}
+            onClick={() => {
+              journaliserRetrait(panier.lignes, true)
+              agir({ type: 'vider' })
+            }}
           >
             Vider le ticket
           </button>
@@ -520,6 +615,33 @@ export function PageCaisse(): React.JSX.Element {
           onFermer={() => setConditionnementOuvert(null)}
         />
       )}
+
+      {remiseOuverte !== null &&
+        (() => {
+          const ligne = remiseOuverte.ligne === null ? undefined : trouverLigne(panier, remiseOuverte.ligne)
+          if (remiseOuverte.ligne !== null && !ligne) return null
+          return (
+            <FenetreRemise
+              panier={panier}
+              conditionnementId={remiseOuverte.ligne}
+              maximum={ligne ? brutLigne(ligne) : sousTotal(panier)}
+              remiseActuelle={ligne ? (ligne.remise ?? 0) : (panier.remiseGlobale ?? 0)}
+              designation={ligne ? `${ligne.quantite} × ${ligne.article.designation}` : null}
+              plafond={plafondRemise}
+              estCaissiere={utilisateur.role === 'caissier'}
+              onAppliquer={(montant, accord) => {
+                if (accord) agir({ type: 'accorder', accord })
+                agir(
+                  ligne
+                    ? { type: 'remiserLigne', conditionnementId: ligne.article.conditionnementId, montant }
+                    : { type: 'remiserTicket', montant }
+                )
+                setRemiseOuverte(null)
+              }}
+              onFermer={() => setRemiseOuverte(null)}
+            />
+          )
+        })()}
 
       {paiement !== null && (
         <FenetrePaiement

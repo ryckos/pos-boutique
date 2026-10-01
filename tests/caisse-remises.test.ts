@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { Db } from '../src/main/db/connexion'
-import { toutes, une } from '../src/main/db/requetes'
+import { executer, toutes, une } from '../src/main/db/requetes'
 import { lignesTicket, LARGEUR } from '../src/main/materiel/ticket'
 import { rechercherParCode } from '../src/main/modules/catalogue/service'
 import { repartirRemise, ventilerTva } from '../src/main/modules/caisse/calculs'
 import { journaliserLignesAnnulees } from '../src/main/modules/caisse/service-lignes-annulees'
 import { ouvrirSession } from '../src/main/modules/caisse/service-session'
 import { lireTicket } from '../src/main/modules/caisse/service-ticket'
-import { enregistrerVente, verifierAutorisationGerant } from '../src/main/modules/caisse/service-vente'
+import { autoriserRemise, enregistrerVente, gerantsActifs } from '../src/main/modules/caisse/service-vente'
 import { ecrireParametres } from '../src/main/modules/parametres/service'
 import type { RequeteVente } from '../src/shared/ipc/caisse'
 import type { UtilisateurConnecte } from '../src/shared/types'
@@ -172,7 +172,13 @@ describe('Remises à la vente — plafond de la caissière (D-A3)', () => {
 
   it('avec l’accord du gérant : vente au nom d’Afi, journal « autorisée par Kossi »', () => {
     const db = base()
-    const v = enregistrerVente(db, AFI, { lignes: lignes(db, 100), paiements: especes(8400) }, KOSSI)
+    const accord = autoriserRemise(db, AFI, { utilisateurId: KOSSI, code: '5678', montant: 100 })
+    expect(accord).toMatchObject({ gerant: 'Kossi', montantMax: 100 })
+    const v = enregistrerVente(db, AFI, {
+      lignes: lignes(db, 100),
+      paiements: especes(8400),
+      jetonRemise: accord.jeton
+    })
     expect(une(db, 'SELECT utilisateur_id AS u FROM ventes WHERE id = ?', v.venteId)).toEqual({ u: AFI })
     expect(journalRemises(db)[0]).toMatchObject({ montant: 100, autoriseeParId: KOSSI })
   })
@@ -191,22 +197,52 @@ describe('Remises à la vente — plafond de la caissière (D-A3)', () => {
     ).toThrow('au-delà de votre plafond (500 F)')
   })
 
-  it('un identifiant de caissière ne vaut pas accord du gérant', () => {
-    const db = base(0)
+  it('l’accord vaut jusqu’à son montant, pour cette caissière, une seule fois', () => {
+    const db = base()
+    const { jeton } = autoriserRemise(db, AFI, { utilisateurId: KOSSI, code: '5678', montant: 300 })
+    // Au-delà du montant accordé : refus, l'accord reste utilisable.
     expect(() =>
-      enregistrerVente(db, AFI, { lignes: lignes(db, 100), paiements: especes(8400) }, AFI)
+      enregistrerVente(db, AFI, { lignes: lignes(db, 400), paiements: especes(8100), jetonRemise: jeton })
+    ).toThrow('au-delà de l’accord du gérant (300 F)')
+    // Une autre caissière ne peut pas s'en servir (Kossi joue ici le rôle d'une caissière sans plafond).
+    executer(db, "UPDATE utilisateurs SET role = 'caissier' WHERE id = ?", KOSSI)
+    ouvrirSession(db, PATRON.id, 0)
+    expect(() =>
+      enregistrerVente(db, KOSSI, { lignes: lignes(db, 300), paiements: especes(8200), jetonRemise: jeton })
+    ).toThrow('demande l’accord du gérant')
+    executer(db, "UPDATE utilisateurs SET role = 'gerant' WHERE id = ?", KOSSI)
+    // Un refus de paiement ne consomme pas l'accord ; la vente réussie, si.
+    expect(() =>
+      enregistrerVente(db, AFI, { lignes: lignes(db, 300), paiements: especes(1), jetonRemise: jeton })
+    ).toThrow('Paiement incomplet')
+    enregistrerVente(db, AFI, { lignes: lignes(db, 300), paiements: especes(8200), jetonRemise: jeton })
+    expect(() =>
+      enregistrerVente(db, AFI, { lignes: lignes(db, 300), paiements: especes(8200), jetonRemise: jeton })
     ).toThrow('demande l’accord du gérant')
   })
 
-  it('code du gérant : bon code → Kossi ; code faux refusé ; compte de caissière refusé', () => {
+  it('un jeton inventé ne vaut pas accord du gérant', () => {
+    const db = base(0)
+    expect(() =>
+      enregistrerVente(db, AFI, { lignes: lignes(db, 100), paiements: especes(8400), jetonRemise: 'faux' })
+    ).toThrow('demande l’accord du gérant')
+  })
+
+  it('code du gérant : code faux refusé ; compte de caissière refusé ; montant invalide refusé', () => {
     const db = base()
-    expect(verifierAutorisationGerant(db, { utilisateurId: KOSSI, code: '5678' })).toBe(KOSSI)
-    expect(() => verifierAutorisationGerant(db, { utilisateurId: KOSSI, code: '1111' })).toThrow(
+    expect(() => autoriserRemise(db, AFI, { utilisateurId: KOSSI, code: '1111', montant: 100 })).toThrow(
       'Code incorrect'
     )
-    expect(() => verifierAutorisationGerant(db, { utilisateurId: AFI, code: '0000' })).toThrow(
+    expect(() => autoriserRemise(db, AFI, { utilisateurId: AFI, code: '0000', montant: 100 })).toThrow(
       'Seul un gérant peut autoriser'
     )
+    expect(() => autoriserRemise(db, AFI, { utilisateurId: KOSSI, code: '5678', montant: 0 })).toThrow(
+      'Montant de remise invalide'
+    )
+  })
+
+  it('liste des gérants : Kossi et le Patron, pas Afi', () => {
+    expect(gerantsActifs(base()).map((g) => g.nom)).toEqual(['Kossi', 'Patron'])
   })
 })
 
