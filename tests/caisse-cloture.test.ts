@@ -17,6 +17,7 @@ import {
 } from '../src/main/modules/caisse/service-cloture'
 import { ouvrirSession, sessionOuverte } from '../src/main/modules/caisse/service-session'
 import { enregistrerVente } from '../src/main/modules/caisse/service-vente'
+import { dateHeure, etatCompte } from '../src/renderer/src/modules/caisse/cloture'
 import type { RapportCaisse } from '../src/shared/ipc/caisse'
 import type { UtilisateurConnecte } from '../src/shared/types'
 import { baseAvecDemo } from './aide'
@@ -320,5 +321,52 @@ describe('Rapports imprimés', () => {
       const octets = mettreEnPageRapport(r, ENTETE, page, { type: 'Z', duplicata: false })
       expect(octets.filter((o) => o === 0x3f).length, page).toBe(attendus)
     }
+  })
+})
+
+describe('Écran de clôture — écart en direct', () => {
+  it('rien saisi : pas d’écart, clôture impossible', () => {
+    expect(etatCompte(58700, '', '')).toEqual({
+      compte: null,
+      ecart: null,
+      ton: null,
+      commentaireRequis: false,
+      peutCloturer: false
+    })
+  })
+
+  it('58 200 comptés pour 58 700 : manque de 500, commentaire exigé', () => {
+    expect(etatCompte(58700, '58 200', '')).toMatchObject({
+      compte: 58200,
+      ecart: -500,
+      ton: 'manque',
+      commentaireRequis: true,
+      peutCloturer: false
+    })
+    expect(etatCompte(58700, '58200', 'Monnaie rendue en trop').peutCloturer).toBe(true)
+    expect(etatCompte(58700, '58200', '   ').peutCloturer).toBe(false)
+  })
+
+  it('surplus en ambre, compte juste en vert sans commentaire', () => {
+    expect(etatCompte(58700, '59000', 'x')).toMatchObject({ ecart: 300, ton: 'surplus' })
+    expect(etatCompte(58700, '58700', '')).toMatchObject({
+      ecart: 0,
+      ton: 'juste',
+      commentaireRequis: false,
+      peutCloturer: true
+    })
+  })
+
+  it('date d’ouverture lisible', () => {
+    expect(dateHeure('2026-09-24 07:45:12')).toBe('24/09/2026 à 07:45')
+  })
+})
+
+describe('Session clôturée — montants figés', () => {
+  it('le théorique figé à la clôture fait foi, même si une écriture arrive après', () => {
+    const { db, sessionId } = vendrediAfi()
+    cloturerSession(db, AFI, { montantCompte: 58200, commentaire: 'manque' })
+    mouvementCaisse(db, sessionId, 'sortie', 'retrait', 2000, 'écriture tardive')
+    expect(rapportSession(db, sessionId)).toMatchObject({ especesTheoriques: 58700, ecart: -500 })
   })
 })

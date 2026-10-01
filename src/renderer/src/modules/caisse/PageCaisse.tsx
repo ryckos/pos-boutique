@@ -5,9 +5,10 @@
  * total en très grand. L'état (ticket courant et tickets en attente) vit dans panier.ts et
  * attente.ts (fonctions pures, testées), les onglets de la grille dans grille.ts. Sans session
  * ouverte, seul « Ouvrir la caisse » s'affiche.
- * À venir : ticket et tiroir (A3) · clôture, X et Z (A4) · remises (A5).
+ * La clôture, les rapports X et Z sont dans PageClotureCaisse (A4). À venir : remises (A5).
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { ArticleCatalogue } from '@shared/types'
 import type { ModePaiementCaisse, SessionCaisse, VenteEnregistree } from '@shared/ipc/caisse'
 import { formaterFCFA, formaterQuantite } from '@shared/format'
@@ -37,6 +38,7 @@ const memoireParUtilisateur = new Map<number, EtatCaisse>()
 
 export function PageCaisse(): React.JSX.Element {
   const utilisateur = useUtilisateur()
+  const naviguer = useNavigate()
   const [etat, dispatch] = useReducer(
     reducteurCaisse,
     utilisateur.id,
@@ -466,6 +468,19 @@ export function PageCaisse(): React.JSX.Element {
           </button>
           <button className="btn btn-discret" onClick={() => setReimpressionOuverte(true)}>
             Réimprimer un ticket
+          </button>
+          <button
+            className="btn btn-discret"
+            onClick={() => {
+              // Un ticket en cours ou en attente serait orphelin après la clôture.
+              if (panier.lignes.length > 0 || etat.attente.length > 0) {
+                setMessage(
+                  'Encaissez ou videz le ticket en cours et les tickets en attente avant de clôturer.'
+                )
+              } else naviguer('/cloture')
+            }}
+          >
+            Clôturer la caisse
           </button>
         </div>
       </section>

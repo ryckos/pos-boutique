@@ -1143,3 +1143,103 @@ select {
     transition: none !important;
   }
 }
+
+/* ─── Clôture de caisse (Dev A, A4 — UI_UX § 5.4) ─── */
+.cloture-choix {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.cloture-session {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: var(--cible);
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  color: var(--encre);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.cloture-session:hover {
+  border-color: var(--vert);
+}
+.cloture-session-nom {
+  font-size: 18px;
+  font-weight: 600;
+}
+.cloture-totaux {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.cloture-carte {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+}
+.cloture-carte .montant {
+  font-size: 24px;
+  font-weight: 600;
+}
+.cloture-lignes {
+  display: grid;
+  grid-template-columns: 1fr max-content;
+  gap: 8px 24px;
+  max-width: 560px;
+}
+.cloture-lignes dd {
+  text-align: right;
+}
+.cloture-total {
+  padding-top: 8px;
+  border-top: 1px solid var(--bord);
+  font-size: 20px;
+  font-weight: 700;
+}
+.cloture-saisie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px 24px;
+  margin-top: 20px;
+}
+.cloture-ecart {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 20px;
+  padding: 10px 14px;
+  border-radius: var(--rayon);
+}
+.cloture-ecart-manque {
+  background: var(--rouge-pale);
+  color: var(--rouge);
+}
+.cloture-ecart-surplus {
+  background: var(--ambre-pale);
+  color: var(--ambre);
+}
+.cloture-ecart-juste {
+  background: var(--vert-pale);
+  color: var(--vert);
+}
+.cloture-commentaire {
+  margin-top: 14px;
+}
+.cloture-suite {
+  margin-top: 16px;
+}
+@media (max-width: 900px) {
+  .cloture-totaux {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

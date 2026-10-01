@@ -218,6 +218,16 @@ Clôture de caisse — session du vendredi              Caissière : Afi · ouve
 ```
 L'écart s'affiche en rouge s'il est négatif, en ambre s'il est positif, et en vert s'il est nul.
 
+Précisions de réalisation (A4, 2026-09-25) :
+- On y arrive par « Clôturer la caisse » (écran Caisse, refusé tant qu'un ticket est en cours ou en
+  attente) ou par l'entrée de menu « Clôture de caisse ». Le gérant choisit d'abord la caisse si
+  plusieurs sont ouvertes.
+- L'écran lui-même est l'aperçu du X ; le bouton s'appelle « Imprimer le rapport X ».
+- Écart non nul : le commentaire devient obligatoire et « Clôturer et imprimer le Z » reste grisé.
+  Une fenêtre de confirmation rappelle théorique, compté et écart.
+- Après la clôture : « Caisse clôturée », écart, commentaire, « Réimprimer le Z » (bandeau si
+  l'imprimante échoue ; la clôture reste enregistrée).
+
 ### 5.5 Écran client (Dev A — A13)
 Fond `--encre` et texte blanc, lisibles à 1,5 m. Il affiche :
 - le nom de la boutique ;

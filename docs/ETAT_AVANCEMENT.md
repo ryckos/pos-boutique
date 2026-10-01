@@ -58,7 +58,7 @@ Le socle comprend :
 | A1.2  | Grille, recherche F2, conditionnement, attente  | A   | ✅     | PR #6 (attente, F2, raccourcis) et #15 (onglets de rayons, changer le conditionnement) |
 | A2    | Encaissement et enregistrement de la vente      | A   | ✅     | PR #7 (serveur) et #14 (ouverture de caisse, fenêtre de paiement) — impression et tiroir en A3 |
 | A3    | Ticket, tiroir, réglages matériel               | A   | 🔄     | PR #18 fusionnée (ticket, tiroir, réimpression DUPLICATA, Réglages matériel ; en-tête et imprimante dans les paramètres de B5) ; **reste l'essai sur le terminal avec la Xprinter** (critère de fin, et page de codes D-A2) |
-| A4    | Sessions de caisse, X et Z                      | A   | 🔄     | `a/caisse-cloture` — partie 1 (serveur, rapports X / Z imprimés, tests 58 700 / −500) faite ; partie 2 : écran de clôture |
+| A4    | Sessions de caisse, X et Z                      | A   | 🔄     | `a/caisse-cloture` — serveur, rapports X / Z imprimés (tests 58 700 / −500) et écran « Clôture de caisse » (écart en direct testé) codés, rebasée sur `test`, `/verifier` vert (355 tests) ; PR vers `test` après essais manuels ; impression réelle du Z avec l'essai Xprinter |
 | A5    | Remises, droits, stabilisation                  | A   | ⏳     |       |
 | B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | ✅     | PR #4 — connexion par nom et code (D-17), verrouillage par compte, code provisoire, écrans Comptes / Mon code / premier démarrage |
 | B2.1  | Catégories                                      | B   | ✅     | PR #8 — rayons et sous-rayons, écran Catégories, `categorie` dans `ArticleCatalogue` |

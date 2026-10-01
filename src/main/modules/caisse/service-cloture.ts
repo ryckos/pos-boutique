@@ -32,6 +32,7 @@ interface SessionEnBase {
   dateOuverture: string
   dateFermeture: string | null
   statut: 'ouverte' | 'fermee'
+  montantTheorique: number | null
   montantCompte: number | null
   ecart: number | null
   commentaire: string | null
@@ -51,6 +52,7 @@ function lireSession(db: Db, sessionId: number): SessionEnBase {
     db,
     `SELECT s.id, s.utilisateur_id AS utilisateurId, u.nom AS caissier, s.fond_ouverture AS fondOuverture,
             s.date_ouverture AS dateOuverture, s.date_fermeture AS dateFermeture, s.statut,
+            s.montant_theorique AS montantTheorique,
             s.montant_compte AS montantCompte, s.ecart, s.commentaire
      FROM sessions_caisse s JOIN utilisateurs u ON u.id = s.utilisateur_id
      WHERE s.id = ?`,
@@ -146,10 +148,12 @@ export function rapportSession(db: Db, sessionId: number): RapportCaisse {
 
   // Espèces : la part payée en espèces (paiements), jamais le montant reçu — la monnaie est rendue.
   const ventesEspeces = totauxParMode.especes
+  // Session clôturée : le théorique figé à la clôture fait foi (il a servi à calculer l'écart).
   const especesTheoriques =
+    s.montantTheorique ??
     s.fondOuverture +
-    ventesEspeces +
-    mouvements.reduce((somme, m) => somme + (m.sens === 'entree' ? m.montant : -m.montant), 0)
+      ventesEspeces +
+      mouvements.reduce((somme, m) => somme + (m.sens === 'entree' ? m.montant : -m.montant), 0)
 
   return {
     sessionId: s.id,
