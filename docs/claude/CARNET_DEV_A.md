@@ -18,6 +18,60 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-01 — a/caisse-cloture — A4 Sessions de caisse, rapports X et Z
+**Fait** :
+- **Partie 1 (serveur, commit `238a185`, travail du 2026-09-25)** : `modules/caisse/service-cloture.ts`
+  (rapport relu en base, clôture en une transaction, droits), `materiel/rapport.ts` (X et Z en
+  48 colonnes, réutilise `mettreEnPage` désormais exporté par `materiel/ticket.ts`), canaux
+  `caisse:sessionsOuvertes` (gérant), `caisse:rapportSession`, `caisse:cloturerSession`,
+  `caisse:imprimerRapport`. **Règles validées par Dev A**, écrites dans `REGLES_METIER.md` § 6.9 :
+  la caissière clôture sa session, le gérant (et l'admin) n'importe laquelle ; écart non nul =
+  commentaire obligatoire ; espèces théoriques = fond + part espèces des tickets terminés + entrées −
+  sorties, recalculées par le principal ; Z : 1re impression réussie = original, puis DUPLICATA
+  (journal `impression_rapport_z`) ; X « Provisoire », non journalisé ; journal
+  `cloture_session_caisse`. Cas de référence 58 700 / compté 58 200 → −500 testé.
+- **Partie 2 (écran, commit `0bdae99`)** : `PageClotureCaisse.tsx` (route `/cloture`, menu
+  « Clôture de caisse ») : 4 totaux par mode, espèces théoriques ligne à ligne, saisie du compté,
+  écart coloré en direct (rouge manque, ambre surplus, vert juste), commentaire exigé, fenêtre de
+  confirmation, « Imprimer le rapport X », « Clôturer et imprimer le Z », vue « Caisse clôturée »
+  avec « Réimprimer le Z » (bandeau si l'imprimante échoue, la clôture reste enregistrée). Gérant :
+  choisit la caisse si plusieurs sont ouvertes. Bouton « Clôturer la caisse » dans l'écran Caisse,
+  refusé tant qu'un ticket est en cours ou en attente. `cloture.ts` (logique pure de l'écart, testée).
+  Une session clôturée garde le théorique figé à la clôture (testé). Précisions dans `UI_UX.md` § 5.4.
+- `/verifier` : aucun manquement. Branche **rebasée sur `test`** (B3 à B8 de Dev B ; un seul conflit
+  dans le journal des fusions, deux côtés gardés), `npm install` (dépendance `xlsx` de B3),
+  **355 tests verts**, poussée. Essais manuels de la clôture faits par Dev A.
+
+**En cours** : A4 🔄 — **PR vers `test` à ouvrir à la main** (`gh` absent du poste) :
+https://github.com/ryckos/pos-boutique/compare/test...a/caisse-cloture?expand=1 , titre
+`feat(caisse): clôture de caisse, rapports X et Z (A4)` ; le texte a été donné à Dev A dans la session.
+
+**Prochaine étape** :
+1. Après fusion de la PR : A4 reste 🔄 (comme A3) jusqu'à l'**impression réelle du Z** sur la Xprinter ;
+   ajouter la ligne au journal des fusions de `ETAT_AVANCEMENT.md` ; supprimer la branche.
+2. **Essai terminal** (dès que Dev A a l'imprimante) : tout le programme de l'entrée A3 ci-dessous
+   (page de codes D-A2, ticket, tiroir, panne) **plus** rapport X, clôture, Z puis « Réimprimer le Z »
+   = DUPLICATA. Puis A3 et A4 → ✅.
+3. Ensuite **A5 — Remises, droits, stabilisation** (`/tache A5`, branche `a/caisse-remises` depuis
+   `test`). Bloquant : **D-A3 (plafond de remise du caissier)** à obtenir de la cliente avant de coder
+   le plafond ; le reste (remise ligne / ticket en FCFA, journalisée) peut avancer.
+4. **À ne pas oublier en A8** : `enregistrerMouvementCaisse()` devra **refuser une session clôturée**
+   (« Cette caisse est clôturée : ouvrez une nouvelle session »), avec un test. Aujourd'hui rien ne
+   garde `mouvements_caisse` : un test de `caisse-cloture.test.ts` écrit un retrait après la clôture
+   (le Z reste juste grâce au théorique figé, mais l'écriture ne devrait pas être possible).
+   Dev B appellera cette fonction pour les dépenses (B13).
+
+**Questions ouvertes** :
+- Essai terminal : Xprinter (A3, A4, D-A2), fenêtre de paiement sur le 15,6″, douchette réelle (A1.1).
+- D-A1 (stock négatif), D-A3 (plafond remise, bloque une partie d'A5) : inchangées.
+- Rappel à Dev B : fichier temporaire `electron.vite.config.1790196666553.mjs` toujours versionné.
+- Sur ce poste : tag local `sauvegarde-avant-rebase-a3` encore présent (`git tag -d sauvegarde-avant-rebase-a3`).
+
+**Contrats** : ajoutés (Dev A, ajouts seulement, aucun impact sur Dev B) : `caisse:sessionsOuvertes`,
+`caisse:rapportSession`, `caisse:cloturerSession`, `caisse:imprimerRapport`. Pour Dev B (B13) : une
+session clôturée est figée par le service, sans trigger ; la garde de `mouvements_caisse` viendra avec
+`enregistrerMouvementCaisse()` (A8, fin S10). Rien d'attendu de Dev B pour A5.
+
 ## 2026-09-24 (fin) — a/caisse-ticket — A3 Ticket, tiroir, réglages matériel
 **Fait** :
 - A1.2 fusionnée (PR #15) et passée à ✅. D-A2 : personne ne se souvient du résultat de T2 →
