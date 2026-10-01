@@ -10,6 +10,7 @@ import type {
   ArticleReception,
   LigneReception,
   Reception,
+  ResumeReception,
   SaisieLigneReception,
   SaisieReception
 } from '@shared/ipc/achats'
@@ -65,6 +66,21 @@ export function articleReception(db: Db, conditionnementId: number): ArticleRece
     prixUnite: a.prixUnite ?? 0,
     prixPropose
   }
+}
+
+export function listerReceptions(db: Db, limite = 200): ResumeReception[] {
+  return toutes<ResumeReception>(
+    db,
+    `SELECT r.id, r.numero, f.nom AS fournisseur, r.date_reception AS dateReception,
+            r.date_echeance AS dateEcheance, r.total, u.nom AS utilisateur,
+            (SELECT COUNT(*) FROM lignes_reception l WHERE l.reception_id = r.id) AS nbLignes
+     FROM receptions r
+     JOIN fournisseurs f ON f.id = r.fournisseur_id
+     JOIN utilisateurs u ON u.id = r.utilisateur_id
+     ORDER BY r.id DESC
+     LIMIT ?`,
+    limite
+  )
 }
 
 export function lireReception(db: Db, id: number): Reception {

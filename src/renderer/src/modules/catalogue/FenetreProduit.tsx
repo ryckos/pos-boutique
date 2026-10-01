@@ -33,6 +33,8 @@ export interface PropsFenetreProduit {
    * pastille. Doit avoir un format valide (voir champsDepuisCodeScanne).
    */
   codeScanne?: string
+  /** Libellé du bouton de validation, à la place du libellé par défaut (réception : « Enregistrer et ajouter à la réception »). */
+  libelleValider?: string
   /** Après l'enregistrement : les alertes de prix éventuelles, à afficher sur la page. */
   onEnregistre: (nom: string, alertes: AlertePrix[]) => void
   onFermer: () => void
@@ -144,7 +146,9 @@ export function FenetreProduit(props: PropsFenetreProduit): React.JSX.Element {
           <span className="pastille pastille-ok">Code scanné : {props.codeScanne}</span>
         )
       }
-      libelleValider={creation ? 'Créer le produit' : 'Enregistrer les modifications'}
+      libelleValider={
+        props.libelleValider ?? (creation ? 'Créer le produit' : 'Enregistrer les modifications')
+      }
       valide={saisieComplete(champs)}
       large
       onValider={enregistrer}

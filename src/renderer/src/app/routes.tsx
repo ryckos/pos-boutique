@@ -3,6 +3,7 @@
  * Une fonctionnalité non terminée peut être fusionnée SANS apparaître ici.
  */
 import type { DefinitionRoute } from './types'
+import { routesAchats } from '@renderer/modules/achats/routes'
 import { routesCaisse } from '@renderer/modules/caisse/routes'
 import { routesCatalogue } from '@renderer/modules/catalogue/routes'
 import { routesFournisseurs } from '@renderer/modules/fournisseurs/routes'
@@ -15,6 +16,7 @@ export const routes: DefinitionRoute[] = [
   ...routesCaisse, // Dev A
   ...routesCatalogue, // Dev B
   ...routesStock, // Dev B
+  ...routesAchats, // Dev B
   ...routesFournisseurs, // Dev B
   ...routesUtilisateurs, // Dev B
   ...routesParametres, // Dev B

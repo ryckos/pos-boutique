@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { articleReception, lireReception, validerReception } from '../src/main/modules/achats/receptions'
+import {
+  articleReception,
+  lireReception,
+  listerReceptions,
+  validerReception
+} from '../src/main/modules/achats/receptions'
 import {
   listerFournisseurs,
   creerFournisseur,
@@ -277,6 +282,21 @@ describe('Réception : validation (scénario lundi 8 h, REGLES_METIER § 4.2)', 
       lignes: [{ conditionnementId: conditionnement(db, '101'), quantite: 40, prix: 180 }]
     })
     expect(r.dateEcheance).toBe(une<{ d: string }>(db, "SELECT date('now','localtime') AS d")!.d)
+  })
+
+  it('liste les réceptions, la plus récente d’abord', () => {
+    const db = baseAvecDemo()
+    livraisonDuLundi(db)
+    const { numero } = livraisonDuLundi(db)
+    const liste = listerReceptions(db)
+    expect(liste).toHaveLength(2)
+    expect(liste[0]).toMatchObject({
+      numero,
+      fournisseur: 'Grossiste Hédzranawoé',
+      total: 43200,
+      utilisateur: 'Kossi',
+      nbLignes: 2
+    })
   })
 
   it('numéros RC à la suite', () => {
