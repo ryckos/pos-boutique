@@ -20,6 +20,7 @@ import { avecTransaction, executer, toutes, une } from '../../db/requetes'
 import { ErreurMetier } from '../../core/erreurs'
 import { enregistrerMouvement, stockProduit } from '../../core/mouvements'
 import { prochainNumero } from '../../core/numerotation'
+import { majStatutApresReception, verifierCommandeALivrer } from './commandes'
 
 export const DOCUMENT_RECEPTION = 'reception'
 
@@ -88,10 +89,11 @@ export function lireReception(db: Db, id: number): Reception {
     db,
     `SELECT r.id, r.numero, r.fournisseur_id AS fournisseurId, f.nom AS fournisseur,
             r.date_reception AS dateReception, r.date_echeance AS dateEcheance, r.total,
-            u.nom AS utilisateur, r.commentaire
+            u.nom AS utilisateur, r.commentaire, c.numero AS commande
      FROM receptions r
      JOIN fournisseurs f ON f.id = r.fournisseur_id
      JOIN utilisateurs u ON u.id = r.utilisateur_id
+     LEFT JOIN commandes_achat c ON c.id = r.commande_id
      WHERE r.id = ?`,
     id
   )
@@ -186,6 +188,8 @@ export function validerReception(
     )
     if (!f) throw new ErreurMetier('Choisissez le fournisseur qui livre')
     if (!f.actif) throw new ErreurMetier(`« ${f.nom} » est désactivé : choisissez un autre fournisseur`)
+    const commandeId = s.commandeId ?? null
+    if (commandeId !== null) verifierCommandeALivrer(db, commandeId, s.fournisseurId)
 
     // Tout est vérifié avant la première écriture ; une erreur plus loin annule quand même tout.
     const lignes = s.lignes.map((l, i) => verifierLigne(db, l, i + 1))
@@ -201,9 +205,10 @@ export function validerReception(
     const numero = prochainNumero(db, 'RC')
     const receptionId = executer(
       db,
-      `INSERT INTO receptions (numero, fournisseur_id, date_reception, date_echeance, total, utilisateur_id, commentaire)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO receptions (numero, commande_id, fournisseur_id, date_reception, date_echeance, total, utilisateur_id, commentaire)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       numero,
+      commandeId,
       s.fournisseurId,
       maintenant,
       dateEcheance,
@@ -271,6 +276,9 @@ export function validerReception(
         a.produitId
       )
     }
+
+    // Le prix payé ici fait la dette ; la commande ne sert qu'à suivre ce qui reste à venir (§ 4.7).
+    if (commandeId !== null) majStatutApresReception(db, commandeId)
 
     return { id: receptionId, numero, total, dateEcheance }
   })
