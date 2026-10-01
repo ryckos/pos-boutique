@@ -60,6 +60,7 @@ Classes existantes :
 | `.voile`, `.fenetre`, `.fenetre-large`, `.formulaire-bloc` | Fenêtres modales (`ui/FenetreFormulaire.tsx`) |
 | `.champ`, `.champ-large`, `.champ-etroit`, `.case` | Champs de formulaire, case à cocher de 48 px |
 | `.tableau-saisie`, `.champ-avec-action`     | Tableau dont les cellules sont des champs (conditionnements) |
+| `.apercu`                                   | Texte d'un document à copier ou recopier (aperçu d'une commande) |
 | `.filtres`                                  | Filtres au-dessus d'un tableau de gestion |
 | `.caisse*`, `.grille-boutons`, `.bouton-article`, `.ticket-*` | Écran de caisse       |
 | `.ecran-client*`                            | Écran client                          |
@@ -423,6 +424,34 @@ chaque ligne, désactivés compris (B7 partie 2) : fenêtre large « Achats — 
 articles, total, à payer avant le, « Voir le détail ») et tableau « Prix d'achat » (article avec la
 date et le coût par unité en petit, dernier prix, livraison précédente, écart « +600 F (+10 %) » en
 pastille ambre s'il augmente, nombre d'achats).
+
+### 5.18 Commandes fournisseur (Dev B — B8 partie 3, gérant)
+Page « Commandes » du menu (`modules/achats/PageCommandes.tsx`), avant « Réceptions ». Tableau Numéro /
+Date (et auteur) / Fournisseur / Articles / Total prévu / État, avec une pastille par état : Brouillon
+et Reçue en partie en ambre, Envoyée neutre, Reçue en vert, Annulée en gris. Boutons selon l'état :
+« Voir » toujours ; « Modifier », « Marquer comme envoyée » et « Annuler » pour un brouillon ;
+« Annuler » pour une commande envoyée ; « Clôturer » pour une commande reçue en partie.
+- **Nouvelle commande / Modifier** (fenêtre large, pastille « Brouillon ») : Fournisseur, « Ajouter un
+  article » (`data-scan`, recherche par nom dès 2 lettres), bouton **« Proposer depuis les alertes »**
+  qui déplie la liste des produits en rupture ou en stock bas (stock, seuil, pastille), avec une
+  étiquette « À commander » de 48 px par produit et « Ajouter les produits cochés » ; aucune quantité
+  n'est proposée. Tableau Article (choix du conditionnement, « ⇄ = 72 unités » en direct) / Qté
+  commandée / Prix prévu (facultatif, pré-rempli du dernier prix payé) / Total / Retirer. Un produit
+  déjà présent n'est pas ajouté une seconde fois (« Déjà dans la commande… »). Un code inconnu renvoie
+  vers l'écran Produits. Boutons « Enregistrer la commande » / « Enregistrer les modifications ».
+- **Marquer comme envoyée** : fenêtre avec l'**aperçu** de la commande (numéro, boutique, fournisseur,
+  date, lignes « Produit : 3 × Carton de 24 (6 000 F) », total prévu, commentaire) et « Copier le
+  texte » pour WhatsApp ou SMS ; rappelle qu'une commande envoyée ne se modifie plus.
+- **Voir** : lignes avec Commandé / Prix prévu / Reçu / **Reste à recevoir** (« 1 × Carton de 24 »,
+  ou en unités s'il ne tombe pas juste), réceptions qui l'ont livrée, aperçu à copier.
+- **Annuler / Clôturer** : fenêtre rouge, motif obligatoire.
+
+Sur l'écran **Réceptions**, après le choix du fournisseur, un bandeau propose ses commandes attendues
+(« Livrer CA-… du 01/10/2026 »). En choisir une ajoute une ligne par reste à recevoir, quantité et prix
+prévu pré-remplis ; le bandeau devient « Cette réception livre la commande CA-… » avec « Détacher la
+commande ». Un prix saisi différent du prix prévu affiche la pastille « prix prévu à la commande :
+6 000 F », sans bloquer. Changer de fournisseur détache la commande. Le détail d'une réception
+indique la commande livrée.
 
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.

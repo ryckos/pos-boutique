@@ -16,10 +16,14 @@ export interface LigneBrouillon {
   numeroLot: string
   /** AAAA-MM-JJ (champ date). */
   datePeremption: string
+  /** Prix prévu à la commande pour ce conditionnement, pour signaler un écart (REGLES_METIER § 4.7). */
+  prixPrevu?: number | null
 }
 
 export interface Brouillon {
   fournisseurId: number | null
+  /** Commande livrée par cette réception, si elle a été choisie. */
+  commande?: { id: number; numero: string } | null
   commentaire: string
   lignes: LigneBrouillon[]
   prochaineCle: number
@@ -34,7 +38,35 @@ export interface EtatLigne {
 }
 
 export function brouillonVide(): Brouillon {
-  return { fournisseurId: null, commentaire: '', lignes: [], prochaineCle: 1 }
+  return { fournisseurId: null, commande: null, commentaire: '', lignes: [], prochaineCle: 1 }
+}
+
+/** Autre fournisseur : la commande choisie ne le concerne plus. */
+export function changerFournisseur(b: Brouillon, fournisseurId: number | null): Brouillon {
+  return { ...b, fournisseurId, commande: b.fournisseurId === fournisseurId ? b.commande : null }
+}
+
+/**
+ * Lie la réception à une commande et ajoute une ligne par reste à recevoir, quantité pré-remplie
+ * (le gérant l'ajuste à ce qu'il a devant lui). Prix pré-rempli par le prix prévu, sinon le dernier payé.
+ */
+export function livrerCommande(
+  b: Brouillon,
+  commande: { id: number; numero: string },
+  restes: { article: ArticleReception; quantite: number; prixPrevu: number | null }[]
+): Brouillon {
+  let x: Brouillon = { ...b, commande }
+  for (const r of restes) {
+    x = ajouterArticle(x, r.article)
+    const cle = x.prochaineCle - 1
+    const prix = r.prixPrevu ?? r.article.prixPropose
+    x = modifierLigne(x, cle, {
+      quantite: formaterQuantite(r.quantite).replace(/\s/g, ''),
+      prix: prix !== null ? String(prix) : '',
+      prixPrevu: r.prixPrevu
+    })
+  }
+  return x
 }
 
 /** Nouvelle ligne en fin de tableau, prix pré-rempli par le dernier prix connu. */
@@ -81,13 +113,18 @@ const LIBELLES_BASE: Record<string, [string, string]> = {
   ml: ['mL', 'mL']
 }
 
+/** « 72 unités », « 2,5 kg » : une quantité en unités de base, lisible. */
+export function texteUnitesBase(unite: string, quantite: number): string {
+  const [un, plusieurs] = LIBELLES_BASE[unite] ?? LIBELLES_BASE.piece
+  return `${formaterQuantite(quantite)} ${quantite > 1 ? plusieurs : un}`
+}
+
 /** « = 72 unités à 250 F l’unité » ; null pour l'Unité elle-même, où il n'y a rien à convertir. */
 export function texteConversion(article: ArticleReception, c: ConversionLigne): string | null {
   if (article.quantiteBase === 1) return null
-  const [un, plusieurs] = LIBELLES_BASE[article.unite] ?? LIBELLES_BASE.piece
-  const nom = c.quantiteBase > 1 ? plusieurs : un
+  const [un] = LIBELLES_BASE[article.unite] ?? LIBELLES_BASE.piece
   const par = article.unite === 'piece' ? 'l’unité' : `le ${un}`
-  return `= ${formaterQuantite(c.quantiteBase)} ${nom} à ${formaterFCFA(c.coutBase)} ${par}`
+  return `= ${texteUnitesBase(article.unite, c.quantiteBase)} à ${formaterFCFA(c.coutBase)} ${par}`
 }
 
 export function etatLigne(l: LigneBrouillon, aujourdhui: string, seuilPeremptionJours: number): EtatLigne {
@@ -127,6 +164,9 @@ export function etatLigne(l: LigneBrouillon, aujourdhui: string, seuilPeremption
     prix > 0
       ? convertirLigne(quantite, prix, a.quantiteBase)
       : null
+  if (prix !== null && l.prixPrevu && prix !== l.prixPrevu) {
+    alertes.push(`prix prévu à la commande : ${formaterFCFA(l.prixPrevu)}`)
+  }
   if (conversion && a.prixUnite > 0 && conversion.coutBase >= a.prixUnite) {
     alertes.push(
       `coût par unité (${formaterFCFA(conversion.coutBase)}) égal ou supérieur au prix de vente (${formaterFCFA(a.prixUnite)})`
@@ -153,6 +193,7 @@ export function manque(b: Brouillon, aujourdhui: string, seuil: number): string 
 export function versSaisie(b: Brouillon): SaisieReception {
   return {
     fournisseurId: b.fournisseurId ?? 0,
+    commandeId: b.commande?.id ?? null,
     commentaire: b.commentaire.trim() || null,
     lignes: b.lignes.map((l) => ({
       conditionnementId: l.article.conditionnementId,
@@ -171,6 +212,7 @@ export function lireBrouillon(texte: string | null): Brouillon | null {
     const b = JSON.parse(texte) as Brouillon
     const valide =
       (b.fournisseurId === null || typeof b.fournisseurId === 'number') &&
+      (b.commande == null || typeof b.commande.id === 'number') &&
       typeof b.commentaire === 'string' &&
       Array.isArray(b.lignes) &&
       typeof b.prochaineCle === 'number' &&

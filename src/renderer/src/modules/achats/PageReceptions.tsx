@@ -5,7 +5,7 @@
  * validation ; le numéro RC n'est attribué qu'à ce moment-là.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Reception, ResumeReception } from '@shared/ipc/achats'
+import type { Reception, ResumeCommande, ResumeReception } from '@shared/ipc/achats'
 import type { Fournisseur } from '@shared/ipc/fournisseurs'
 import type { ArticleCatalogue } from '@shared/types'
 import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
@@ -15,11 +15,14 @@ import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { FenetreDetailReception } from './FenetreDetailReception'
 import { FenetreProduit } from '@renderer/modules/catalogue/FenetreProduit'
 import { champsDepuisCodeScanne } from '@renderer/modules/catalogue/saisieProduit'
+import { resteEnSaisie } from './saisieCommande'
 import {
   ajouterArticle,
   brouillonUtile,
   brouillonVide,
+  changerFournisseur,
   etatLigne,
+  livrerCommande,
   lireBrouillon,
   manque,
   modifierLigne,
@@ -192,6 +195,7 @@ function SaisieReception(props: {
   const [resultats, setResultats] = useState<ArticleCatalogue[]>([])
   const [codeInconnu, setCodeInconnu] = useState<string | null>(null)
   const [fenetre, setFenetre] = useState<Fenetre>(null)
+  const [ouvertes, setOuvertes] = useState<ResumeCommande[]>([])
   const [erreur, setErreur] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(
     props.reprise ? 'Réception en cours reprise là où vous l’aviez laissée.' : null
@@ -209,6 +213,51 @@ function SaisieReception(props: {
       .then((p) => setSeuil(p.peremptionSeuilJours))
       .catch(() => undefined)
   }, [])
+
+  // Commandes envoyées ou reçues en partie du fournisseur choisi, à livrer par cette réception.
+  const fournisseurChoisi = b.fournisseurId
+  useEffect(() => {
+    if (fournisseurChoisi === null) {
+      setOuvertes([])
+      return
+    }
+    appel('achats:commandesOuvertes', { fournisseurId: fournisseurChoisi })
+      .then(setOuvertes)
+      .catch(() => setOuvertes([]))
+  }, [fournisseurChoisi])
+
+  // Pré-remplit une ligne par reste à recevoir : dans le conditionnement commandé s'il tombe juste,
+  // sinon dans l'Unité (REGLES_METIER § 4.7). Le gérant ajuste ensuite à ce qu'il a devant lui.
+  const livrer = async (commandeId: number): Promise<void> => {
+    const c = await appel('achats:commande', { id: commandeId })
+    const restes: Parameters<typeof livrerCommande>[2] = []
+    const ignores: string[] = []
+    for (const l of c.lignes.filter((x) => x.resteBase > 0)) {
+      const r = resteEnSaisie(l.resteBase, l.quantiteCond)
+      let conditionnementId = l.conditionnementId
+      let quantite = r.quantite
+      if (!r.dansConditionnement) {
+        const unite = (await appel('catalogue:conditionnementsProduit', { produitId: l.produitId })).find(
+          (o) => o.quantiteBase === 1
+        )
+        if (unite) conditionnementId = unite.conditionnementId
+        else quantite = l.resteBase / l.quantiteCond
+      }
+      const article = await appel('achats:articleReception', { conditionnementId })
+      if (!article) {
+        ignores.push(l.produit)
+        continue
+      }
+      const memeConditionnement = conditionnementId === l.conditionnementId
+      restes.push({ article, quantite, prixPrevu: memeConditionnement ? l.prix : null })
+    }
+    setB((x) => livrerCommande(x, { id: c.id, numero: c.numero }, restes))
+    setErreur(null)
+    setInfo(
+      `Commande ${c.numero} : reste à recevoir pré-rempli. Corrigez chaque quantité selon ce qui est livré.` +
+        (ignores.length > 0 ? ` Article désactivé, non repris : ${ignores.join(', ')}.` : '')
+    )
+  }
 
   // Conditionnements proposés pour chaque produit du brouillon (changer carton / unité sur une ligne).
   const chargerOptions = useCallback((produitId: number) => {
@@ -291,7 +340,9 @@ function SaisieReception(props: {
         setB((x) =>
           modifierLigne(x, l.cle, {
             article,
-            prix: article.prixPropose !== null ? String(article.prixPropose) : ''
+            prix: article.prixPropose !== null ? String(article.prixPropose) : '',
+            // Le prix prévu à la commande valait pour l'ancien conditionnement : plus comparable.
+            prixPrevu: null
           })
         )
       })
@@ -324,7 +375,7 @@ function SaisieReception(props: {
           Fournisseur
           <select
             value={b.fournisseurId ?? ''}
-            onChange={(e) => setB({ ...b, fournisseurId: e.target.value ? Number(e.target.value) : null })}
+            onChange={(e) => setB(changerFournisseur(b, e.target.value ? Number(e.target.value) : null))}
           >
             <option value="">Choisissez le fournisseur</option>
             {fournisseurs.map((f) => (
@@ -348,6 +399,36 @@ function SaisieReception(props: {
           />
         </label>
       </div>
+
+      {b.commande ? (
+        <div className="bandeau bandeau-action page-message">
+          <span>
+            Cette réception livre la commande <strong>{b.commande.numero}</strong> : elle passera à « Reçue » ou
+            « Reçue en partie » à la validation.
+          </span>
+          <button className="btn btn-secondaire" onClick={() => setB({ ...b, commande: null })}>
+            Détacher la commande
+          </button>
+        </div>
+      ) : (
+        ouvertes.length > 0 && (
+          <div className="bandeau bandeau-action page-message">
+            <span>
+              {ouvertes.length > 1 ? 'Commandes attendues' : 'Commande attendue'} de ce fournisseur : choisissez
+              celle qui est livrée, ou recevez sans commande.
+            </span>
+            {ouvertes.map((c) => (
+              <button
+                key={c.id}
+                className="btn"
+                onClick={() => livrer(c.id).catch((e: Error) => setErreur(e.message))}
+              >
+                Livrer {c.numero} du {formaterDate(c.dateCommande)}
+              </button>
+            ))}
+          </div>
+        )
+      )}
 
       {resultats.length > 0 && (
         <div className="tableau-cadre page-message">
@@ -499,7 +580,8 @@ function SaisieReception(props: {
             props.onTerminer(
               `Réception ${r.numero} validée : stock mis à jour, ${formaterFCFA(r.total)} dus à ${
                 fournisseur?.nom ?? 'ce fournisseur'
-              }, à payer avant le ${formaterDate(r.dateEcheance)}.`
+              }, à payer avant le ${formaterDate(r.dateEcheance)}.` +
+                (b.commande ? ` Commande ${b.commande.numero} mise à jour.` : '')
             )
           }}
         >

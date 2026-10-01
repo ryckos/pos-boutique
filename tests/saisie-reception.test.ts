@@ -145,6 +145,7 @@ describe('Saisie d’une réception', () => {
   it('prépare la saisie envoyée au principal', () => {
     expect(versSaisie({ ...lundi(), commentaire: '  BL 457 ' })).toEqual({
       fournisseurId: 1,
+      commandeId: null,
       commentaire: 'BL 457',
       lignes: [
         { conditionnementId: 5, quantite: 3, prix: 6000, numeroLot: null, datePeremption: null },
