@@ -78,7 +78,7 @@ Le socle comprend :
 | A9    | FEFO à la vente                           | A   | ⏳     |   |
 | A10   | Facture et proforma                       | A   | ⏳     |   |
 | B7    | Fournisseurs                              | B   | ✅     | PR #24 (fiches, solde dû, désactivation si dette réglée, écran Fournisseurs) et #27 (bouton « Achats » : livraisons d'une période et derniers prix d'achat, canal `fournisseurs:achats`) |
-| B8    | Commandes et réceptions (CUMP)            | B   | 🔄     | réceptions fusionnées : PR #25 (validation côté serveur : lignes, lots, mouvements, CUMP, dette avec échéance, RC ; migration `date_echeance`) et #26 (écran Réceptions, conversion en direct, brouillon sur le poste, produit créé depuis un code inconnu) ; partie 3 **commandes fournisseur** (règles validées le 2026-10-01, `REGLES_METIER.md` § 4.7) : PR 1 `b/commandes` (serveur, migration `conditionnement_id`, réception liée à une commande) puis PR 2 `b/commandes-ecran`, empilée (écran Commandes, proposer depuis les alertes, aperçu à copier, bandeau « Livrer CA-… » sur Réceptions) ; testées à la main par Dev B, PR à ouvrir dans l'ordre |
+| B8    | Commandes et réceptions (CUMP)            | B   | ✅     | PR #25 (réception côté serveur : lignes, lots, mouvements, CUMP, dette avec échéance, RC), #26 (écran Réceptions), #31 (commandes fournisseur côté serveur, migration `conditionnement_id`, réception liée à une commande) et #33 (écran Commandes, proposer depuis les alertes, aperçu à copier, « Livrer CA-… » sur Réceptions) |
 | B9    | Lots, FEFO, tableau des péremptions       | B   | ⏳     |   |
 | B10   | Règlements et dettes fournisseurs         | B   | ⏳     |   |
 
@@ -139,3 +139,5 @@ Le socle comprend :
 | 2026-09-30 | B7    | Partie 2 : historique des achats et des prix d'achat d'un fournisseur (PR #27) |
 | 2026-10-01 | A4    | Clôture de caisse : espèces théoriques, écart coloré, commentaire si écart, rapports X et Z, réimpression DUPLICATA du Z (PR #28) — essai Xprinter à faire |
 | 2026-10-01 | A5    | Parties 1 et 2 : remises sur ligne et sur ticket, plafond sur le total, accord du gérant à usage unique, lignes retirées journalisées ; canaux `caisse:gerants`, `caisse:autoriserRemise`, `caisse:journaliserAnnulationLigne` (PR #30) |
+| 2026-10-01 | B8    | Partie 3 : commandes fournisseur côté serveur, dans le conditionnement, statut recalculé à chaque réception liée ; migration `lignes_commande_achat.conditionnement_id` (PR #31) |
+| 2026-10-01 | B8    | Partie 3 : écran Commandes (alertes sans quantité, aperçu à copier, clôture et annulation avec motif), bandeau « Livrer CA-… » sur Réceptions ; classe commune `.apercu` (PR #33) |
