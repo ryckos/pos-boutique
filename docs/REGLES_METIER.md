@@ -383,6 +383,24 @@ Les règlements peuvent être partiels (espèces, mobile money, virement). La vu
   - un **« lot de 3 »** est un conditionnement de vente ;
   - un **lot d'arrivage** (table `lots`) est une date de péremption.
 
+### 5.1 FEFO et tableau des péremptions (validé par Dev B le 2026-10-04)
+- **`allouerFefo`** ne sert que les lots qui ont encore du stock et **ne sont pas périmés** (date de
+  péremption ≥ aujourd'hui), de la date la plus proche à la plus lointaine ; à date égale, le lot le
+  plus ancien d'abord. Un lot périmé n'est jamais vendu par le FEFO : il reste au tableau des
+  péremptions jusqu'à son retrait.
+- La répartition couvre **toujours toute la quantité vendue** : si les lots ne suffisent pas (ou si le
+  produit n'est pas suivi en péremption), le reste sort **sans lot**. La vente n'est jamais bloquée
+  (D-A1) ; l'inventaire régularise ensuite.
+- **Tableau des péremptions** : lots en stock qui périment dans `peremption_seuil_jours` jours ou
+  moins, **lots déjà périmés compris** (« Périmé depuis 2 j », en rouge). Rouge à 3 jours ou moins,
+  ambre au-delà. Valeur en jeu = restant × prix d'achat du lot.
+- **Retirer** : quantité saisie (le restant du lot proposé), au plus le restant ; mouvement
+  `perte_peremption` sur ce lot, motif « Périmé » d'office, commentaire facultatif ajouté au motif.
+  Comme tout mouvement, il est chiffré au CUMP du produit. Gérant. Pas de journal d'audit : le
+  mouvement trace déjà qui, quand et pourquoi.
+- **Promotion** : une promotion vaut pour tout un produit, et appartient aux promotions programmées
+  (A16, Dev A). Le bouton « Promo » est affiché inactif d'ici là.
+
 ---
 
 ## 6. Caisse et ventes (Dev A)

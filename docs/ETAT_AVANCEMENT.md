@@ -23,7 +23,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 | `parametres:lire` (puis `ecrire`)                         | B         | A           | fin S5   | ✅     | PR #17 (lecture) — sans requête → `ParametresBoutique` (objet typé, défauts appliqués) ; `lireParametres(db)` appelable directement dans le principal pour le ticket ; `ecrire` (gérant pour `imprimante*`) livré PR #19 |
 | `caisse:enregistrerVente` (modèle de transaction)         | A         | B (lecture) | fin S5   | ✅     | PR #7 — `service-vente.ts`, modèle de transaction à lire |
 | Stock initial de démarrage                                | B         | A (recette) | fin S7   | ✅     | PR #21 — écran « Stock initial » (gérant), à utiliser sur des produits importés par Excel pour la recette Phase 1 |
-| `stock/allouerFefo(db, produitId, qteBase)`               | B         | A           | fin S10  | ⏳     | A9 |
+| `stock/allouerFefo(db, produitId, qteBase)`               | B         | A           | fin S10  | 🔄     | A9 — branche `b/fefo` : `allouerFefo` de `modules/stock/fefo.ts` → `{ lotId: number \| null; quantite }[]`, somme = `qteBase`, un mouvement par part ; lots périmés jamais servis ; reste sans lot (REGLES_METIER § 5.1) |
 | `caisse/sessionOuverte()`, `enregistrerMouvementCaisse()` | A         | B           | fin S10  | ⏳     | B13 |
 | `caisse:ventesPeriode`                                    | A         | B           | fin S16  | ⏳     | B14 |
 | Alertes rupture et péremption (lecture)                   | B         | A           | fin S17  | ⏳     | A15 |
@@ -79,7 +79,7 @@ Le socle comprend :
 | A10   | Facture et proforma                       | A   | ⏳     |   |
 | B7    | Fournisseurs                              | B   | ✅     | PR #24 (fiches, solde dû, désactivation si dette réglée, écran Fournisseurs) et #27 (bouton « Achats » : livraisons d'une période et derniers prix d'achat, canal `fournisseurs:achats`) |
 | B8    | Commandes et réceptions (CUMP)            | B   | ✅     | PR #25 (réception côté serveur : lignes, lots, mouvements, CUMP, dette avec échéance, RC), #26 (écran Réceptions), #31 (commandes fournisseur côté serveur, migration `conditionnement_id`, réception liée à une commande) et #33 (écran Commandes, proposer depuis les alertes, aperçu à copier, « Livrer CA-… » sur Réceptions) |
-| B9    | Lots, FEFO, tableau des péremptions       | B   | ⏳     |   |
+| B9    | Lots, FEFO, tableau des péremptions       | B   | 🔄     | Partie 1 (`b/fefo`) : `allouerFefo` pour Dev A ; partie 2 à venir : tableau des péremptions et retrait (`perte_peremption`) |
 | B10   | Règlements et dettes fournisseurs         | B   | ⏳     |   |
 
 ## Phase 3 — Suivi financier (S13–S15)
