@@ -256,6 +256,13 @@ select {
   background: var(--rouge-pale);
   color: var(--rouge);
 }
+/* Urgence d'une ligne (péremptions) : rouge à 3 jours ou moins, ambre au-delà. */
+.tableau tr.ligne-urgente td {
+  background: var(--rouge-pale);
+}
+.tableau tr.ligne-proche td {
+  background: var(--ambre-pale);
+}
 .tableau td.retrait {
   padding-left: 40px;
 }

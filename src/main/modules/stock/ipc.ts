@@ -4,6 +4,7 @@ import { gerer } from '../../ipc/gerer'
 import { session } from '../../core/session'
 import { etatStock } from './etat'
 import { historiqueProduit } from './historique'
+import { retirerLot, tableauPeremptions } from './peremptions'
 import {
   annulerStockInitial,
   enregistrerStockInitial,
@@ -20,6 +21,16 @@ export function enregistrerIpcStock(): void {
   gerer('stock:historiqueProduit', ({ produitId, du, au }) => {
     session.exiger(['gerant'])
     return historiqueProduit(base(), produitId, { du, au })
+  })
+
+  // Péremptions : gérant (valeur en jeu au prix d'achat, retrait = perte chiffrée).
+  gerer('stock:peremptions', () => {
+    session.exiger(['gerant'])
+    return tableauPeremptions(base())
+  })
+  gerer('stock:retirerLot', (requete) => {
+    const u = session.exiger(['gerant'])
+    return retirerLot(base(), u.id, requete)
   })
 
   // Stock initial : gérant (matrice : « valider un inventaire », même mécanisme).

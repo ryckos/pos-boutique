@@ -137,7 +137,49 @@ export interface SaisieStockInitial {
   numeroLot?: string | null
 }
 
+// ─── Péremptions (B9) ────────────────────────────────────────────────────────
+
+/** Un lot d'arrivage en stock qui périme bientôt, ou déjà périmé (REGLES_METIER § 5.1). */
+export interface LotPerimable {
+  lotId: number
+  produitId: number
+  produit: string
+  numeroLot: string | null
+  /** AAAA-MM-JJ. */
+  datePeremption: string
+  /** Négatif = périmé depuis autant de jours. */
+  joursRestants: number
+  /** En unités de base. */
+  restant: number
+  unite: string
+  /** Prix d'achat du lot, FCFA par unité de base. */
+  prixAchat: number
+  /** restant × prix d'achat, FCFA. */
+  valeur: number
+  /** 3 jours ou moins (périmés compris) : ligne rouge ; sinon ambre. */
+  urgent: boolean
+}
+
+export interface TableauPeremptions {
+  /** Paramètre `peremption_seuil_jours`. */
+  horizonJours: number
+  /** Du plus proche au plus lointain. */
+  lots: LotPerimable[]
+  /** Somme des valeurs en jeu, FCFA. */
+  valeurTotale: number
+}
+
 export interface ContratStock {
+  /** Lots en stock qui périment sous `peremption_seuil_jours` jours, périmés compris. Gérant. */
+  'stock:peremptions': { requete: void; reponse: TableauPeremptions }
+  /**
+   * Retire du stock tout ou partie d'un lot : mouvement `perte_peremption` sur ce lot, motif
+   * « Périmé » (et le commentaire). Au plus le restant du lot. Gérant.
+   */
+  'stock:retirerLot': {
+    requete: { lotId: number; quantite: number; commentaire?: string | null }
+    reponse: { restant: number }
+  }
   /** Stock de tous les produits actifs, valeur, alertes, dormants. Gérant (valeur au CUMP). */
   'stock:etat': { requete: void; reponse: EtatStock }
   /**
