@@ -18,6 +18,66 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-04 — b/fefo, b/peremptions — B9 Lots, FEFO, tableau des péremptions
+**Fait** :
+- PR #34 (`b/docs-b8-fusion`) fusionnée ; `test` local mis à jour, branche supprimée en local.
+- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 5.1 :
+  - le FEFO ne sert que les lots en stock **non périmés** (date ≥ aujourd'hui), date la plus proche
+    d'abord, puis le lot le plus ancien ;
+  - la répartition couvre toujours toute la quantité : le reste sort **sans lot** (D-A1, jamais bloquer) ;
+  - tableau : lots sous `peremption_seuil_jours`, **périmés compris** (« Périmé depuis 2 j »), rouge à
+    3 jours ou moins, ambre au-delà ; valeur en jeu = restant × prix d'achat du lot ;
+  - « Retirer » : quantité saisie (restant proposé), au plus le restant ; `perte_peremption` sur le lot,
+    motif « Périmé » (+ commentaire facultatif), chiffré au CUMP, gérant, pas de journal d'audit ;
+  - « Promo » : affiché inactif, à brancher avec les promotions programmées (A16, Dev A), car une
+    promotion vaut pour tout le produit.
+- **PR 1 `b/fefo`** (commit `c1254dc`, poussée) : `src/main/modules/stock/fefo.ts`
+  (`allouerFefo`), 8 tests (`tests/fefo.test.ts` : A12 avant B03, 9 + 3, reste sans lot, lot vidé ou
+  périmé ignoré, lot du jour servi, égalité de date, quantité au poids).
+- **PR 2 `b/peremptions`** (commit `980ea5b`, empilée sur la PR 1, poussée) : service
+  `stock/peremptions.ts`, canaux `stock:peremptions` et `stock:retirerLot`, écran
+  `PagePeremptions.tsx` (menu « Péremptions », gérant), classes communes `.tableau tr.ligne-urgente`
+  et `tr.ligne-proche`, `UI_UX.md` § 5.8 complété. 6 tests (`tests/peremptions.test.ts` : scénario du
+  mardi 5 400 + 18 900 = **24 300**, périmés, horizon, retraits et refus). **Testé à la main par Dev B.**
+- 416 tests verts, typecheck OK. Aucune migration.
+
+**En cours** : deux PR à ouvrir sur GitHub (`gh` absent de ce poste), **dans l'ordre** :
+1. `b/fefo` → `test` : https://github.com/ryckos/pos-boutique/compare/test...b/fefo?expand=1
+2. `b/peremptions` → `test`, après la fusion de la PR 1. Si la PR 1 est fusionnée en squash :
+   `git switch b/peremptions && git fetch && git rebase --onto origin/test c1254dc && git push --force-with-lease`.
+   Ce carnet est commité sur `b/peremptions`.
+
+**Prochaine étape** :
+1. Suivre les fusions : à chaque fusion, une ligne au journal des fusions de `ETAT_AVANCEMENT.md` ;
+   après la PR 1, rendez-vous `allouerFefo` → ✅ ; après la PR 2, B9 → ✅. Supprimer les branches.
+   Supprimer aussi sur GitHub les branches déjà fusionnées : `b/commandes`, `b/commandes-ecran`,
+   `b/docs-b8-fusion`, `b/receptions`, `b/receptions-ecran`, `b/fournisseurs`, `b/fournisseurs-achats`.
+2. **B10 Règlements et dettes fournisseurs** (`/tache B10`, branche `b/reglements` depuis `test` à jour).
+   Relire `REGLES_METIER.md` § 4.5 (dettes, échéance déjà figée à la réception : `receptions.date_echeance`)
+   et § 4.6 ; tables `reglements_fournisseurs`, vue `v_dettes_fournisseurs` ; le solde dû est déjà
+   calculé dans `fournisseurs/service.ts` (même formule que la vue). Questions à poser à Dev B avant le
+   plan : règlement imputé à une réception précise ou au solde global ? modes de paiement ? règlement
+   depuis la caisse (dépend de `enregistrerMouvementCaisse`, A8) ou hors caisse seulement ? numérotation ?
+
+**Questions ouvertes** :
+- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
+- Plafond de remise caissier (D-A3) : en attente de la cliente.
+- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photo des produits : reportée.
+
+**Contrats** :
+- **Livré à Dev A (rendez-vous fin S10, en relecture PR 1)** : `allouerFefo(db, produitId, qteBase)`
+  de `src/main/modules/stock/fefo.ts`, appel direct dans le principal (pas d'IPC), lecture seule, à
+  appeler **dans la transaction de la vente** → `{ lotId: number | null; quantite: number }[]`.
+  Somme des parts = `qteBase` ; **un mouvement `vente` par part** (`lotId` tel quel, `null` = part non
+  couverte) ; lots périmés jamais servis ; `[]` si `qteBase` ≤ 0. Débloque A9 (`service-vente.ts`,
+  commentaire « Lot : null jusqu'au FEFO »).
+- Ajoutés (gérant, sans impact pour la caisse) : `stock:peremptions`, `stock:retirerLot`.
+- **Pour Dev A** : le bouton « Promo −20 % » du tableau attend les promotions programmées (A16) ;
+  nouvelles classes communes `.tableau tr.ligne-urgente` / `tr.ligne-proche`.
+- Attendus : `enregistrerMouvementCaisse()` (Dev A, A8, fin S10) pas encore livré.
+
+---
+
 ## 2026-10-01 — b/commandes, b/commandes-ecran — B8 partie 3 : commandes fournisseur (fusionnées, B8 ✅)
 **Fait** :
 - **PR #25, #26, #27 fusionnées** (réceptions serveur, écran Réceptions, achats d'un fournisseur) :
@@ -537,46 +597,3 @@ premier niveau, même si le produit est dans un sous-rayon), `null` si non class
 pas casser les objets `ArticleCatalogue` écrits en dur dans `panier.test.ts` et `attente.test.ts` ; le
 service le remplit toujours. Onglets par ordre alphabétique ; pas de champ d'ordre (pas demandé
 fermement, demanderait une migration). Nouveau canal `catalogue:categories` si besoin de la liste.
-
----
-
-## 2026-09-23 — b/utilisateurs-roles — B1 Utilisateurs, rôles et sécurité
-**Fait** :
-- **Décision D-17, validée par le chef de projet** : connexion en deux gestes (toucher son nom,
-  puis taper son code). Les codes ne sont plus uniques ; le verrouillage (5 codes faux → 30 s,
-  1, 2, 5, puis 15 min) se fait **compte par compte** ; tout code donné par l'admin est
-  **provisoire** et la personne choisit le sien avant d'ouvrir une session. Raison : l'admin
-  connaissait les codes de tous, et « code déjà utilisé » révélait qu'un code ouvrait un compte.
-- Migration `20260923_1157_securite_connexion.sql` : colonnes `pin_provisoire`,
-  `echecs_consecutifs`, `verrouillages`, `verrouille_jusqu_a` sur `utilisateurs`.
-- Module `utilisateurs` (admin) : lister, créer, réinitialiser le code, changer le rôle,
-  désactiver avec motif ; garde-fous (dernier admin, pas soi-même) ; tout est journalisé.
-- Écrans : connexion par nom + pavé (compte à rebours si verrouillé, choix du code si provisoire),
-  « Comptes utilisateurs » (admin), « Mon code » (tout le monde), assistant de premier démarrage.
-- `POS_SIMULER_PROD=1` (avec `POS_DB`) : se comporter comme l'application installée, pour tester
-  l'assistant en développement.
-- 64 tests verts, build OK, scénario complet testé à la main par Dev B.
-
-**Revue des droits (rendez-vous fin S3)** :
-- Canaux de Dev B conformes à la matrice. Corrigé : `catalogue:produitsStock` (valeur du stock au
-  CUMP) est désormais réservé au gérant, comme son écran.
-- **Pour Dev A** : `materiel:imprimantes` et `materiel:ouvrirEcranClient` n'appellent pas
-  `session.exiger()` — à ajouter (au moins `exiger()`, gérant pour la liste des imprimantes si elle
-  ne sert qu'aux réglages). `systeme:infos` sans session est normal (utilisé avant connexion).
-
-**En cours** : PR B1 vers `test`, en attente de relecture par Dev A.
-
-**Prochaine étape** : après fusion, passer B1 à ✅ et le contrat « contrôle des rôles » à ✅ dans
-`ETAT_AVANCEMENT.md` ; puis **B2.1 Catégories** (`/tache B2.1`, branche `b/categories`) et, sans
-tarder, **B2.2** pour livrer `catalogue:conditionnementsProduit` à Dev A (fin S4).
-
-**Questions ouvertes** :
-- Réactivation d'un compte désactivé : non prévue pour l'instant (à confirmer avec la cliente).
-- `xlsx` pour l'import (B3) : toujours à valider.
-- Pour Dev A : A1.1 est fusionnée mais encore 🔄 dans `ETAT_AVANCEMENT.md`.
-
-**Contrats** : modifiés — `auth:connexion` prend désormais `{ utilisateurId, pin }` et renvoie
-`{ utilisateur } | { codeProvisoire: true }` (utilisé seulement par l'écran de connexion de Dev B).
-Ajoutés — `auth:comptesConnexion`, `auth:definirCodePersonnel`, `auth:changerMonCode`,
-`auth:etatVerrouillage`, `auth:etatDemarrage`, `auth:creerPremierAdmin`, `utilisateurs:*` (admin).
-**Aucun impact sur le code de Dev A** ; seule la connexion de la caissière change (deux gestes).
