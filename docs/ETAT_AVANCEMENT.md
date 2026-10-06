@@ -80,7 +80,7 @@ Le socle comprend :
 | B7    | Fournisseurs                              | B   | ✅     | PR #24 (fiches, solde dû, désactivation si dette réglée, écran Fournisseurs) et #27 (bouton « Achats » : livraisons d'une période et derniers prix d'achat, canal `fournisseurs:achats`) |
 | B8    | Commandes et réceptions (CUMP)            | B   | ✅     | PR #25 (réception côté serveur : lignes, lots, mouvements, CUMP, dette avec échéance, RC), #26 (écran Réceptions), #31 (commandes fournisseur côté serveur, migration `conditionnement_id`, réception liée à une commande) et #33 (écran Commandes, proposer depuis les alertes, aperçu à copier, « Livrer CA-… » sur Réceptions) |
 | B9    | Lots, FEFO, tableau des péremptions       | B   | ✅     | PR #35 (`allouerFefo` pour Dev A) et #36 (tableau des péremptions `stock:peremptions`, retrait d'un lot `stock:retirerLot` en `perte_peremption`, écran Péremptions) |
-| B10   | Règlements et dettes fournisseurs         | B   | 🔄     | Branche `b/reglements` |
+| B10   | Règlements et dettes fournisseurs         | B   | 🔄     | PR à ouvrir : `b/reglements` (serveur : règlement lié ou global, échéancier, annulation avec motif, migration) puis `b/reglements-ecran` (boutons Dettes et Payer) ; testé à la main |
 
 ## Phase 3 — Suivi financier (S13–S15)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |

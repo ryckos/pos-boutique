@@ -18,6 +18,78 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-06 — b/reglements, b/reglements-ecran — B10 Règlements et dettes fournisseurs
+**Fait** :
+- **PR #35 (`b/fefo`) et #36 (`b/peremptions`) fusionnées** le 2026-10-06 (commits de fusion) :
+  B9 → ✅, rendez-vous `allouerFefo` → ✅, deux lignes au journal des fusions (sur `b/reglements`).
+  Branches supprimées en local.
+- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 4.5 :
+  - un règlement paie une **réception précise** ou le **solde global** ; le global couvre d'abord la
+    réception la plus ancienne ;
+  - montant en francs entiers > 0, **au plus le reste dû** (pas d'avance, dette jamais négative) ;
+  - modes espèces, TMoney, Flooz, virement, autre ; référence facultative ; date du jour par défaut,
+    passée acceptée, jamais future ; pas de numéro ; paiement non journalisé ;
+  - **hors caisse** pour l'instant (paiement au tiroir après A8 de Dev A) ;
+  - correction = **annulation avec motif**, journalisée (`annulation_reglement_fournisseur`, § 1.4) ;
+    le règlement reste visible, ne compte plus ; une seule fois ;
+  - échéancier : « Soldée », « À payer le … » (jour de l'échéance compris), « En retard de N j » ;
+    alerte du retard par fournisseur et au total sur la page Fournisseurs.
+- **PR 1 `b/reglements`** (commit `61e9dd5`, poussée) : migration
+  `20261006_1000_annulation_reglement.sql` (`annule_le`, `annule_par`, `motif_annulation` ;
+  `v_dettes_fournisseurs` recréée sans les annulés), règle pure `src/shared/fournisseurs.ts`
+  (`imputerReglements`, `joursEntre`, `LIBELLES_MODE_REGLEMENT`), service
+  `modules/fournisseurs/reglements.ts`, 3 canaux gérant, `SOLDE_DU` de `fournisseurs/service.ts`
+  filtré sur les non annulés. 11 tests (`tests/reglements.test.ts` : 18 000 − 10 000 = **8 000**, 8 001
+  refusé ; global 20 000 sur 18 000 + 13 200 → **11 200** ; annulation ; 5 jours de retard ; refus ;
+  désactivation après paiement).
+- **PR 2 `b/reglements-ecran`** (commit `30f9a62`, empilée sur la PR 1, poussée) : boutons « Dettes » et
+  « Payer » sur la page Fournisseurs, retard en en-tête et par ligne, `FenetreDettes.tsx` (échéancier,
+  règlements, payer, annuler), logique pure `saisieReglement.ts` (4 tests), `UI_UX.md` § 5.17.
+  **Scénario complet testé à la main par Dev B.**
+- 431 tests verts, typecheck OK.
+
+**En cours** : deux PR à ouvrir sur GitHub (`gh` absent de ce poste), **dans l'ordre** ; le texte de
+chacune a été fourni à Dev B dans la session :
+1. `b/reglements` → `test` : https://github.com/ryckos/pos-boutique/compare/test...b/reglements?expand=1
+2. `b/reglements-ecran` → `test`, après la fusion de la PR 1. Si la PR 1 est fusionnée en squash :
+   `git switch b/reglements-ecran && git fetch && git rebase --onto origin/test 61e9dd5 && git push --force-with-lease`.
+   Ce carnet est commité sur `b/reglements-ecran`.
+
+**Prochaine étape** :
+1. Suivre les fusions : une ligne au journal des fusions de `ETAT_AVANCEMENT.md` par PR ; après la
+   PR 2, B10 → ✅ (Phase 2 terminée côté Dev B). Supprimer les branches. Sur GitHub, Dev B doit encore
+   supprimer `b/commandes`, `b/commandes-ecran`, `b/docs-b8-fusion`, `b/receptions`,
+   `b/receptions-ecran`, `b/fournisseurs`, `b/fournisseurs-achats`, `b/fefo`, `b/peremptions`.
+2. **B11 Sorties de stock et retours fournisseur** (`/tache B11`, branche `b/sorties` depuis `test`
+   à jour). Relire `REGLES_METIER.md` § 8 et § 4.5, `UI_UX.md` (écran « Sortie de stock »),
+   `SCENARIO_REFERENCE.md` (2 boîtes bombées × 250 = **500 F** d'avoir). Points à trancher avec Dev B
+   avant le plan :
+   - où stocker l'avoir attendu et sa confirmation (aucune table d'avoirs dans le schéma → migration) ;
+   - l'avoir confirmé doit **se déduire du solde dû** : à intégrer dans `SOLDE_DU`
+     (`fournisseurs/service.ts`), dans `imputerReglements` / `receptionsImputees`
+     (`fournisseurs/reglements.ts`) et dans `v_dettes_fournisseurs` (nouvelle migration) — un avoir
+     s'impute-t-il comme un règlement global ?
+   - coût de l'avoir : CUMP ou prix du lot ; sortie depuis un lot précis (FEFO) ou non ;
+   - type « don » dédié (demande de recréer le CHECK : à voir avec Dev A) ou `casse` + motif « don ».
+
+**Questions ouvertes** :
+- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
+- Plafond de remise caissier (D-A3) : en attente de la cliente.
+- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photo des produits : reportée.
+- Paiement d'un fournisseur depuis le tiroir : après A8 ; motif de mouvement de caisse à prévoir
+  (`mouvements_caisse.motif` n'a que `autre` qui convienne → migration du CHECK, à décider avec Dev A).
+
+**Contrats** :
+- Ajoutés (gérant, **sans impact pour la caisse**) : `fournisseurs:enregistrerReglement`,
+  `fournisseurs:annulerReglement`, `fournisseurs:dettes` ; champs facultatifs `Fournisseur.enRetard`
+  et `prochaineEcheance`.
+- **Pour Dev A** : nouvelle migration (table `reglements_fournisseurs` et vue `v_dettes_fournisseurs`
+  seulement) ; `allouerFefo` est dans `test` (PR #35), A9 peut démarrer.
+- Attendu : `enregistrerMouvementCaisse()` (Dev A, A8, fin S10) pas encore livré ; il bloque B13 et le
+  paiement des fournisseurs au tiroir.
+
+---
+
 ## 2026-10-04 — b/fefo, b/peremptions — B9 Lots, FEFO, tableau des péremptions
 **Fait** :
 - PR #34 (`b/docs-b8-fusion`) fusionnée ; `test` local mis à jour, branche supprimée en local.
@@ -566,34 +638,3 @@ Puis **B5 : livrer `parametres:lire` à Dev A avant la fin de S5** (le glisser t
   `UI_UX.md` § 2.
 - Attendus inchangés : `sessionOuverte()` / `enregistrerMouvementCaisse()` (fin S10) — sa version
   actuelle prend un `utilisateurId`, à discuter en A8.
-
-
----
-
-## 2026-09-23 (suite) — b/categories — B2.1 Catégories
-**Fait** :
-- B1 fusionnée (PR #4), passée à ✅ ; branche supprimée.
-- Règles validées par Dev B et écrites (`REGLES_METIER.md` § 2.5) : rayons et sous-rayons, **un seul
-  niveau** ; nom unique parmi les actives du même niveau (casse et espaces ignorés) ; désactivation
-  seulement d'une catégorie vide (ni produit ni sous-rayon actif) ; gérant ; pas de journal.
-- `catalogue/categories.ts` + canaux `catalogue:categories` (tous), `creerCategorie`,
-  `renommerCategorie`, `desactiverCategorie` (gérant). Aucune migration.
-- Écran « Catégories » (gérant). Composant commun `ui/Panneau.tsx` (sorti de l'écran des comptes).
-- 111 tests verts (15 nouveaux), build OK, testé à la main par Dev B.
-
-**En cours** : PR B2.1 vers `test`, en relecture par Dev A.
-
-**Prochaine étape** : après fusion, B2.1 ✅ et contrat « catégorie » ✅ ; puis **B2.2 Produits et
-conditionnements** (`/tache B2.2`, branche `b/produits`) — livrer **`catalogue:conditionnementsProduit`
-tôt** (fin S4, attendu par A1.2 sous la forme `{ requete: { produitId }; reponse: ArticleCatalogue[] }`,
-unité en premier). La fiche produit permettra aussi de déplacer un produit d'une catégorie à l'autre
-(aujourd'hui impossible dans l'application).
-
-**Questions ouvertes** : `xlsx` (B3) toujours à valider ; réactivation (comptes, catégories) non prévue.
-
-**Contrats** : **livré pour Dev A** — `ArticleCatalogue.categorie` = nom du **rayon** (catégorie de
-premier niveau, même si le produit est dans un sous-rayon), `null` si non classé ; renseigné par
-`rechercherCode`, `rechercher` et `grille`. Déclaré **optionnel** (`categorie?: string | null`) pour ne
-pas casser les objets `ArticleCatalogue` écrits en dur dans `panier.test.ts` et `attente.test.ts` ; le
-service le remplit toujours. Onglets par ordre alphabétique ; pas de champ d'ordre (pas demandé
-fermement, demanderait une migration). Nouveau canal `catalogue:categories` si besoin de la liste.
