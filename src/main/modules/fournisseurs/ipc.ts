@@ -3,6 +3,7 @@ import { base } from '../../db/connexion'
 import { gerer } from '../../ipc/gerer'
 import { session } from '../../core/session'
 import { achatsFournisseur } from './achats'
+import { annulerReglement, dettesFournisseur, enregistrerReglement } from './reglements'
 import { creerFournisseur, desactiverFournisseur, listerFournisseurs, modifierFournisseur } from './service'
 
 // Gérant : les fournisseurs vont avec les réceptions (matrice : « réceptionner une livraison »).
@@ -26,5 +27,17 @@ export function enregistrerIpcFournisseurs(): void {
   gerer('fournisseurs:achats', ({ fournisseurId, du, au }) => {
     session.exiger(['gerant'])
     return achatsFournisseur(base(), fournisseurId, { du, au })
+  })
+  gerer('fournisseurs:enregistrerReglement', (saisie) => {
+    const u = session.exiger(['gerant'])
+    return { id: enregistrerReglement(base(), u.id, saisie) }
+  })
+  gerer('fournisseurs:annulerReglement', ({ id, motif }) => {
+    const u = session.exiger(['gerant'])
+    annulerReglement(base(), u.id, id, motif)
+  })
+  gerer('fournisseurs:dettes', ({ fournisseurId }) => {
+    session.exiger(['gerant'])
+    return dettesFournisseur(base(), fournisseurId)
   })
 }

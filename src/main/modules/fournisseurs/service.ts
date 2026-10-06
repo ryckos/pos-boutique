@@ -9,13 +9,15 @@ import { avecTransaction, executer, toutes, une } from '../../db/requetes'
 import { ErreurMetier } from '../../core/erreurs'
 import { journaliser } from '../../core/audit'
 import { formaterFCFA } from '@shared/format'
+import { resumeEcheances } from './reglements'
 
 const DELAI_MAX = 365
 
 // Même calcul que v_dettes_fournisseurs, mais aussi pour les désactivés (la vue les écarte).
-// Les avoirs reçus (B11) viendront en déduction quand ils existeront.
+// Un règlement annulé ne compte plus (B10). Les avoirs reçus (B11) viendront en déduction.
 const SOLDE_DU = `COALESCE((SELECT SUM(r.total) FROM receptions r WHERE r.fournisseur_id = f.id), 0)
-  - COALESCE((SELECT SUM(g.montant) FROM reglements_fournisseurs g WHERE g.fournisseur_id = f.id), 0)`
+  - COALESCE((SELECT SUM(g.montant) FROM reglements_fournisseurs g
+              WHERE g.fournisseur_id = f.id AND g.annule_le IS NULL), 0)`
 
 interface LigneFournisseur extends Omit<Fournisseur, 'actif'> {
   actif: number
@@ -70,7 +72,11 @@ export function listerFournisseurs(db: Db): Fournisseur[] {
             (SELECT MAX(r.date_reception) FROM receptions r WHERE r.fournisseur_id = f.id) AS derniereReception
      FROM fournisseurs f`
   )
-    .map((f) => ({ ...f, actif: f.actif === 1 }))
+    .map((f) => ({
+      ...f,
+      actif: f.actif === 1,
+      ...(f.soldeDu > 0 ? resumeEcheances(db, f.id) : { enRetard: 0, prochaineEcheance: null })
+    }))
     .sort((a, b) => Number(b.actif) - Number(a.actif) || a.nom.localeCompare(b.nom, 'fr'))
 }
 

@@ -54,6 +54,7 @@ Actions à journaliser avec `journaliser()` :
 | `reinitialisation_pin`        | l'admin a donné un code provisoire ; jamais la valeur |
 | `annulation_commande`         | numéro, statut, motif (§ 4.7) |
 | `cloture_commande`            | numéro, reste non livré, motif (§ 4.7) |
+| `annulation_reglement_fournisseur` | fournisseur, montant, date, motif (§ 4.5) |
 | `validation_inventaire`       |                    |
 | `restauration_sauvegarde`     |                    |
 
@@ -310,6 +311,27 @@ solde dû = somme des réceptions − somme des règlements − avoirs reçus
 ```
 Les règlements peuvent être partiels (espèces, mobile money, virement). La vue de référence est
 `v_dettes_fournisseurs`.
+
+**Règlements (validé par Dev B le 2026-10-06, B10)** :
+- **Droits** : le gérant (et l'admin).
+- **Imputation** : le règlement paie une **réception précise** ou le **solde global**. Un règlement
+  global couvre d'abord la réception la plus ancienne (ordre d'arrivée).
+- **Montant** : francs entiers > 0, **au plus le reste dû** (de la réception choisie, ou le solde
+  global). Pas d'avance : une dette ne devient jamais négative.
+- **Modes** : espèces, TMoney, Flooz, virement, autre. Référence (n° de transaction) facultative.
+- **Date** : aujourd'hui par défaut ; une date passée est acceptée, jamais une date future.
+- **Hors caisse** pour l'instant : un règlement n'écrit rien dans la caisse. Payer depuis le tiroir
+  viendra après `enregistrerMouvementCaisse()` (Dev A, A8), avec un motif de mouvement de caisse à
+  prévoir (aujourd'hui seulement `autre`).
+- **Pas de numéro** de règlement. Le paiement n'est pas journalisé (comme une réception).
+- **Correction** : un règlement saisi par erreur est **annulé** avec motif obligatoire, journalisé
+  (`annulation_reglement_fournisseur`). Il reste visible, marqué annulé, et ne compte plus ; on
+  ressaisit le bon règlement. Une seule annulation par règlement.
+- **Échéancier** : pour chaque réception, total, réglé, reste et échéance (figée à la validation,
+  § 4.2). État : « Soldée », « À payer le … » (le jour de l'échéance compris), ou « En retard de N j »
+  dès le lendemain. **Alerte d'échéance dépassée** : montant en retard par fournisseur et au total
+  sur la page Fournisseurs.
+- Un règlement d'un fournisseur désactivé est refusé (sa dette est réglée, § 4.6).
 
 ### 4.6 Fiches fournisseurs (validé par Dev B le 2026-09-30)
 - **Droits** : le gérant (et l'admin), comme la réception d'une livraison.

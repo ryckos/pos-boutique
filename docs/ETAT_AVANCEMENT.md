@@ -23,7 +23,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 | `parametres:lire` (puis `ecrire`)                         | B         | A           | fin S5   | ✅     | PR #17 (lecture) — sans requête → `ParametresBoutique` (objet typé, défauts appliqués) ; `lireParametres(db)` appelable directement dans le principal pour le ticket ; `ecrire` (gérant pour `imprimante*`) livré PR #19 |
 | `caisse:enregistrerVente` (modèle de transaction)         | A         | B (lecture) | fin S5   | ✅     | PR #7 — `service-vente.ts`, modèle de transaction à lire |
 | Stock initial de démarrage                                | B         | A (recette) | fin S7   | ✅     | PR #21 — écran « Stock initial » (gérant), à utiliser sur des produits importés par Excel pour la recette Phase 1 |
-| `stock/allouerFefo(db, produitId, qteBase)`               | B         | A           | fin S10  | 🔄     | A9 — branche `b/fefo` : `allouerFefo` de `modules/stock/fefo.ts` → `{ lotId: number \| null; quantite }[]`, somme = `qteBase`, un mouvement par part ; lots périmés jamais servis ; reste sans lot (REGLES_METIER § 5.1) |
+| `stock/allouerFefo(db, produitId, qteBase)`               | B         | A           | fin S10  | ✅     | PR #35 — `allouerFefo` de `modules/stock/fefo.ts` → `{ lotId: number \| null; quantite }[]`, somme = `qteBase`, un mouvement par part ; lots périmés jamais servis ; reste sans lot (REGLES_METIER § 5.1) ; débloque A9 |
 | `caisse/sessionOuverte()`, `enregistrerMouvementCaisse()` | A         | B           | fin S10  | ⏳     | B13 |
 | `caisse:ventesPeriode`                                    | A         | B           | fin S16  | ⏳     | B14 |
 | Alertes rupture et péremption (lecture)                   | B         | A           | fin S17  | ⏳     | A15 |
@@ -79,8 +79,8 @@ Le socle comprend :
 | A10   | Facture et proforma                       | A   | ⏳     |   |
 | B7    | Fournisseurs                              | B   | ✅     | PR #24 (fiches, solde dû, désactivation si dette réglée, écran Fournisseurs) et #27 (bouton « Achats » : livraisons d'une période et derniers prix d'achat, canal `fournisseurs:achats`) |
 | B8    | Commandes et réceptions (CUMP)            | B   | ✅     | PR #25 (réception côté serveur : lignes, lots, mouvements, CUMP, dette avec échéance, RC), #26 (écran Réceptions), #31 (commandes fournisseur côté serveur, migration `conditionnement_id`, réception liée à une commande) et #33 (écran Commandes, proposer depuis les alertes, aperçu à copier, « Livrer CA-… » sur Réceptions) |
-| B9    | Lots, FEFO, tableau des péremptions       | B   | 🔄     | Partie 1 (`b/fefo`) : `allouerFefo` pour Dev A ; partie 2 (`b/peremptions`) : tableau des péremptions (`stock:peremptions`), retrait d'un lot (`stock:retirerLot`, `perte_peremption`), écran Péremptions |
-| B10   | Règlements et dettes fournisseurs         | B   | ⏳     |   |
+| B9    | Lots, FEFO, tableau des péremptions       | B   | ✅     | PR #35 (`allouerFefo` pour Dev A) et #36 (tableau des péremptions `stock:peremptions`, retrait d'un lot `stock:retirerLot` en `perte_peremption`, écran Péremptions) |
+| B10   | Règlements et dettes fournisseurs         | B   | 🔄     | Branche `b/reglements` |
 
 ## Phase 3 — Suivi financier (S13–S15)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
@@ -141,3 +141,5 @@ Le socle comprend :
 | 2026-10-01 | A5    | Parties 1 et 2 : remises sur ligne et sur ticket, plafond sur le total, accord du gérant à usage unique, lignes retirées journalisées ; canaux `caisse:gerants`, `caisse:autoriserRemise`, `caisse:journaliserAnnulationLigne` (PR #30) |
 | 2026-10-01 | B8    | Partie 3 : commandes fournisseur côté serveur, dans le conditionnement, statut recalculé à chaque réception liée ; migration `lignes_commande_achat.conditionnement_id` (PR #31) |
 | 2026-10-01 | B8    | Partie 3 : écran Commandes (alertes sans quantité, aperçu à copier, clôture et annulation avec motif), bandeau « Livrer CA-… » sur Réceptions ; classe commune `.apercu` (PR #33) |
+| 2026-10-06 | B9    | Partie 1 : `allouerFefo`, répartition d'une vente par lots, date la plus proche d'abord, reste sans lot — contrat livré à A (PR #35) |
+| 2026-10-06 | B9    | Partie 2 : tableau des péremptions (périmés compris, valeur en jeu), retrait d'un lot en `perte_peremption` ; classes `tr.ligne-urgente` / `tr.ligne-proche` (PR #36) |

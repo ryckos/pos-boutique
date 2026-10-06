@@ -44,7 +44,9 @@ describe('Fournisseurs : fiches (REGLES_METIER § 4.6)', () => {
         delaiPaiementJours: 15,
         actif: true,
         soldeDu: 0,
-        derniereReception: null
+        derniereReception: null,
+        enRetard: 0,
+        prochaineEcheance: null
       }
     ])
   })
