@@ -30,7 +30,11 @@ const LAIT = 2
 const CARTON_TOMATE = '16181000000049'
 
 function recevoirTomate(db: Db, cartons: number, prix: number): number {
-  const carton = une<{ id: number }>(db, 'SELECT id FROM conditionnements WHERE code_barres = ?', CARTON_TOMATE)!.id
+  const carton = une<{ id: number }>(
+    db,
+    'SELECT id FROM conditionnements WHERE code_barres = ?',
+    CARTON_TOMATE
+  )!.id
   return validerReception(db, KOSSI, {
     fournisseurId: GROSSISTE,
     lignes: [{ conditionnementId: carton, quantite: cartons, prix }]
@@ -54,8 +58,12 @@ function scenarioMercredi(db: Db) {
 describe('Sorties : coût d’un retour (règle pure)', () => {
   const prix = [{ fournisseurId: 1, coutUnitaire: 275 }]
   it('prend le prix du lot s’il vient de ce fournisseur, sinon son dernier prix, sinon le CUMP', () => {
-    expect(coutRetour(1, { lot: { fournisseurId: 1, prixAchat: 250 }, prixFournisseurs: prix, cump: 262.8 })).toBe(250)
-    expect(coutRetour(1, { lot: { fournisseurId: 2, prixAchat: 240 }, prixFournisseurs: prix, cump: 262.8 })).toBe(275)
+    expect(
+      coutRetour(1, { lot: { fournisseurId: 1, prixAchat: 250 }, prixFournisseurs: prix, cump: 262.8 })
+    ).toBe(250)
+    expect(
+      coutRetour(1, { lot: { fournisseurId: 2, prixAchat: 240 }, prixFournisseurs: prix, cump: 262.8 })
+    ).toBe(275)
     expect(coutRetour(1, { lot: null, prixFournisseurs: prix, cump: 262.8 })).toBe(275)
     expect(coutRetour(9, { lot: null, prixFournisseurs: prix, cump: 262.8 })).toBe(262.8)
   })
@@ -71,7 +79,14 @@ describe('Sorties : retour fournisseur (SCENARIO_REFERENCE, mercredi)', () => {
     const r = scenarioMercredi(db)
     expect(r.montantAttendu).toBe(500)
 
-    const m = une<{ type: string; quantite: number; cout: number; doc: string; docId: number; motif: string }>(
+    const m = une<{
+      type: string
+      quantite: number
+      cout: number
+      doc: string
+      docId: number
+      motif: string
+    }>(
       db,
       `SELECT type, quantite, cout_unitaire AS cout, document_type AS doc, document_id AS docId, motif
        FROM mouvements_stock WHERE id = ?`,
@@ -92,7 +107,12 @@ describe('Sorties : retour fournisseur (SCENARIO_REFERENCE, mercredi)', () => {
     expect(fournisseur(db).avoirsAttendus).toBe(500)
     const d = dettesFournisseur(db, GROSSISTE)
     expect(d.avoirsAttendus).toBe(500)
-    expect(d.avoirs[0]).toMatchObject({ produit: 'Tomate concentrée 70 g', quantite: 2, montantAttendu: 500, statut: 'attendu' })
+    expect(d.avoirs[0]).toMatchObject({
+      produit: 'Tomate concentrée 70 g',
+      quantite: 2,
+      montantAttendu: 500,
+      statut: 'attendu'
+    })
   })
 
   it('avoir reçu : déduit de la dette comme un règlement global', () => {
@@ -119,7 +139,9 @@ describe('Sorties : retour fournisseur (SCENARIO_REFERENCE, mercredi)', () => {
     const db = baseAvecDemo()
     const { retourId } = scenarioMercredi(db)
     expect(() => noterAvoirRecu(db, KOSSI, { id: retourId!, montant: 450.5 })).toThrow(/sans virgule/)
-    expect(() => noterAvoirRecu(db, KOSSI, { id: retourId!, montant: 450, date: '2999-01-01' })).toThrow(/futur/)
+    expect(() => noterAvoirRecu(db, KOSSI, { id: retourId!, montant: 450, date: '2999-01-01' })).toThrow(
+      /futur/
+    )
     noterAvoirRecu(db, KOSSI, { id: retourId!, montant: 450 })
     expect(fournisseur(db).soldeDu).toBe(17550)
   })
@@ -161,7 +183,9 @@ describe('Sorties : retour fournisseur (SCENARIO_REFERENCE, mercredi)', () => {
     const db = baseAvecDemo()
     scenarioMercredi(db)
     enregistrerReglement(db, KOSSI, { fournisseurId: GROSSISTE, montant: 18000, mode: 'especes' })
-    expect(() => desactiverFournisseur(db, KOSSI, GROSSISTE, 'Plus de livraison')).toThrow(/attendez un avoir/)
+    expect(() => desactiverFournisseur(db, KOSSI, GROSSISTE, 'Plus de livraison')).toThrow(
+      /attendez un avoir/
+    )
   })
 
   it('retour refusé vers un fournisseur désactivé, ou pour un vol ou un don', () => {
@@ -169,17 +193,32 @@ describe('Sorties : retour fournisseur (SCENARIO_REFERENCE, mercredi)', () => {
     const autre = creerFournisseur(db, { nom: 'Ancien grossiste', delaiPaiementJours: 0 })
     desactiverFournisseur(db, KOSSI, autre, 'Fermé')
     expect(() =>
-      enregistrerSortie(db, KOSSI, { produitId: TOMATE, quantite: 1, motif: 'casse', retour: { fournisseurId: autre } })
+      enregistrerSortie(db, KOSSI, {
+        produitId: TOMATE,
+        quantite: 1,
+        motif: 'casse',
+        retour: { fournisseurId: autre }
+      })
     ).toThrow(/désactivé/)
     expect(() =>
-      enregistrerSortie(db, KOSSI, { produitId: TOMATE, quantite: 1, motif: 'vol', retour: { fournisseurId: GROSSISTE } })
+      enregistrerSortie(db, KOSSI, {
+        produitId: TOMATE,
+        quantite: 1,
+        motif: 'vol',
+        retour: { fournisseurId: GROSSISTE }
+      })
     ).toThrow(/défectueux ou périmé/)
     expect(stockProduit(db, TOMATE)).toBe(72)
   })
 
   it('sans réception chez ce fournisseur, l’avoir se calcule au CUMP ; il peut être corrigé', () => {
     const db = baseAvecDemo()
-    const a = enregistrerSortie(db, KOSSI, { produitId: TOMATE, quantite: 2, motif: 'casse', retour: { fournisseurId: GROSSISTE } })
+    const a = enregistrerSortie(db, KOSSI, {
+      produitId: TOMATE,
+      quantite: 2,
+      motif: 'casse',
+      retour: { fournisseurId: GROSSISTE }
+    })
     expect(a.montantAttendu).toBe(500)
     const b = enregistrerSortie(db, KOSSI, {
       produitId: TOMATE,
@@ -202,7 +241,12 @@ describe('Sorties : retour fournisseur (SCENARIO_REFERENCE, mercredi)', () => {
 describe('Sorties : sortie simple (REGLES_METIER § 8)', () => {
   it('le don passe en casse avec le motif « Don » ; le vol en vol ; chiffrés au CUMP', () => {
     const db = baseAvecDemo()
-    const don = enregistrerSortie(db, KOSSI, { produitId: TOMATE, quantite: 3, motif: 'don', commentaire: 'Orphelinat' })
+    const don = enregistrerSortie(db, KOSSI, {
+      produitId: TOMATE,
+      quantite: 3,
+      motif: 'don',
+      commentaire: 'Orphelinat'
+    })
     const vol = enregistrerSortie(db, KOSSI, { produitId: 7, quantite: 2, motif: 'vol' })
     expect(don.retourId).toBeNull()
     const ms = toutes<{ type: string; motif: string; doc: string }>(
@@ -217,12 +261,18 @@ describe('Sorties : sortie simple (REGLES_METIER § 8)', () => {
     ])
     const liste = listerSorties(db)
     expect(liste.map((s) => s.valeur)).toEqual([300, 750])
-    expect(liste[1]).toMatchObject({ produit: 'Tomate concentrée 70 g', quantite: 3, retour: null, motifAnnulation: null })
+    expect(liste[1]).toMatchObject({
+      produit: 'Tomate concentrée 70 g',
+      quantite: 3,
+      retour: null,
+      motifAnnulation: null
+    })
   })
 
   it('refuse une quantité nulle, à virgule ou plus grande que le stock', () => {
     const db = baseAvecDemo()
-    const sortir = (quantite: number) => enregistrerSortie(db, KOSSI, { produitId: TOMATE, quantite, motif: 'casse' })
+    const sortir = (quantite: number) =>
+      enregistrerSortie(db, KOSSI, { produitId: TOMATE, quantite, motif: 'casse' })
     expect(() => sortir(0)).toThrow(/quantité/)
     expect(() => sortir(1.5)).toThrow(/entier/)
     expect(() => sortir(73)).toThrow(/au plus/)
@@ -234,16 +284,21 @@ describe('Sorties : sortie simple (REGLES_METIER § 8)', () => {
     const fiche = ficheSortie(db, LAIT)
     expect(fiche.suiviPeremption).toBe(true)
     expect(fiche.lots).toHaveLength(1)
-    expect(fiche.lots[0]).toMatchObject({ numeroLot: 'DEMO-01', restant: 12, prixAchat: 2100, fournisseurId: null })
+    expect(fiche.lots[0]).toMatchObject({
+      numeroLot: 'DEMO-01',
+      restant: 12,
+      prixAchat: 2100,
+      fournisseurId: null
+    })
     const lotId = fiche.lots[0].lotId
-    expect(() => enregistrerSortie(db, KOSSI, { produitId: LAIT, lotId, quantite: 13, motif: 'perime' })).toThrow(
-      /reste que 12/
-    )
+    expect(() =>
+      enregistrerSortie(db, KOSSI, { produitId: LAIT, lotId, quantite: 13, motif: 'perime' })
+    ).toThrow(/reste que 12/)
     enregistrerSortie(db, KOSSI, { produitId: LAIT, lotId, quantite: 2, motif: 'perime' })
     expect(ficheSortie(db, LAIT).lots[0].restant).toBe(10)
-    expect(une<{ type: string }>(db, 'SELECT type FROM mouvements_stock ORDER BY id DESC LIMIT 1')!.type).toBe(
-      'perte_peremption'
-    )
+    expect(
+      une<{ type: string }>(db, 'SELECT type FROM mouvements_stock ORDER BY id DESC LIMIT 1')!.type
+    ).toBe('perte_peremption')
   })
 
   it('la fiche propose le fournisseur qui a livré, avec son dernier coût', () => {
@@ -265,7 +320,12 @@ describe('Sorties : liste et annulation', () => {
     retirerLot(db, KOSSI, { lotId, quantite: 1 })
     const liste = listerSorties(db)
     expect(liste).toHaveLength(1)
-    expect(liste[0]).toMatchObject({ type: 'perte_peremption', motif: 'Périmé', lot: 'DEMO-01', valeur: 2100 })
+    expect(liste[0]).toMatchObject({
+      type: 'perte_peremption',
+      motif: 'Périmé',
+      lot: 'DEMO-01',
+      valeur: 2100
+    })
   })
 
   it('annuler un retour : stock rendu, avoir annulé, journalisé ; une seule fois', () => {
@@ -280,8 +340,14 @@ describe('Sorties : liste et annulation', () => {
       motifCloture: 'Erreur : boîtes saines'
     })
     expect(fournisseur(db).avoirsAttendus).toBe(0)
-    expect(listerSorties(db)[0]).toMatchObject({ motifAnnulation: 'Erreur : boîtes saines', retour: { statut: 'annule' } })
-    const j = une<{ n: number }>(db, "SELECT COUNT(*) AS n FROM journal_audit WHERE action = 'annulation_sortie_stock'")!
+    expect(listerSorties(db)[0]).toMatchObject({
+      motifAnnulation: 'Erreur : boîtes saines',
+      retour: { statut: 'annule' }
+    })
+    const j = une<{ n: number }>(
+      db,
+      "SELECT COUNT(*) AS n FROM journal_audit WHERE action = 'annulation_sortie_stock'"
+    )!
     expect(j.n).toBe(1)
     expect(() => annulerSortie(db, KOSSI, mouvementId, 'encore')).toThrow(/clos|déjà annulée/)
   })

@@ -226,7 +226,10 @@ type LigneSortie = Omit<SortieStock, 'retour'> & {
   retourStatut: StatutAvoir | null
 }
 
-export function listerSorties(db: Db, periode: { du?: string | null; au?: string | null } = {}): SortieStock[] {
+export function listerSorties(
+  db: Db,
+  periode: { du?: string | null; au?: string | null } = {}
+): SortieStock[] {
   const aujourdhui = une<{ d: string }>(db, "SELECT date('now','localtime') AS d")!.d
   const au = lireDate(periode.au, 'fin') ?? aujourdhui
   const du =
@@ -239,7 +242,12 @@ export function listerSorties(db: Db, periode: { du?: string | null; au?: string
       ...m,
       retour:
         retourId !== null
-          ? { id: retourId, fournisseur: retourFournisseur!, montantAttendu: retourMontant!, statut: retourStatut! }
+          ? {
+              id: retourId,
+              fournisseur: retourFournisseur!,
+              montantAttendu: retourMontant!,
+              statut: retourStatut!
+            }
           : null
     })
   )

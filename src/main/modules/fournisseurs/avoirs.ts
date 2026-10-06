@@ -127,7 +127,8 @@ export function annulerRetour(db: Db, utilisateurId: number, id: number, motif: 
   if (r.statut === 'recu') {
     throw new ErreurMetier(`L’avoir de « ${r.fournisseur} » est déjà reçu : cette sortie ne s’annule plus`)
   }
-  if (r.statut !== 'attendu') throw new ErreurMetier('Ce retour est déjà clos : cette sortie ne s’annule plus')
+  if (r.statut !== 'attendu')
+    throw new ErreurMetier('Ce retour est déjà clos : cette sortie ne s’annule plus')
   executer(
     db,
     `UPDATE retours_fournisseur
