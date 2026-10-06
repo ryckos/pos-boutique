@@ -14,10 +14,15 @@ import { resumeEcheances } from './reglements'
 const DELAI_MAX = 365
 
 // Même calcul que v_dettes_fournisseurs, mais aussi pour les désactivés (la vue les écarte).
-// Un règlement annulé ne compte plus (B10). Les avoirs reçus (B11) viendront en déduction.
+// Un règlement annulé ne compte plus (B10) ; un avoir reçu se déduit (B11). Négatif = avoir à valoir.
 const SOLDE_DU = `COALESCE((SELECT SUM(r.total) FROM receptions r WHERE r.fournisseur_id = f.id), 0)
   - COALESCE((SELECT SUM(g.montant) FROM reglements_fournisseurs g
-              WHERE g.fournisseur_id = f.id AND g.annule_le IS NULL), 0)`
+              WHERE g.fournisseur_id = f.id AND g.annule_le IS NULL), 0)
+  - COALESCE((SELECT SUM(a.montant_recu) FROM retours_fournisseur a
+              WHERE a.fournisseur_id = f.id AND a.statut = 'recu'), 0)`
+// Avoirs que le fournisseur doit encore envoyer (B11).
+const AVOIRS_ATTENDUS = `COALESCE((SELECT SUM(a.montant_attendu) FROM retours_fournisseur a
+              WHERE a.fournisseur_id = f.id AND a.statut = 'attendu'), 0)`
 
 interface LigneFournisseur extends Omit<Fournisseur, 'actif'> {
   actif: number
@@ -27,7 +32,7 @@ function lire(db: Db, id: number): LigneFournisseur {
   const f = une<LigneFournisseur>(
     db,
     `SELECT f.id, f.nom, f.contact, f.telephone, f.adresse, f.delai_paiement_jours AS delaiPaiementJours,
-            f.actif, ${SOLDE_DU} AS soldeDu,
+            f.actif, ${SOLDE_DU} AS soldeDu, ${AVOIRS_ATTENDUS} AS avoirsAttendus,
             (SELECT MAX(r.date_reception) FROM receptions r WHERE r.fournisseur_id = f.id) AS derniereReception
      FROM fournisseurs f WHERE f.id = ?`,
     id
@@ -68,7 +73,7 @@ export function listerFournisseurs(db: Db): Fournisseur[] {
   return toutes<LigneFournisseur>(
     db,
     `SELECT f.id, f.nom, f.contact, f.telephone, f.adresse, f.delai_paiement_jours AS delaiPaiementJours,
-            f.actif, ${SOLDE_DU} AS soldeDu,
+            f.actif, ${SOLDE_DU} AS soldeDu, ${AVOIRS_ATTENDUS} AS avoirsAttendus,
             (SELECT MAX(r.date_reception) FROM receptions r WHERE r.fournisseur_id = f.id) AS derniereReception
      FROM fournisseurs f`
   )
@@ -106,8 +111,8 @@ export function modifierFournisseur(db: Db, id: number, saisie: SaisieFournisseu
 }
 
 /**
- * Refusée tant qu'il reste une dette : désactivé, le fournisseur sortirait de v_dettes_fournisseurs
- * et sa dette disparaîtrait des comptes.
+ * Refusée tant qu'il reste une dette, un avoir à valoir ou un avoir attendu : désactivé, le
+ * fournisseur sortirait de v_dettes_fournisseurs et ces montants disparaîtraient des comptes.
  */
 export function desactiverFournisseur(db: Db, utilisateurId: number, id: number, motif: string): void {
   const m = facultatif(motif)
@@ -117,6 +122,17 @@ export function desactiverFournisseur(db: Db, utilisateurId: number, id: number,
     if (!f.actif) throw new ErreurMetier(`« ${f.nom} » est déjà désactivé`)
     if (f.soldeDu > 0) {
       throw new ErreurMetier(`Vous devez encore ${formaterFCFA(f.soldeDu)} à « ${f.nom} » : réglez la dette d’abord`)
+    }
+    // Un avoir à valoir ou attendu disparaîtrait aussi des comptes.
+    if (f.soldeDu < 0) {
+      throw new ErreurMetier(
+        `« ${f.nom} » vous doit un avoir de ${formaterFCFA(-f.soldeDu)} : utilisez-le avant de le désactiver`
+      )
+    }
+    if ((f.avoirsAttendus ?? 0) > 0) {
+      throw new ErreurMetier(
+        `Vous attendez un avoir de ${formaterFCFA(f.avoirsAttendus ?? 0)} de « ${f.nom} » : notez-le reçu ou refusé d’abord`
+      )
     }
     executer(db, 'UPDATE fournisseurs SET actif = 0 WHERE id = ?', id)
     journaliser(db, {

@@ -2,6 +2,7 @@
  * Règlements et dettes fournisseurs (tâche B10). Propriétaire : Dev B.
  * Règles (REGLES_METIER § 4.5) : règlement lié à une réception ou global (imputé sur les plus
  * anciennes), hors caisse, jamais au-delà du reste dû ; correction par annulation avec motif.
+ * Un avoir reçu (B11) s'impute comme un règlement global ; un excédent reste à valoir.
  */
 import type {
   DettesFournisseur,
@@ -16,6 +17,7 @@ import type { Db } from '../../db/connexion'
 import { avecTransaction, executer, toutes, une } from '../../db/requetes'
 import { ErreurMetier } from '../../core/erreurs'
 import { journaliser } from '../../core/audit'
+import { avoirsFournisseur, avoirsRecus } from './avoirs'
 
 const MODES: ModeReglement[] = ['especes', 'tmoney', 'flooz', 'virement', 'autre']
 const DATE_ISO = /^\d{4}-\d{2}-\d{2}$/
@@ -47,6 +49,8 @@ function receptionsImputees(db: Db, fournisseurId: number, jour: string): Recept
      WHERE fournisseur_id = ? AND annule_le IS NULL`,
     fournisseurId
   )
+  // Un avoir reçu couvre les réceptions les plus anciennes, comme un règlement global (§ 8).
+  for (const montant of avoirsRecus(db, fournisseurId)) reglements.push({ receptionId: null, montant })
   const imputations = imputerReglements(receptions, reglements, jour)
   return receptions.map((r, i) => ({
     ...imputations[i],
@@ -214,13 +218,20 @@ export function dettesFournisseur(db: Db, fournisseurId: number): DettesFourniss
     fournisseurId
   )
 
+  const avoirs = avoirsFournisseur(db, fournisseurId)
+  // Même formule que v_dettes_fournisseurs : négatif quand un avoir dépasse ce qui restait dû.
+  const totalRegle = reglements.filter((r) => !r.annuleLe).reduce((t, r) => t + r.montant, 0)
+  const totalAvoirs = avoirs.reduce((t, a) => t + (a.statut === 'recu' ? (a.montantRecu ?? 0) : 0), 0)
+
   return {
     fournisseurId,
     nom: f.nom,
     actif: f.actif === 1,
-    soldeDu: receptions.reduce((t, r) => t + r.reste, 0),
+    soldeDu: receptions.reduce((t, r) => t + r.total, 0) - totalRegle - totalAvoirs,
     enRetard: dues.filter((r) => r.etat === 'en_retard').reduce((t, r) => t + r.reste, 0),
     echeances: [...dues, ...soldees].map(versEcheance),
-    reglements
+    reglements,
+    avoirs,
+    avoirsAttendus: avoirs.reduce((t, a) => t + (a.statut === 'attendu' ? a.montantAttendu : 0), 0)
   }
 }

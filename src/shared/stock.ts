@@ -61,3 +61,49 @@ export const LIBELLES_MOUVEMENT: Record<TypeMouvement, string> = {
   vol: 'Vol',
   contre_passation: 'Annulation'
 }
+
+// ─── Sorties de stock (B11, REGLES_METIER § 8) ───────────────────────────────
+
+export type MotifSortie = 'casse' | 'perime' | 'vol' | 'don'
+
+/**
+ * Motif choisi par le gérant → type de mouvement et libellé. Le don passe par `casse` avec le
+ * libellé « Don » : aucun type dédié n'existe dans le schéma (REGLES_METIER § 8).
+ * `retourPossible` : seule une marchandise défectueuse ou périmée se renvoie au fournisseur.
+ */
+export const MOTIFS_SORTIE: Record<
+  MotifSortie,
+  { libelle: string; type: TypeMouvement; retourPossible: boolean }
+> = {
+  casse: { libelle: 'Défectueux ou casse', type: 'casse', retourPossible: true },
+  perime: { libelle: 'Périmé', type: 'perte_peremption', retourPossible: true },
+  vol: { libelle: 'Vol constaté', type: 'vol', retourPossible: false },
+  don: { libelle: 'Don', type: 'casse', retourPossible: false }
+}
+
+/** Ce qu'on sait du prix payé pour calculer un avoir attendu. */
+export interface SourcesCoutRetour {
+  /** Lot choisi pour la sortie : son prix d'achat et le fournisseur qui l'a livré. */
+  lot?: { fournisseurId: number | null; prixAchat: number } | null
+  /** Dernier coût par unité de base payé à chaque fournisseur pour ce produit. */
+  prixFournisseurs: Array<{ fournisseurId: number; coutUnitaire: number }>
+  cump: number
+}
+
+/**
+ * Coût par unité de base d'un retour à ce fournisseur (validé par Dev B le 2026-10-06) : le prix
+ * d'achat du lot s'il vient de lui, sinon le dernier prix qu'on lui a payé pour ce produit, sinon
+ * le CUMP.
+ */
+export function coutRetour(fournisseurId: number, sources: SourcesCoutRetour): number {
+  if (sources.lot && sources.lot.fournisseurId === fournisseurId && sources.lot.prixAchat > 0) {
+    return sources.lot.prixAchat
+  }
+  const prix = sources.prixFournisseurs.find((p) => p.fournisseurId === fournisseurId)
+  return prix ? prix.coutUnitaire : sources.cump
+}
+
+/** Avoir attendu = quantité × coût, arrondi au franc. 2 boîtes × 250 → 500. */
+export function avoirAttendu(quantite: number, coutUnitaire: number): number {
+  return Math.round(quantite * coutUnitaire)
+}
