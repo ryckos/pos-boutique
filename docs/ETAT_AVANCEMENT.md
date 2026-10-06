@@ -80,7 +80,7 @@ Le socle comprend :
 | B7    | Fournisseurs                              | B   | ✅     | PR #24 (fiches, solde dû, désactivation si dette réglée, écran Fournisseurs) et #27 (bouton « Achats » : livraisons d'une période et derniers prix d'achat, canal `fournisseurs:achats`) |
 | B8    | Commandes et réceptions (CUMP)            | B   | ✅     | PR #25 (réception côté serveur : lignes, lots, mouvements, CUMP, dette avec échéance, RC), #26 (écran Réceptions), #31 (commandes fournisseur côté serveur, migration `conditionnement_id`, réception liée à une commande) et #33 (écran Commandes, proposer depuis les alertes, aperçu à copier, « Livrer CA-… » sur Réceptions) |
 | B9    | Lots, FEFO, tableau des péremptions       | B   | ✅     | PR #35 (`allouerFefo` pour Dev A) et #36 (tableau des péremptions `stock:peremptions`, retrait d'un lot `stock:retirerLot` en `perte_peremption`, écran Péremptions) |
-| B10   | Règlements et dettes fournisseurs         | B   | 🔄     | PR à ouvrir : `b/reglements` (serveur : règlement lié ou global, échéancier, annulation avec motif, migration) puis `b/reglements-ecran` (boutons Dettes et Payer) ; testé à la main |
+| B10   | Règlements et dettes fournisseurs         | B   | ✅     | PR #37 (règlement lié à une réception ou global, échéancier, annulation avec motif journalisée, migration `annule_le` / `v_dettes_fournisseurs`) et #38 (boutons « Dettes » et « Payer », retard affiché sur la page Fournisseurs) |
 
 ## Phase 3 — Suivi financier (S13–S15)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
@@ -143,3 +143,5 @@ Le socle comprend :
 | 2026-10-01 | B8    | Partie 3 : écran Commandes (alertes sans quantité, aperçu à copier, clôture et annulation avec motif), bandeau « Livrer CA-… » sur Réceptions ; classe commune `.apercu` (PR #33) |
 | 2026-10-06 | B9    | Partie 1 : `allouerFefo`, répartition d'une vente par lots, date la plus proche d'abord, reste sans lot — contrat livré à A (PR #35) |
 | 2026-10-06 | B9    | Partie 2 : tableau des péremptions (périmés compris, valeur en jeu), retrait d'un lot en `perte_peremption` ; classes `tr.ligne-urgente` / `tr.ligne-proche` (PR #36) |
+| 2026-10-06 | B10   | Partie 1 : règlements fournisseurs (réception précise ou solde global, au plus le reste dû), échéancier et retard, annulation avec motif ; migration `20261006_1000_annulation_reglement.sql` (PR #37) |
+| 2026-10-06 | B10   | Partie 2 : écran des dettes et des règlements (boutons « Dettes » et « Payer », retard par fournisseur et au total) (PR #38) |
