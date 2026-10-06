@@ -1,14 +1,21 @@
 /**
  * Dettes d'un fournisseur et règlements (B10, REGLES_METIER § 4.5, UI_UX § 5.17). Propriétaire : Dev B.
  * L'échéancier par réception, les règlements (annulés compris), « Enregistrer un règlement » et
- * « Annuler » un règlement mal saisi. Le processus principal relit le reste dû et revérifie tout.
+ * « Annuler » un règlement mal saisi. Les avoirs des retours (B11) : « Avoir reçu » ou « Refusé ».
+ * Le processus principal relit le reste dû et revérifie tout.
  */
 import { useCallback, useEffect, useState } from 'react'
-import type { DettesFournisseur, ModeReglement, ReglementFournisseur } from '@shared/ipc/fournisseurs'
+import type {
+  AvoirFournisseur,
+  DettesFournisseur,
+  ModeReglement,
+  ReglementFournisseur
+} from '@shared/ipc/fournisseurs'
 import { LIBELLES_MODE_REGLEMENT } from '@shared/fournisseurs'
-import { formaterDate, formaterFCFA } from '@shared/format'
+import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { STATUTS_AVOIR } from '../stock/saisieSortie'
 import {
   GLOBAL,
   libelleReception,
@@ -28,7 +35,12 @@ interface Props {
   onFermer: () => void
 }
 
-type Vue = { type: 'dettes' } | { type: 'payer' } | { type: 'annuler'; reglement: ReglementFournisseur }
+type Vue =
+  | { type: 'dettes' }
+  | { type: 'payer' }
+  | { type: 'annuler'; reglement: ReglementFournisseur }
+  | { type: 'avoirRecu'; avoir: AvoirFournisseur }
+  | { type: 'refuserAvoir'; avoir: AvoirFournisseur }
 
 /** Date du jour du poste, AAAA-MM-JJ. */
 function aujourdhuiLocal(): string {
@@ -104,14 +116,45 @@ export function FenetreDettes(props: Props): React.JSX.Element | null {
     )
   }
 
+  if (vue.type === 'avoirRecu') {
+    const a = vue.avoir
+    return (
+      <FormulaireAvoirRecu
+        avoir={a}
+        onFermer={() => setVue({ type: 'dettes' })}
+        onValider={async (s) => {
+          await appel('fournisseurs:avoirRecu', { id: a.id, ...s })
+          await apres(`Avoir de ${formaterFCFA(s.montant)} de « ${nom} » reçu : déduit de la dette.`, false)
+        }}
+      />
+    )
+  }
+  if (vue.type === 'refuserAvoir') {
+    const a = vue.avoir
+    return (
+      <FormulaireRefusAvoir
+        avoir={a}
+        onFermer={() => setVue({ type: 'dettes' })}
+        onValider={async (motif) => {
+          await appel('fournisseurs:refuserAvoir', { id: a.id, motif })
+          await apres(`Avoir de ${formaterFCFA(a.montantAttendu)} refusé par « ${nom} ».`, false)
+        }}
+      />
+    )
+  }
+
   return (
     <FenetreFormulaire
       titre={`Dettes — ${nom}`}
       pastille={
-        <span className={`pastille ${dettes.enRetard > 0 ? 'pastille-erreur' : 'pastille-ok'}`}>
-          Dû : {formaterFCFA(dettes.soldeDu)}
-          {dettes.enRetard > 0 && ` · en retard : ${formaterFCFA(dettes.enRetard)}`}
-        </span>
+        dettes.soldeDu < 0 ? (
+          <span className="pastille pastille-ok">Avoir à valoir : {formaterFCFA(-dettes.soldeDu)}</span>
+        ) : (
+          <span className={`pastille ${dettes.enRetard > 0 ? 'pastille-erreur' : 'pastille-ok'}`}>
+            Dû : {formaterFCFA(dettes.soldeDu)}
+            {dettes.enRetard > 0 && ` · en retard : ${formaterFCFA(dettes.enRetard)}`}
+          </span>
+        )
       }
       libelleValider="Enregistrer un règlement"
       valide={dettes.actif && dettes.soldeDu > 0}
@@ -221,7 +264,158 @@ export function FenetreDettes(props: Props): React.JSX.Element | null {
             </table>
           </div>
         )}
+
+        <h3>Avoirs des retours</h3>
+        {dettes.avoirs.length === 0 ? (
+          <p className="vide">Aucun retour à ce fournisseur. Un retour se fait depuis « Sorties de stock ».</p>
+        ) : (
+          <div className="tableau-cadre">
+            <table className="tableau">
+              <thead>
+                <tr>
+                  <th>Retour</th>
+                  <th>Produit</th>
+                  <th className="nombre">Attendu</th>
+                  <th>État</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {dettes.avoirs.map((a) => (
+                  <tr key={a.id} className={a.statut === 'annule' ? 'inactif' : undefined}>
+                    <td>
+                      {formaterDate(a.dateRetour)}
+                      <span className="detail">par {a.utilisateur}</span>
+                    </td>
+                    <td>
+                      {formaterQuantite(a.quantite)} × {a.produit}
+                      {a.lot && <span className="detail">Lot {a.lot}</span>}
+                    </td>
+                    <td className="nombre montant">{formaterFCFA(a.montantAttendu)}</td>
+                    <td>
+                      <span className={`pastille ${STATUTS_AVOIR[a.statut].classe}`}>
+                        {STATUTS_AVOIR[a.statut].texte}
+                      </span>
+                      <span className="detail">{detailAvoir(a)}</span>
+                    </td>
+                    <td>
+                      {a.statut === 'attendu' && dettes.actif && (
+                        <div className="tableau-actions">
+                          <button
+                            type="button"
+                            className="btn"
+                            onClick={() => setVue({ type: 'avoirRecu', avoir: a })}
+                          >
+                            Avoir reçu
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-attention"
+                            onClick={() => setVue({ type: 'refuserAvoir', avoir: a })}
+                          >
+                            Refusé
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+    </FenetreFormulaire>
+  )
+}
+
+/** « 450 F le 07/10/2026 · AV-12 » pour un avoir reçu ; le motif d'un refus ou d'une annulation. */
+function detailAvoir(a: AvoirFournisseur): string {
+  if (a.statut === 'recu') {
+    return [`${formaterFCFA(a.montantRecu ?? 0)} le ${formaterDate(a.dateAvoir ?? '')}`, a.reference]
+      .filter(Boolean)
+      .join(' · ')
+  }
+  return a.motifCloture ?? ''
+}
+
+function FormulaireAvoirRecu(props: {
+  avoir: AvoirFournisseur
+  onValider: (s: { montant: number; date: string; reference: string }) => Promise<void>
+  onFermer: () => void
+}): React.JSX.Element {
+  const a = props.avoir
+  const aujourdhui = aujourdhuiLocal()
+  const [montantTexte, setMontantTexte] = useState(String(a.montantAttendu))
+  const [date, setDate] = useState(aujourdhui)
+  const [reference, setReference] = useState('')
+  const montant = lireMontant(montantTexte)
+  const manque =
+    montant === null || !Number.isInteger(montant) || montant <= 0
+      ? 'Indiquez le montant reçu, en francs, sans virgule.'
+      : date === '' || date > aujourdhui
+        ? 'Indiquez la date de l’avoir, jamais dans le futur.'
+        : null
+
+  return (
+    <FenetreFormulaire
+      titre="Avoir reçu"
+      pastille={<span className="pastille pastille-alerte">Attendu : {formaterFCFA(a.montantAttendu)}</span>}
+      libelleValider="Enregistrer l’avoir"
+      valide={manque === null}
+      onValider={() => props.onValider({ montant: montant!, date, reference })}
+      onFermer={props.onFermer}
+    >
+      <p className="vide formulaire-bloc">
+        Retour de {formaterQuantite(a.quantite)} × « {a.produit} » du {formaterDate(a.dateRetour)}. L’avoir se
+        déduit de la dette, d’abord sur les livraisons les plus anciennes ; s’il la dépasse, le reste est à
+        valoir sur les prochaines.
+      </p>
+      <label className="champ">
+        Montant reçu (F)
+        <input inputMode="numeric" value={montantTexte} onChange={(e) => setMontantTexte(e.target.value)} />
+        <span className="champ-aide">{manque ?? 'Peut différer de l’avoir attendu.'}</span>
+      </label>
+      <label className="champ">
+        Date de l’avoir
+        <input type="date" value={date} max={aujourdhui} onChange={(e) => setDate(e.target.value)} />
+      </label>
+      <label className="champ">
+        Référence (facultatif)
+        <input placeholder="N° de l’avoir" value={reference} onChange={(e) => setReference(e.target.value)} />
+      </label>
+    </FenetreFormulaire>
+  )
+}
+
+function FormulaireRefusAvoir(props: {
+  avoir: AvoirFournisseur
+  onValider: (motif: string) => Promise<void>
+  onFermer: () => void
+}): React.JSX.Element {
+  const [motif, setMotif] = useState('')
+  const a = props.avoir
+  return (
+    <FenetreFormulaire
+      titre="Avoir refusé par le fournisseur"
+      libelleValider="Noter le refus"
+      attention
+      valide={motif.trim() !== ''}
+      onValider={() => props.onValider(motif)}
+      onFermer={props.onFermer}
+    >
+      <p className="vide formulaire-bloc">
+        Avoir attendu de {formaterFCFA(a.montantAttendu)} pour {formaterQuantite(a.quantite)} × « {a.produit} ».
+        Rien ne sera déduit de la dette ; la marchandise reste sortie du stock.
+      </p>
+      <label className="champ champ-large">
+        Motif
+        <input
+          placeholder="Ex. : abîmé en rayon, pas à la livraison"
+          value={motif}
+          onChange={(e) => setMotif(e.target.value)}
+        />
+      </label>
     </FenetreFormulaire>
   )
 }

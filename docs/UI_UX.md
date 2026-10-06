@@ -340,6 +340,20 @@ Le formulaire contient :
 
 Le bouton s'appelle **« Valider la sortie »**.
 
+Réalisation (B11, `modules/stock/PageSorties.tsx`, menu « Sorties de stock », gérant) :
+- champ « Article qui sort du stock » (`data-scan`) : un scan ou la touche Entrée ouvre la fenêtre de
+  sortie du produit ; un nom tapé propose les produits (un par ligne) ;
+- fenêtre « Sortie de stock — <produit> », pastille « Stock : … » : Lot (si le produit a des lots en
+  stock : le plus proche de sa date proposé, ou « Sans lot »), Quantité (« Au plus … »), Motif,
+  Commentaire ; la case « Créer un retour fournisseur » n'apparaît que pour « Défectueux ou casse » et
+  « Périmé » et ouvre Fournisseur (ceux qui ont livré le produit d'abord, avec leur dernier prix) et
+  « Avoir attendu (F) » calculé, corrigeable ; note « Mouvement −N tracé : qui, quand, pourquoi » avec
+  la perte au coût moyen, ou ce qui manque pour valider ;
+- tableau « Sorties des 30 derniers jours » (retraits du tableau des péremptions compris) : Date,
+  Produit · lot, Motif, Quantité, Valeur, Retour (pastille d'état de l'avoir et fournisseur), Par, et
+  « Annuler » (rouge, motif obligatoire) tant que la sortie n'est pas annulée et que son avoir est
+  encore attendu ; une sortie annulée passe en gris avec son motif.
+
 ### 5.10 Retour client (Dev A — A7)
 L'en-tête « Retour client » indique le ticket d'origine et sa date. L'écran contient :
 - la liste des lignes du ticket, avec une case à cocher sur chacune ; les lignes non cochées sont
@@ -451,6 +465,16 @@ retard : … », sinon « avant le <prochaine échéance> ». Boutons « Dettes 
   bouton « Enregistrer le règlement ». Ouverte par « Payer », elle revient à la page une fois finie.
 - Annulation : fenêtre « Annuler un règlement » (bouton rouge), rappel du règlement et de son effet,
   motif obligatoire.
+
+**Avoirs des retours (B11)** : sur la page, un solde négatif s'affiche « 0 F » avec « avoir à valoir :
+… » dessous (le « Total dû » ne le déduit pas des autres fournisseurs), et « avoir attendu : … » quand
+un retour attend son avoir. Dans « Dettes », la pastille devient « Avoir à valoir : … » (verte) si le
+solde est négatif, et un tableau « Avoirs des retours » suit les règlements : date et auteur du retour,
+quantité × produit (et lot), avoir attendu, pastille d'état (Avoir attendu ambre, Avoir reçu vert avec
+montant, date et référence, Avoir refusé rouge avec le motif, Annulé gris). Sur un avoir attendu :
+- « Avoir reçu » : fenêtre, montant reçu pré-rempli de l'attendu (modifiable), date (aujourd'hui, pas
+  de date future), référence facultative, bouton « Enregistrer l'avoir » ;
+- « Refusé » (rouge) : fenêtre, motif obligatoire, bouton « Noter le refus ».
 
 ### 5.18 Commandes fournisseur (Dev B — B8 partie 3, gérant)
 Page « Commandes » du menu (`modules/achats/PageCommandes.tsx`), avant « Réceptions ». Tableau Numéro /

@@ -47,7 +47,8 @@ export function PageFournisseurs(): React.JSX.Element {
     charger()
   }
 
-  const totalDu = fournisseurs.reduce((s, f) => s + (f.actif ? f.soldeDu : 0), 0)
+  // Un avoir à valoir (solde négatif) ne réduit pas ce que l'on doit aux autres fournisseurs.
+  const totalDu = fournisseurs.reduce((s, f) => s + (f.actif ? Math.max(0, f.soldeDu) : 0), 0)
   const totalRetard = fournisseurs.reduce((s, f) => s + (f.actif ? (f.enRetard ?? 0) : 0), 0)
 
   return (
@@ -166,7 +167,17 @@ export function PageFournisseurs(): React.JSX.Element {
                   <td>{libelleDelai(f.delaiPaiementJours)}</td>
                   <td>{f.derniereReception ? formaterDate(f.derniereReception) : 'Aucune'}</td>
                   <td className="nombre montant">
-                    {formaterFCFA(f.soldeDu)}
+                    {f.soldeDu < 0 ? (
+                      <>
+                        {formaterFCFA(0)}
+                        <span className="detail">avoir à valoir : {formaterFCFA(-f.soldeDu)}</span>
+                      </>
+                    ) : (
+                      formaterFCFA(f.soldeDu)
+                    )}
+                    {(f.avoirsAttendus ?? 0) > 0 && (
+                      <span className="detail">avoir attendu : {formaterFCFA(f.avoirsAttendus!)}</span>
+                    )}
                     {(f.enRetard ?? 0) > 0 ? (
                       <span className="detail">
                         <span className="pastille pastille-erreur">
@@ -310,6 +321,18 @@ function FormulaireDesactivation(props: {
       {fournisseur.soldeDu > 0 && (
         <p className="alerte formulaire-bloc">
           Vous lui devez encore {formaterFCFA(fournisseur.soldeDu)} : réglez la dette avant de le désactiver.
+        </p>
+      )}
+      {fournisseur.soldeDu < 0 && (
+        <p className="alerte formulaire-bloc">
+          Il vous doit un avoir de {formaterFCFA(-fournisseur.soldeDu)} : utilisez-le sur une livraison avant de
+          le désactiver.
+        </p>
+      )}
+      {(fournisseur.avoirsAttendus ?? 0) > 0 && (
+        <p className="alerte formulaire-bloc">
+          Vous attendez un avoir de {formaterFCFA(fournisseur.avoirsAttendus!)} : notez-le reçu ou refusé (bouton
+          « Dettes ») avant de le désactiver.
         </p>
       )}
       <label className="champ champ-large">
