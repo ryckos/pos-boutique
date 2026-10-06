@@ -321,6 +321,14 @@ Les lignes sont colorées selon l'urgence :
 
 Sous le tableau, la note : « Le FEFO vend d'abord ces lots automatiquement. »
 
+Précisions de la réalisation (B9, 2026-10-04) :
+- menu « Péremptions » (gérant) ; l'horizon suit le paramètre `peremption_seuil_jours` ;
+- les lots déjà périmés apparaissent en tête, en rouge, avec « Périmé depuis 2 j » ;
+- « Retirer » ouvre une fenêtre : quantité (le restant proposé), commentaire facultatif, perte au
+  prix d'achat affichée ; bouton rouge « Retirer du stock » ;
+- « Promo −20 % » est affiché inactif jusqu'aux promotions programmées (A16, Dev A) ;
+- classes communes `.tableau tr.ligne-urgente` (rouge) et `tr.ligne-proche` (ambre).
+
 ### 5.9 Sortie de stock (Dev B — B11)
 Le formulaire contient :
 - les champs Produit (scanné), Quantité (en unités de base) et Motif (Défectueux ou casse, Périmé,
