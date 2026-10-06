@@ -1,5 +1,6 @@
-/** Propriétaire : Dev B. Fiches fournisseurs (B7). */
+/** Propriétaire : Dev B. Fiches fournisseurs (B7), dettes (B10), avoirs (B11). */
 import type { ResumeReception } from './achats'
+import type { StatutAvoir } from './stock'
 
 export interface Fournisseur {
   id: number
@@ -10,7 +11,7 @@ export interface Fournisseur {
   /** Délai accordé pour payer une réception, en jours ; 0 = comptant. */
   delaiPaiementJours: number
   actif: boolean
-  /** Réceptions − règlements, en FCFA (REGLES_METIER § 4.5). */
+  /** Réceptions − règlements − avoirs reçus, en FCFA (REGLES_METIER § 4.5). Négatif = avoir à valoir. */
   soldeDu: number
   /** Date de la dernière réception (AAAA-MM-JJ HH:MM:SS), null si aucune. */
   derniereReception: string | null
@@ -18,6 +19,8 @@ export interface Fournisseur {
   enRetard?: number
   /** Plus proche échéance d'une réception non soldée (AAAA-MM-JJ), null s'il n'y en a pas (B10). */
   prochaineEcheance?: string | null
+  /** Somme des avoirs attendus de ce fournisseur (retours non encore remboursés), en FCFA (B11). */
+  avoirsAttendus?: number
 }
 
 export interface SaisieFournisseur {
@@ -111,16 +114,51 @@ export interface ReglementFournisseur {
   motifAnnulation: string | null
 }
 
+/** Avoir attendu d'un retour fournisseur, et ce qu'il est devenu (REGLES_METIER § 8). */
+export interface AvoirFournisseur {
+  id: number
+  /** AAAA-MM-JJ HH:MM:SS du retour. */
+  dateRetour: string
+  produit: string
+  quantite: number
+  unite: string
+  lot: string | null
+  montantAttendu: number
+  statut: StatutAvoir
+  montantRecu: number | null
+  /** AAAA-MM-JJ de l'avoir reçu. */
+  dateAvoir: string | null
+  reference: string | null
+  /** Motif du refus ou de l'annulation. */
+  motifCloture: string | null
+  utilisateur: string
+  closPar: string | null
+}
+
+export interface SaisieAvoirRecu {
+  id: number
+  /** FCFA entier > 0 ; peut différer de l'avoir attendu. */
+  montant: number
+  /** AAAA-MM-JJ, jamais dans le futur ; aujourd'hui par défaut. */
+  date?: string | null
+  reference?: string | null
+}
+
 export interface DettesFournisseur {
   fournisseurId: number
   nom: string
   actif: boolean
+  /** Réceptions − règlements − avoirs reçus ; négatif = avoir à valoir sur les prochains achats. */
   soldeDu: number
   enRetard: number
   /** Réceptions non soldées (par échéance), puis soldées des 90 derniers jours (plus récentes d'abord). */
   echeances: EcheanceReception[]
   /** Tous les règlements, annulés compris, les plus récents d'abord. */
   reglements: ReglementFournisseur[]
+  /** Avoirs attendus d'abord, puis les autres, les plus récents d'abord (B11). */
+  avoirs: AvoirFournisseur[]
+  /** Somme des avoirs attendus, FCFA. */
+  avoirsAttendus: number
 }
 
 export interface ContratFournisseurs {
@@ -139,6 +177,10 @@ export interface ContratFournisseurs {
   'fournisseurs:enregistrerReglement': { requete: SaisieReglement; reponse: { id: number } }
   /** Motif obligatoire, journalisé ; le règlement reste visible mais ne compte plus. Gérant. */
   'fournisseurs:annulerReglement': { requete: { id: number; motif: string }; reponse: void }
-  /** Solde, échéancier par réception et règlements d'un fournisseur. Gérant. */
+  /** L'avoir attendu est arrivé : il se déduit de la dette comme un règlement global. Gérant. */
+  'fournisseurs:avoirRecu': { requete: SaisieAvoirRecu; reponse: void }
+  /** Le fournisseur refuse l'avoir : motif obligatoire, journalisé. Gérant. */
+  'fournisseurs:refuserAvoir': { requete: { id: number; motif: string }; reponse: void }
+  /** Solde, échéancier par réception, règlements et avoirs d'un fournisseur. Gérant. */
   'fournisseurs:dettes': { requete: { fournisseurId: number }; reponse: DettesFournisseur }
 }

@@ -88,7 +88,7 @@ Le socle comprend :
 | A11   | Clients et vente à crédit                 | A   | ⏳     |   |
 | A12   | Recouvrement                              | A   | ⏳     |   |
 | A13   | Écran client définitif                    | A   | ⏳     |   |
-| B11   | Sorties de stock, retours fournisseur     | B   | ⏳     |   |
+| B11   | Sorties de stock, retours fournisseur     | B   | 🔄     | `b/sorties` (serveur : sorties, retours, avoirs déduits de la dette, migration `retours_fournisseur`) ; écran à suivre (`b/sorties-ecran`) |
 | B12   | Inventaires                               | B   | ⏳     |   |
 | B13   | Dépenses                                  | B   | ⏳     |   |
 

@@ -5,6 +5,7 @@ import { session } from '../../core/session'
 import { etatStock } from './etat'
 import { historiqueProduit } from './historique'
 import { retirerLot, tableauPeremptions } from './peremptions'
+import { annulerSortie, enregistrerSortie, ficheSortie, listerSorties } from './sorties'
 import {
   annulerStockInitial,
   enregistrerStockInitial,
@@ -31,6 +32,24 @@ export function enregistrerIpcStock(): void {
   gerer('stock:retirerLot', (requete) => {
     const u = session.exiger(['gerant'])
     return retirerLot(base(), u.id, requete)
+  })
+
+  // Sorties de stock et retours fournisseur : gérant (pertes chiffrées, avoirs).
+  gerer('stock:ficheSortie', ({ produitId }) => {
+    session.exiger(['gerant'])
+    return ficheSortie(base(), produitId)
+  })
+  gerer('stock:enregistrerSortie', (saisie) => {
+    const u = session.exiger(['gerant'])
+    return enregistrerSortie(base(), u.id, saisie)
+  })
+  gerer('stock:sorties', (periode) => {
+    session.exiger(['gerant'])
+    return listerSorties(base(), periode)
+  })
+  gerer('stock:annulerSortie', ({ mouvementId, motif }) => {
+    const u = session.exiger(['gerant'])
+    annulerSortie(base(), u.id, mouvementId, motif)
   })
 
   // Stock initial : gérant (matrice : « valider un inventaire », même mécanisme).

@@ -50,6 +50,7 @@ document à jour.
 | `receptions`              | Arrivage, `commande_id` (commande livrée, facultatif), `total` (qui crée la dette), `date_echeance` (figée à la validation, B8) |
 | `lignes_reception`        | Saisie telle quelle : `conditionnement_id`, `quantite_recue`, `prix_achat_unitaire` (d'un conditionnement), `quantite_base_totale`, lot, péremption |
 | `reglements_fournisseurs` | Paiements aux fournisseurs : `reception_id` (NULL = global), `mode`, `reference` ; annulation par `annule_le`, `annule_par`, `motif_annulation` (B10) |
+| `retours_fournisseur`     | Retour fournisseur et son avoir (B11) : produit, lot, `quantite` (unités de base), `cout_unitaire` (prix payé à ce fournisseur), `montant_attendu` ; `statut` attendu → `recu` (`montant_recu`, `date_avoir`, `reference`) ou `refuse` / `annule` (`motif_cloture`). Document du mouvement `retour_fournisseur` |
 
 ### Clients — Dev A
 | Table                    | Rôle                                                             |
@@ -74,7 +75,7 @@ document à jour.
 | `v_alertes_stock`      | Produits en rupture ou sous le seuil                          | A, B         |
 | `v_stock_lots`         | Quantité restante par lot                                     | B (FEFO)     |
 | `v_peremptions`        | Lots en stock, avec jours restants et valeur en jeu           | B            |
-| `v_dettes_fournisseurs`| Achats, règlements non annulés et solde dû par fournisseur    | B            |
+| `v_dettes_fournisseurs`| Achats, règlements non annulés, avoirs reçus et solde dû par fournisseur (négatif = avoir à valoir) | B |
 | `v_creances_clients`   | Encaissé et restant dû par créance                            | A            |
 
 ## Triggers de protection
@@ -86,6 +87,7 @@ document à jour.
 | `trg_audit_no_delete`       | Interdit tout `DELETE` sur `journal_audit`    |
 | `trg_ventes_no_delete`      | Interdit tout `DELETE` sur `ventes`           |
 | `trg_lignes_vente_no_delete`| Interdit tout `DELETE` sur `lignes_vente`     |
+| `trg_retours_fournisseur_no_delete` | Interdit tout `DELETE` sur `retours_fournisseur` |
 
 ## Migrations appliquées
 | Fichier                                  | Contenu                                              |
@@ -97,6 +99,7 @@ document à jour.
 | `20260930_1400_echeance_reception.sql` | `receptions.date_echeance` (AAAA-MM-JJ) : échéance de la dette, jour de réception + délai du fournisseur |
 | `20261001_0833_commande_conditionnement.sql` | `lignes_commande_achat.conditionnement_id` : on commande dans le conditionnement (3 cartons), comparaison en unités de base |
 | `20261006_1000_annulation_reglement.sql` | `reglements_fournisseurs.annule_le`, `annule_par`, `motif_annulation` ; `v_dettes_fournisseurs` recréée sans les règlements annulés |
+| `20261006_1400_retours_fournisseur.sql` | Table `retours_fournisseur` (avoir attendu, reçu, refusé ou annulé) et son trigger ; `v_dettes_fournisseurs` recréée avec `total_avoirs` déduit du solde |
 
 Ajouter ici chaque nouvelle migration (nom et contenu en une ligne).
 

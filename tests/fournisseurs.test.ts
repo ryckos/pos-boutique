@@ -46,7 +46,8 @@ describe('Fournisseurs : fiches (REGLES_METIER § 4.6)', () => {
         soldeDu: 0,
         derniereReception: null,
         enRetard: 0,
-        prochaineEcheance: null
+        prochaineEcheance: null,
+        avoirsAttendus: 0
       }
     ])
   })

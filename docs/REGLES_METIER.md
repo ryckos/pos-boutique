@@ -55,6 +55,8 @@ Actions à journaliser avec `journaliser()` :
 | `annulation_commande`         | numéro, statut, motif (§ 4.7) |
 | `cloture_commande`            | numéro, reste non livré, motif (§ 4.7) |
 | `annulation_reglement_fournisseur` | fournisseur, montant, date, motif (§ 4.5) |
+| `annulation_sortie_stock`     | produit, type, quantité, motif d'origine, valeur ; motif (§ 8) |
+| `refus_avoir_fournisseur`     | fournisseur, produit, avoir attendu, motif (§ 8) |
 | `validation_inventaire`       |                    |
 | `restauration_sauvegarde`     |                    |
 
@@ -332,6 +334,11 @@ Les règlements peuvent être partiels (espèces, mobile money, virement). La vu
   dès le lendemain. **Alerte d'échéance dépassée** : montant en retard par fournisseur et au total
   sur la page Fournisseurs.
 - Un règlement d'un fournisseur désactivé est refusé (sa dette est réglée, § 4.6).
+- **Avoirs (B11, § 8)** : un avoir **reçu** s'impute comme un règlement global (réceptions les plus
+  anciennes d'abord). S'il dépasse ce qui reste dû, le solde devient **négatif** : c'est un avoir à
+  valoir, consommé automatiquement par les livraisons suivantes. Un règlement reste limité au reste
+  dû. La désactivation d'un fournisseur est refusée tant que son solde n'est pas nul **ou** qu'un
+  avoir est attendu.
 
 ### 4.6 Fiches fournisseurs (validé par Dev B le 2026-09-30)
 - **Droits** : le gérant (et l'admin), comme la réception d'une livraison.
@@ -627,6 +634,33 @@ repart à 1 chaque année.
   1. Mouvement `retour_fournisseur` (−).
   2. **Avoir attendu** = quantité × coût d'achat. Exemple : 2 boîtes bombées × 250 F = 500 F.
   3. L'avoir est déduit de la dette quand il est confirmé.
+
+**Précisions validées par Dev B le 2026-10-06 (B11)** :
+- **Droits** : le gérant (et l'admin).
+- **Motifs** : « Défectueux ou casse » (`casse`), « Périmé » (`perte_peremption`), « Vol constaté »
+  (`vol`), « Don » (`casse`, libellé « Don »). Commentaire facultatif, ajouté au libellé
+  (« Défectueux ou casse : boîtes bombées »).
+- **Quantité** en unités de base, entière sauf au poids ou au volume ; **au plus le stock** du lot
+  choisi, ou du produit pour une sortie sans lot (une sortie n'est pas une vente : D-A1 ne s'applique
+  pas). Le mouvement est chiffré au **CUMP**.
+- **Lot** : pour un produit suivi par lots, on choisit le lot parmi ceux en stock ; le plus proche de
+  sa date est proposé. Une sortie sans lot reste possible.
+- **Retour fournisseur** : seulement pour « Défectueux ou casse » et « Périmé ». Fournisseur proposé :
+  celui du lot (via sa réception), sinon le dernier qui a livré ce produit ; modifiable, actifs
+  seulement. Le mouvement est de type `retour_fournisseur` (document `retour_fournisseur`).
+- **Coût de l'avoir** : prix d'achat du lot s'il vient de ce fournisseur, sinon le dernier prix
+  payé à ce fournisseur pour ce produit (prix du conditionnement / quantité de base), sinon le CUMP.
+  Avoir attendu = quantité × coût, **arrondi au franc**, corrigeable avant validation.
+- **Suite de l'avoir** : « Avoir reçu » (montant reçu en francs entiers > 0, peut différer de
+  l'attendu ; date jamais future ; référence facultative ; non journalisé, comme un règlement), qui
+  se déduit de la dette (§ 4.5) ; ou « Refusé » avec motif, journalisé (`refus_avoir_fournisseur`).
+- **Correction** : une sortie s'annule par **contre-passation**, motif obligatoire, journalisée
+  (`annulation_sortie_stock`), une seule fois. Avec un retour, l'avoir doit être encore attendu : il
+  passe à « annulé » ; une sortie dont l'avoir est reçu ou refusé ne s'annule plus. Les retraits du
+  tableau des péremptions (§ 5.1) s'annulent de la même façon ; une casse issue d'un retour client
+  (Dev A) non.
+- **Pas de numéro** de sortie ni de retour. L'historique du produit affiche « Sortie de stock » ou
+  « Retour à <fournisseur> ».
 
 ---
 

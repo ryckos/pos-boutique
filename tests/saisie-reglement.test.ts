@@ -38,7 +38,9 @@ const DETTES: DettesFournisseur = {
   soldeDu: 29200,
   enRetard: 18000,
   echeances: [RC1, RC2],
-  reglements: []
+  reglements: [],
+  avoirs: [],
+  avoirsAttendus: 0
 }
 
 describe('Saisie d’un règlement fournisseur (écran B10)', () => {

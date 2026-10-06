@@ -1,5 +1,5 @@
-/** Propriétaire : Dev B. Écran stock (B4) et stock initial de démarrage (B6). */
-import type { PartRepartition } from '../stock'
+/** Propriétaire : Dev B. Écran stock (B4), stock initial (B6), péremptions (B9), sorties (B11). */
+import type { MotifSortie, PartRepartition } from '../stock'
 import type { TypeMouvement } from '../types'
 
 // ─── Écran stock (B4) ────────────────────────────────────────────────────────
@@ -169,6 +169,86 @@ export interface TableauPeremptions {
   valeurTotale: number
 }
 
+// ─── Sorties de stock et retours fournisseur (B11) ───────────────────────────
+
+/** Un lot en stock du produit, pour choisir d'où sort la marchandise. */
+export interface LotSortie {
+  lotId: number
+  numeroLot: string | null
+  /** AAAA-MM-JJ, null si le lot n'est pas daté. */
+  datePeremption: string | null
+  restant: number
+  /** Prix d'achat du lot, FCFA par unité de base. */
+  prixAchat: number
+  /** Fournisseur de la réception qui a créé le lot, null pour un stock initial. */
+  fournisseurId: number | null
+}
+
+/** Dernier coût payé à un fournisseur actif pour ce produit. */
+export interface PrixRetour {
+  fournisseurId: number
+  fournisseur: string
+  /** FCFA par unité de base (prix du conditionnement / quantité de base). */
+  coutUnitaire: number
+  /** AAAA-MM-JJ HH:MM:SS de la réception. */
+  date: string
+}
+
+export interface FicheSortie {
+  produitId: number
+  nom: string
+  unite: string
+  /** Stock du produit, en unités de base. */
+  stock: number
+  cump: number
+  suiviPeremption: boolean
+  /** Lots en stock, date la plus proche d'abord (périmés compris) : le premier est proposé. */
+  lots: LotSortie[]
+  /** Fournisseurs actifs qui ont livré ce produit, le plus récent d'abord. */
+  prixFournisseurs: PrixRetour[]
+  /** Fournisseur proposé pour un retour : celui du lot proposé, sinon le dernier qui a livré. */
+  fournisseurPropose: number | null
+}
+
+export interface SaisieSortie {
+  produitId: number
+  /** Lot d'où sort la marchandise ; absent ou null = sortie sans lot. */
+  lotId?: number | null
+  /** En unités de base, au plus le stock du lot (ou du produit sans lot). */
+  quantite: number
+  motif: MotifSortie
+  commentaire?: string | null
+  /** Retour fournisseur (motifs « Défectueux ou casse » et « Périmé » seulement). */
+  retour?: {
+    fournisseurId: number
+    /** FCFA entier > 0 ; absent = quantité × coût de retour, recalculé par le service. */
+    montantAttendu?: number | null
+  } | null
+}
+
+export type StatutAvoir = 'attendu' | 'recu' | 'refuse' | 'annule'
+
+export interface SortieStock {
+  mouvementId: number
+  /** AAAA-MM-JJ HH:MM:SS. */
+  horodatage: string
+  produitId: number
+  produit: string
+  unite: string
+  type: TypeMouvement
+  /** « Défectueux ou casse : boîtes bombées »… */
+  motif: string | null
+  /** Quantité sortie, positive, en unités de base. */
+  quantite: number
+  lot: string | null
+  /** Quantité × coût du mouvement (CUMP), FCFA. */
+  valeur: number
+  utilisateur: string
+  retour: { id: number; fournisseur: string; montantAttendu: number; statut: StatutAvoir } | null
+  /** Annulée par contre-passation : motif de l'annulation, sinon null. */
+  motifAnnulation: string | null
+}
+
 export interface ContratStock {
   /** Lots en stock qui périment sous `peremption_seuil_jours` jours, périmés compris. Gérant. */
   'stock:peremptions': { requete: void; reponse: TableauPeremptions }
@@ -190,6 +270,23 @@ export interface ContratStock {
     requete: { produitId: number; du?: string | null; au?: string | null }
     reponse: HistoriqueProduit
   }
+  /** Stock, lots et prix fournisseurs d'un produit, pour préparer une sortie. Gérant. */
+  'stock:ficheSortie': { requete: { produitId: number }; reponse: FicheSortie }
+  /**
+   * Sortie de stock (REGLES_METIER § 8) : un mouvement chiffré au CUMP ; avec un retour
+   * fournisseur, mouvement `retour_fournisseur` et avoir attendu. Gérant.
+   */
+  'stock:enregistrerSortie': {
+    requete: SaisieSortie
+    reponse: { mouvementId: number; retourId: number | null; montantAttendu: number | null }
+  }
+  /** Sorties d'une période (30 derniers jours par défaut), les plus récentes d'abord. Gérant. */
+  'stock:sorties': { requete: { du?: string | null; au?: string | null }; reponse: SortieStock[] }
+  /**
+   * Annule une sortie par contre-passation (motif obligatoire, journalisé). Avec un retour, l'avoir
+   * doit être encore attendu : il passe à « annulé ». Gérant.
+   */
+  'stock:annulerSortie': { requete: { mouvementId: number; motif: string }; reponse: void }
   /** Tous les produits actifs avec leur état de stock initial. Gérant. */
   'stock:stockInitial': { requete: void; reponse: EtatStockInitialBoutique }
   'stock:ficheStockInitial': { requete: { produitId: number }; reponse: FicheStockInitial }

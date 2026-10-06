@@ -27,6 +27,8 @@ const SQL_MOUVEMENTS = `
            WHEN 'inventaire' THEN 'Inventaire ' || i.numero
            WHEN 'stock_initial' THEN 'Stock initial'
            WHEN 'demo' THEN 'Stock de démonstration'
+           WHEN 'sortie' THEN 'Sortie de stock'
+           WHEN 'retour_fournisseur' THEN 'Retour à ' || f.nom
          END AS document,
          CASE WHEN l.id IS NOT NULL THEN COALESCE(
            l.numero_lot,
@@ -37,11 +39,13 @@ const SQL_MOUVEMENTS = `
   LEFT JOIN ventes v ON m.document_type = 'vente' AND v.id = m.document_id
   LEFT JOIN receptions r ON m.document_type = 'reception' AND r.id = m.document_id
   LEFT JOIN inventaires i ON m.document_type = 'inventaire' AND i.id = m.document_id
+  LEFT JOIN retours_fournisseur rf ON m.document_type = 'retour_fournisseur' AND rf.id = m.document_id
+  LEFT JOIN fournisseurs f ON f.id = rf.fournisseur_id
   LEFT JOIN lots l ON l.id = m.lot_id
   WHERE m.produit_id = ? AND m.horodatage >= ? AND m.horodatage < date(?, '+1 day')
   ORDER BY m.id`
 
-function lireDate(valeur: string | null | undefined, nom: string): string | null {
+export function lireDate(valeur: string | null | undefined, nom: string): string | null {
   const v = valeur?.trim()
   if (!v) return null
   if (!FORMAT_DATE.test(v) || Number.isNaN(Date.parse(v))) {
