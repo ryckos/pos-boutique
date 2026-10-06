@@ -1,5 +1,6 @@
 /**
- * Fournisseurs : liste, création, modification, désactivation, achats. Propriétaire : Dev B.
+ * Fournisseurs : liste, création, modification, désactivation, achats, dettes et règlements.
+ * Propriétaire : Dev B.
  * Gérant. Jamais de suppression : un fournisseur se désactive, avec un motif, une fois sa dette
  * réglée (REGLES_METIER § 4.6). Les règles sont revérifiées par le processus principal.
  */
@@ -9,9 +10,12 @@ import { formaterDate, formaterFCFA } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { FenetreAchats } from './FenetreAchats'
+import { FenetreDettes } from './FenetreDettes'
 
 type Action =
-  { type: 'creer' } | { type: 'modifier' | 'desactiver' | 'achats'; fournisseur: Fournisseur } | null
+  | { type: 'creer' }
+  | { type: 'modifier' | 'desactiver' | 'achats' | 'dettes' | 'payer'; fournisseur: Fournisseur }
+  | null
 
 const libelleDelai = (jours: number): string => (jours === 0 ? 'Comptant' : `${jours} jours`)
 
@@ -44,6 +48,7 @@ export function PageFournisseurs(): React.JSX.Element {
   }
 
   const totalDu = fournisseurs.reduce((s, f) => s + (f.actif ? f.soldeDu : 0), 0)
+  const totalRetard = fournisseurs.reduce((s, f) => s + (f.actif ? (f.enRetard ?? 0) : 0), 0)
 
   return (
     <div className="page">
@@ -53,6 +58,9 @@ export function PageFournisseurs(): React.JSX.Element {
           <span>
             Total dû : <span className="montant">{formaterFCFA(totalDu)}</span>
           </span>
+          {totalRetard > 0 && (
+            <span className="pastille pastille-erreur">En retard : {formaterFCFA(totalRetard)}</span>
+          )}
           <button className="btn" onClick={() => ouvrir({ type: 'creer' })}>
             Créer un fournisseur
           </button>
@@ -109,6 +117,20 @@ export function PageFournisseurs(): React.JSX.Element {
         />
       )}
 
+      {(action?.type === 'dettes' || action?.type === 'payer') && (
+        <FenetreDettes
+          key={action.fournisseur.id}
+          fournisseurId={action.fournisseur.id}
+          nom={action.fournisseur.nom}
+          payer={action.type === 'payer'}
+          onChangement={(message) => {
+            setSucces(message)
+            charger()
+          }}
+          onFermer={() => setAction(null)}
+        />
+      )}
+
       {erreur && (
         <p className="alerte" role="alert" style={{ marginBottom: 16 }}>
           {erreur}
@@ -143,7 +165,21 @@ export function PageFournisseurs(): React.JSX.Element {
                   <td>{f.telephone ?? '—'}</td>
                   <td>{libelleDelai(f.delaiPaiementJours)}</td>
                   <td>{f.derniereReception ? formaterDate(f.derniereReception) : 'Aucune'}</td>
-                  <td className="nombre montant">{formaterFCFA(f.soldeDu)}</td>
+                  <td className="nombre montant">
+                    {formaterFCFA(f.soldeDu)}
+                    {(f.enRetard ?? 0) > 0 ? (
+                      <span className="detail">
+                        <span className="pastille pastille-erreur">
+                          En retard : {formaterFCFA(f.enRetard!)}
+                        </span>
+                      </span>
+                    ) : (
+                      f.soldeDu > 0 &&
+                      f.prochaineEcheance && (
+                        <span className="detail">avant le {formaterDate(f.prochaineEcheance)}</span>
+                      )
+                    )}
+                  </td>
                   <td>
                     <span className={`pastille ${f.actif ? 'pastille-ok' : 'pastille-inactif'}`}>
                       {f.actif ? 'Actif' : 'Désactivé'}
@@ -157,6 +193,17 @@ export function PageFournisseurs(): React.JSX.Element {
                       >
                         Achats
                       </button>
+                      <button
+                        className="btn btn-secondaire"
+                        onClick={() => ouvrir({ type: 'dettes', fournisseur: f })}
+                      >
+                        Dettes
+                      </button>
+                      {f.actif && f.soldeDu > 0 && (
+                        <button className="btn" onClick={() => ouvrir({ type: 'payer', fournisseur: f })}>
+                          Payer
+                        </button>
+                      )}
                       {f.actif && (
                         <>
                           <button

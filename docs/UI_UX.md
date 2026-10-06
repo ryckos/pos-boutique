@@ -420,7 +420,7 @@ un tableau Date / Mouvement / Document / Quantité (+72, −1) / Stock / Par, qu
 début de la période » et finit, en gras, par « Stock à la fin de la période ». Sous le document, en petit :
 le lot et le motif. Les types s'affichent en clair (Vente, Réception, Ajustement, Annulation…).
 
-### 5.17 Fournisseurs (Dev B — B7, gérant)
+### 5.17 Fournisseurs (Dev B — B7 et B10, gérant)
 Page « Fournisseurs » du menu. En-tête : « Total dû » (fournisseurs actifs) et « Créer un
 fournisseur ». Tableau Nom (avec, en petit, la personne à contacter et l'adresse) / Téléphone / Délai
 de paiement (« Comptant » ou « 15 jours ») / Dernière livraison / Solde dû / État. Actifs d'abord, puis
@@ -432,6 +432,25 @@ chaque ligne, désactivés compris (B7 partie 2) : fenêtre large « Achats — 
 articles, total, à payer avant le, « Voir le détail ») et tableau « Prix d'achat » (article avec la
 date et le coût par unité en petit, dernier prix, livraison précédente, écart « +600 F (+10 %) » en
 pastille ambre s'il augmente, nombre d'achats).
+
+**Dettes et règlements (B10)** : en-tête, à côté du « Total dû », pastille rouge « En retard : … »
+s'il y a des échéances dépassées. Sous le solde dû de chaque ligne, en petit : pastille rouge « En
+retard : … », sinon « avant le <prochaine échéance> ». Boutons « Dettes » (toutes les lignes) et
+« Payer » (fournisseur actif qui a un solde dû).
+- Fenêtre large « Dettes — <nom> », pastille « Dû : … · en retard : … » (rouge s'il y a du retard).
+  Tableau « Échéancier » : réception (date en petit), total, réglé, reste, pastille d'état « Soldée »
+  (vert), « À payer le … » (ambre), « En retard de N j » (rouge, ligne en `ligne-urgente`) ; les non
+  soldées d'abord par échéance, puis les soldées des 90 derniers jours. Tableau « Règlements » : date,
+  montant, mode (référence en petit), pour (RC ou « Solde global »), par, bouton « Annuler » ou
+  pastille « Annulé » avec date, auteur et motif en petit. Bouton principal « Enregistrer un
+  règlement ».
+- Fenêtre « Payer « <nom> » », pastille « Reste dû : … » : Pour (« Solde global — les livraisons les
+  plus anciennes d'abord » ou une réception non soldée avec son reste), Montant pré-rempli au reste
+  (on le baisse pour un acompte, l'aide dit « Il restera … à payer. »), Mode, Référence (facultatif),
+  Date (aujourd'hui, pas de date future), mention « Le règlement n'est pas pris dans la caisse. »,
+  bouton « Enregistrer le règlement ». Ouverte par « Payer », elle revient à la page une fois finie.
+- Annulation : fenêtre « Annuler un règlement » (bouton rouge), rappel du règlement et de son effet,
+  motif obligatoire.
 
 ### 5.18 Commandes fournisseur (Dev B — B8 partie 3, gérant)
 Page « Commandes » du menu (`modules/achats/PageCommandes.tsx`), avant « Réceptions ». Tableau Numéro /
