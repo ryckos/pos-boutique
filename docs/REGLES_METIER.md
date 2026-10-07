@@ -57,7 +57,8 @@ Actions à journaliser avec `journaliser()` :
 | `annulation_reglement_fournisseur` | fournisseur, montant, date, motif (§ 4.5) |
 | `annulation_sortie_stock`     | produit, type, quantité, motif d'origine, valeur ; motif (§ 8) |
 | `refus_avoir_fournisseur`     | fournisseur, produit, avoir attendu, motif (§ 8) |
-| `validation_inventaire`       |                    |
+| `validation_inventaire`       | numéro, rayon, comptés, écarts, non comptés, manquants et surplus en FCFA (§ 9) |
+| `annulation_inventaire`       | numéro, rayon, comptés, motif (§ 9) |
 | `restauration_sauvegarde`     |                    |
 
 ---
@@ -678,6 +679,31 @@ repart à 1 chaque année.
   non nul, au CUMP, et produit un **rapport de démarque chiffré**.
   Exemple : 2 savons manquants à 150 F = 300 F.
 - Une fois validé, un inventaire est figé.
+
+### 9.0 Précisions (validées par Dev B le 2026-10-07)
+- **Gérant** (et admin) seul : ouvrir, compter, valider, annuler.
+- **Un seul inventaire en cours** à la fois. Numéro `INV` donné **dès l'ouverture** (gardé s'il est
+  annulé).
+- Partiel = **un rayon et ses sous-rayons** (ou un seul sous-rayon). Un produit hors du périmètre se
+  refuse au comptage.
+- Chaque comptage est **enregistré aussitôt** (une transaction par produit : une coupure ne perd que
+  le produit en cours). Le théorique est photographié **à l'enregistrement du comptage** : une vente
+  faite ensuite reste dans le stock après l'ajustement (27 comptés, 1 vendu ensuite → 26).
+- Tant que l'inventaire est en cours, un **recomptage remplace** le comptage et reprend le théorique.
+  Compter 0 est un comptage (tout manque).
+- Le motif est choisi **au comptage** quand l'écart n'est pas nul, avec un **commentaire facultatif**
+  (« vol présumé »).
+- **Produits non comptés** à la validation (inventaire total ou partiel) : **leur stock ne change pas** ;
+  l'écran l'annonce avant de valider. Valider sans aucun comptage est refusé.
+- Produits suivis en péremption : on compte **le produit en entier**, pas lot par lot. À la validation,
+  un **manquant** est retiré des lots, la **date la plus ancienne d'abord, périmés compris** ; ce que
+  les lots ne couvrent pas sort sans lot. Un **surplus** entre sans lot.
+- Mouvements `ajustement_inventaire` au **CUMP du moment de la validation**, document `inventaire`,
+  motif « Inventaire INV-… : Vol (vol présumé) ».
+- **Rapport de démarque** : manquants (écarts négatifs × CUMP, arrondis au franc par produit),
+  surplus (écarts positifs × CUMP) et net = surplus − manquants.
+- **Annulation** d'un inventaire en cours : motif obligatoire, journalisée (`annulation_inventaire`),
+  aucun mouvement. Validé ou annulé, l'inventaire est figé (triggers en base).
 - **Stock initial** au démarrage : même mécanisme, avec le document `stock_initial` et le coût
   d'achat saisi, qui initialise le CUMP (détail en 9.1).
 

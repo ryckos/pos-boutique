@@ -64,8 +64,8 @@ document à jour.
 |----------------------|-----------------------------------------------------------------------|
 | `categories_depense` | Loyer, électricité…                                                   |
 | `depenses`           | `source` (`caisse` ou `fonds_propres`), `session_caisse_id` si caisse |
-| `inventaires`        | En-tête, `statut`, `valide_par_id`                                    |
-| `lignes_inventaire`  | `quantite_theorique`, `quantite_comptee`, `ecart` (**colonne générée**), `detail_comptage` (JSON), `motif_ecart` |
+| `inventaires`        | En-tête, `statut`, `valide_par_id`, `categorie_id` (rayon ; `NULL` = total), `motif_annulation` |
+| `lignes_inventaire`  | `quantite_theorique`, `quantite_comptee`, `ecart` (**colonne générée**), `detail_comptage` (JSON), `motif_ecart`, `commentaire`, `compte_le` (heure du théorique) ; une ligne par produit |
 
 ## Vues (lecture seule, jamais d'écriture)
 | Vue                    | Contenu                                                       | Utilisée par |
@@ -88,6 +88,8 @@ document à jour.
 | `trg_ventes_no_delete`      | Interdit tout `DELETE` sur `ventes`           |
 | `trg_lignes_vente_no_delete`| Interdit tout `DELETE` sur `lignes_vente`     |
 | `trg_retours_fournisseur_no_delete` | Interdit tout `DELETE` sur `retours_fournisseur` |
+| `trg_inventaires_no_delete`, `trg_lignes_inventaire_no_delete` | Interdisent tout `DELETE` sur `inventaires` et `lignes_inventaire` |
+| `trg_inventaires_fige`, `trg_lignes_inventaire_figees`, `trg_lignes_inventaire_ajout_fige` | Un inventaire validé ou annulé ne se modifie plus, ses comptages non plus |
 
 ## Migrations appliquées
 | Fichier                                  | Contenu                                              |
@@ -100,6 +102,7 @@ document à jour.
 | `20261001_0833_commande_conditionnement.sql` | `lignes_commande_achat.conditionnement_id` : on commande dans le conditionnement (3 cartons), comparaison en unités de base |
 | `20261006_1000_annulation_reglement.sql` | `reglements_fournisseurs.annule_le`, `annule_par`, `motif_annulation` ; `v_dettes_fournisseurs` recréée sans les règlements annulés |
 | `20261006_1400_retours_fournisseur.sql` | Table `retours_fournisseur` (avoir attendu, reçu, refusé ou annulé) et son trigger ; `v_dettes_fournisseurs` recréée avec `total_avoirs` déduit du solde |
+| `20261007_0900_inventaires.sql` | `inventaires.categorie_id`, `motif_annulation` ; `lignes_inventaire.compte_le`, `commentaire`, une ligne par produit (index unique) ; triggers : pas de suppression, inventaire figé une fois validé ou annulé |
 
 Ajouter ici chaque nouvelle migration (nom et contenu en une ligne).
 

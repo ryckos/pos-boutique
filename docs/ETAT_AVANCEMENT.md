@@ -89,7 +89,7 @@ Le socle comprend :
 | A12   | Recouvrement                              | A   | ⏳     |   |
 | A13   | Écran client définitif                    | A   | ⏳     |   |
 | B11   | Sorties de stock, retours fournisseur     | B   | 🔄     | `b/sorties` (serveur : sorties, retours, avoirs déduits de la dette, migration `retours_fournisseur`) ; écran à suivre (`b/sorties-ecran`) |
-| B12   | Inventaires                               | B   | ⏳     |   |
+| B12   | Inventaires                               | B   | 🔄     | Partie 1 `b/inventaires` (serveur : migration `20261007_0900_inventaires.sql`, module `inventaires`, 7 canaux gérant, 18 tests) ; partie 2 (écran) à faire |
 | B13   | Dépenses                                  | B   | ⏳     |   |
 
 ## Phase 4 — Pilotage (S16–S18)
