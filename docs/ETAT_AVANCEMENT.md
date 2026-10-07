@@ -88,7 +88,7 @@ Le socle comprend :
 | A11   | Clients et vente à crédit                 | A   | ⏳     |   |
 | A12   | Recouvrement                              | A   | ⏳     |   |
 | A13   | Écran client définitif                    | A   | ⏳     |   |
-| B11   | Sorties de stock, retours fournisseur     | B   | 🔄     | PR #39 fusionnée (serveur : sorties, retours, avoirs déduits de la dette, migration `retours_fournisseur`) ; **PR 2 `b/sorties-ecran` en relecture** (écran Sorties de stock, avoirs dans « Dettes ») ; testé à la main |
+| B11   | Sorties de stock, retours fournisseur     | B   | ✅     | PR #39 (serveur : sorties, retours, avoirs déduits de la dette, migration `retours_fournisseur`) et #40 (écran Sorties de stock, avoirs reçus ou refusés dans « Dettes », avoir à valoir sur la page Fournisseurs) |
 | B12   | Inventaires                               | B   | ⏳     |   |
 | B13   | Dépenses                                  | B   | ⏳     |   |
 
@@ -146,3 +146,4 @@ Le socle comprend :
 | 2026-10-06 | B10   | Partie 1 : règlements fournisseurs (réception précise ou solde global, au plus le reste dû), échéancier et retard, annulation avec motif ; migration `20261006_1000_annulation_reglement.sql` (PR #37) |
 | 2026-10-06 | B10   | Partie 2 : écran des dettes et des règlements (boutons « Dettes » et « Payer », retard par fournisseur et au total) (PR #38) |
 | 2026-10-06 | B11   | Partie 1 : sorties de stock (motif, lot, au plus le stock, CUMP), retours fournisseur et avoirs (attendu, reçu, refusé, annulé) déduits de la dette, excédent à valoir ; migration `20261006_1400_retours_fournisseur.sql` (PR #39) |
+| 2026-10-06 | B11   | Partie 2 : écran Sorties de stock (motif, lot, retour fournisseur avec avoir attendu, annulation), avoirs « reçu » / « refusé » dans la fenêtre des dettes, avoir à valoir sur la page Fournisseurs (PR #40) |
