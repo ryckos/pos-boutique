@@ -517,6 +517,21 @@ commande ». Un prix saisi différent du prix prévu affiche la pastille « prix
 6 000 F », sans bloquer. Changer de fournisseur détache la commande. Le détail d'une réception
 indique la commande livrée.
 
+### 5.19 Dépenses (Dev B — B13, gérant)
+Page « Dépenses » du menu (`modules/depenses/PageDepenses.tsx`), après « Fournisseurs ». En-tête : « Total
+de la période », boutons « Catégories » et « Nouvelle dépense ». Filtres Du / Au (30 derniers jours par
+défaut) et Catégorie ; une pastille par catégorie avec son total quand il y en a plusieurs. Tableau
+Numéro (et auteur) / Date / Catégorie / Libellé (et justificatif) / Payée par / Montant / État : pastille
+« Enregistrée » en vert, « Annulée » en gris avec la date, l'auteur et le motif ; ligne annulée grisée.
+- **Nouvelle dépense** (fenêtre) : Catégorie, Libellé, Montant (F), Payée par (« Fonds propres » ;
+  « Caisse (tiroir) — bientôt disponible » grisé jusqu'à A8), Date (aujourd'hui, jamais future),
+  Justificatif (n° du reçu, facultatif). Le bouton « Enregistrer la dépense » reste grisé et l'aide dit
+  ce qui manque. Le message de succès donne le numéro `DEP`.
+- **Annuler** (fenêtre rouge) : rappel de la dépense, motif obligatoire, « Annuler la dépense ».
+- **Catégories** (fenêtre) : champ « Nouvelle catégorie » et « Créer la catégorie », liste avec pastille
+  Active / Désactivée et « Désactiver » (confirmation en fenêtre rouge ; la dernière active ne se
+  désactive pas).
+
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
 - Les messages d'erreur portent `role="alert"`.
