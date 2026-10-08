@@ -7,6 +7,7 @@ import { routesAchats } from '@renderer/modules/achats/routes'
 import { routesCaisse } from '@renderer/modules/caisse/routes'
 import { routesCatalogue } from '@renderer/modules/catalogue/routes'
 import { routesFournisseurs } from '@renderer/modules/fournisseurs/routes'
+import { routesInventaires } from '@renderer/modules/inventaires/routes'
 import { routesParametres } from '@renderer/modules/parametres/routes'
 import { routesStock } from '@renderer/modules/stock/routes'
 import { routesUtilisateurs } from '@renderer/modules/utilisateurs/routes'
@@ -16,6 +17,7 @@ export const routes: DefinitionRoute[] = [
   ...routesCaisse, // Dev A
   ...routesCatalogue, // Dev B
   ...routesStock, // Dev B
+  ...routesInventaires, // Dev B
   ...routesAchats, // Dev B
   ...routesFournisseurs, // Dev B
   ...routesUtilisateurs, // Dev B

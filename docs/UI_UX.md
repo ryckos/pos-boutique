@@ -367,15 +367,28 @@ L'en-tête « Retour client » indique le ticket d'origine et sa date. L'écran 
 Le bouton s'appelle **« Valider le retour »**.
 
 ### 5.11 Inventaire (Dev B — B12)
-L'en-tête indique le numéro de l'inventaire et le rayon, avec le statut « En cours ». Chaque
-produit apparaît dans une carte qui contient :
-- son nom et son stock théorique ;
-- un champ de comptage **par conditionnement** (Cartons de 24, Lots de 3, Unités) ;
-- le total converti (« = 41 boîtes ») ;
-- une pastille d'écart : verte si l'écart est de 0, rouge s'il est différent de 0. Dans ce second
-  cas, un motif obligatoire est demandé.
+Menu « Inventaires » (gérant). Sans inventaire en cours : bouton **« Ouvrir un inventaire »**
+(fenêtre : « Tout le magasin », un rayon avec ses sous-rayons, ou un sous-rayon) et tableau des
+inventaires précédents (numéro, périmètre, état, dates et personnes, comptés, démarque, « Voir »).
 
-Le bouton s'appelle **« Valider l'inventaire »** (réservé au gérant).
+Inventaire en cours : le titre porte le numéro, l'en-tête la pastille « En cours », le périmètre,
+**« Annuler l'inventaire »** (motif) et **« Valider l'inventaire »**. Une ligne résume l'avancement
+(« 12 produits comptés sur 40, 1 écart · manquants estimés 300 F »). Filtres « À compter »,
+« Déjà comptés », « Avec un écart », « Tous », et recherche (un code tapé puis Entrée, ou un scan,
+ouvre le comptage du produit). Le tableau donne, par produit : le nom (et le détail du comptage),
+le rayon, le théorique, le compté, la pastille d'écart (verte « Juste », rouge « Écart −2 unités »
+avec le motif) et « Compter » ou « Recompter ».
+
+Le comptage d'un produit s'ouvre dans une **fenêtre** (règle des formulaires, § 3) qui reprend la
+carte de la maquette : stock théorique, un champ **par conditionnement** (Cartons de 24, Lots de 3,
+Unités), le total converti (« = 41 unités »), la pastille d'écart en direct ; si l'écart n'est pas
+nul, le **motif** (obligatoire) et un commentaire facultatif. Toutes les cases vides ne valent pas
+zéro : il faut taper 0. **« Enregistrer le comptage »** enregistre aussitôt.
+
+« Valider l'inventaire » ouvre une confirmation : comptés, écarts, manquants et surplus estimés, et
+l'avertissement « N produits ne sont pas comptés : leur stock ne sera pas modifié ». Après la
+validation, le **rapport de démarque** s'affiche (manquants, surplus, net, et par produit : écart,
+motif, coût moyen, valeur).
 
 ### 5.12 Pages de gestion (listes)
 Chaque page de gestion utilise `.page` et `.page-entete`. L'en-tête contient :
