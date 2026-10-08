@@ -62,8 +62,8 @@ document à jour.
 ### Dépenses et inventaires — Dev B
 | Table                | Rôle                                                                  |
 |----------------------|-----------------------------------------------------------------------|
-| `categories_depense` | Loyer, électricité…                                                   |
-| `depenses`           | `source` (`caisse` ou `fonds_propres`), `session_caisse_id` si caisse |
+| `categories_depense` | Loyer, électricité… (9 de départ), `actif`, `desactive_le` ; nom unique, désactivées comprises |
+| `depenses`           | `numero` (DEP, unique), `source` (`caisse` ou `fonds_propres`), `session_caisse_id` si caisse, `reference` (n° du reçu), `annule_le` / `annule_par` / `motif_annulation` ; `justificatif` réservé au chemin d'une photo |
 | `inventaires`        | En-tête, `statut`, `valide_par_id`, `categorie_id` (rayon ; `NULL` = total), `motif_annulation` |
 | `lignes_inventaire`  | `quantite_theorique`, `quantite_comptee`, `ecart` (**colonne générée**), `detail_comptage` (JSON), `motif_ecart`, `commentaire`, `compte_le` (heure du théorique) ; une ligne par produit |
 
@@ -103,6 +103,7 @@ document à jour.
 | `20261006_1000_annulation_reglement.sql` | `reglements_fournisseurs.annule_le`, `annule_par`, `motif_annulation` ; `v_dettes_fournisseurs` recréée sans les règlements annulés |
 | `20261006_1400_retours_fournisseur.sql` | Table `retours_fournisseur` (avoir attendu, reçu, refusé ou annulé) et son trigger ; `v_dettes_fournisseurs` recréée avec `total_avoirs` déduit du solde |
 | `20261007_0900_inventaires.sql` | `inventaires.categorie_id`, `motif_annulation` ; `lignes_inventaire.compte_le`, `commentaire`, une ligne par produit (index unique) ; triggers : pas de suppression, inventaire figé une fois validé ou annulé |
+| `20261008_0900_depenses.sql` | `depenses.numero` (index unique), `reference`, `annule_le`, `annule_par`, `motif_annulation` ; `categories_depense.actif`, `desactive_le` ; 9 catégories de départ ; triggers : pas de suppression (dépense, catégorie), dépense annulée figée |
 
 Ajouter ici chaque nouvelle migration (nom et contenu en une ligne).
 

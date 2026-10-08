@@ -59,6 +59,7 @@ Actions à journaliser avec `journaliser()` :
 | `refus_avoir_fournisseur`     | fournisseur, produit, avoir attendu, motif (§ 8) |
 | `validation_inventaire`       | numéro, rayon, comptés, écarts, non comptés, manquants et surplus en FCFA (§ 9) |
 | `annulation_inventaire`       | numéro, rayon, comptés, motif (§ 9) |
+| `annulation_depense`          | numéro, date, catégorie, libellé, montant, source ; motif (§ 10) |
 | `restauration_sauvegarde`     |                    |
 
 ---
@@ -740,6 +741,26 @@ repart à 1 chaque année.
   `sortie`, via la fonction fournie par Dev A.
 - Source **« fonds propres »** : la dépense n'a aucun effet sur la caisse.
 - Numéro de la forme `DEP-AAAA-NNNNNN`.
+
+### 10.1 Précisions (validées par Dev B le 2026-10-08)
+- **Catégories** : neuf de départ, présentes aussi en production (Loyer, Électricité, Eau, Salaires,
+  Transport, Entretien et réparations, Fournitures, Impôts et taxes, Autre). Le gérant en crée et en
+  désactive, jamais de suppression ; il reste toujours au moins une catégorie active. Le nom est unique
+  parmi **toutes** les catégories, désactivées comprises (majuscules et espaces ignorés) : la base
+  l'impose, et la réactivation n'est pas prévue. Une dépense garde sa catégorie désactivée.
+- **Saisie** : catégorie active, libellé obligatoire, montant en francs entiers > 0, pas de plafond.
+  Date du jour par défaut ; une date passée est acceptée pour « fonds propres », jamais une date
+  future ; une dépense « caisse » est toujours datée du jour. Numéro `DEP` attribué à l'enregistrement.
+- **Justificatif** : référence texte facultative (n° du reçu ou de la facture). La photo est reportée.
+- **Droits** : gérant (et admin) pour tout. La caissière n'enregistrera que des dépenses « caisse »,
+  sur sa session ouverte, une fois les mouvements de caisse livrés (A8, Dev A). D'ici là, la source
+  « caisse » est refusée avec un message clair.
+- **Correction** : annulation par le gérant, motif obligatoire, journalisée (`annulation_depense`,
+  § 1.4), une seule fois. La dépense reste visible et ne compte plus dans les totaux. Après A8, une
+  dépense « caisse » s'annulera par une entrée de caisse compensatoire, refusée si la session est
+  clôturée.
+- **Liste** : 30 derniers jours par défaut, filtre par catégorie, total et total par catégorie (hors
+  annulées).
 
 ---
 
