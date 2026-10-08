@@ -48,7 +48,7 @@ Format d'une entrée :
   réécrit. **Scénario complet testé à la main par Dev B.**
 - B12 → ✅ et deux lignes au journal des fusions (dans `test`, le statut de B12 était resté ⏳ après
   la résolution d'un conflit de fusion : corrigé ici). 480 tests verts, typecheck et build OK.
-- Astuce poste de Dev B : `C:	emp` n'existe pas ; base jetable avec
+- Astuce poste de Dev B : `C:\temp` n'existe pas ; base jetable avec
   `$env:POS_DB="$env:TEMP\inventaire.db"; npm run dev` (puis `Remove-Item Env:POS_DB`).
 
 **En cours** : PR de documentation `b/docs-b12-fusion` → `test` (B12 ✅, journal des fusions, ce
