@@ -89,7 +89,7 @@ Le socle comprend :
 | A12   | Recouvrement                              | A   | ⏳     |   |
 | A13   | Écran client définitif                    | A   | ⏳     |   |
 | B11   | Sorties de stock, retours fournisseur     | B   | ✅     | PR #39 (serveur : sorties, retours, avoirs déduits de la dette, migration `retours_fournisseur`) et #40 (écran Sorties de stock, avoirs reçus ou refusés dans « Dettes », avoir à valoir sur la page Fournisseurs) |
-| B12   | Inventaires                               | B   | ⏳     |   |
+| B12   | Inventaires                               | B   | ✅     | PR #42 (serveur : inventaire total ou par rayon, comptage par conditionnement, validation au CUMP, démarque, migration `20261007_0900_inventaires.sql`) et #43 (menu « Inventaires », comptage en fenêtre, rapport de démarque) ; testé à la main |
 | B13   | Dépenses                                  | B   | ⏳     |   |
 
 ## Phase 4 — Pilotage (S16–S18)
@@ -147,3 +147,5 @@ Le socle comprend :
 | 2026-10-06 | B10   | Partie 2 : écran des dettes et des règlements (boutons « Dettes » et « Payer », retard par fournisseur et au total) (PR #38) |
 | 2026-10-06 | B11   | Partie 1 : sorties de stock (motif, lot, au plus le stock, CUMP), retours fournisseur et avoirs (attendu, reçu, refusé, annulé) déduits de la dette, excédent à valoir ; migration `20261006_1400_retours_fournisseur.sql` (PR #39) |
 | 2026-10-06 | B11   | Partie 2 : écran Sorties de stock (motif, lot, retour fournisseur avec avoir attendu, annulation), avoirs « reçu » / « refusé » dans la fenêtre des dettes, avoir à valoir sur la page Fournisseurs (PR #40) |
+| 2026-10-08 | B12   | Partie 1 : inventaires total ou par rayon, comptage par conditionnement enregistré aussitôt, validation au CUMP (manquant pris sur les lots les plus anciens), rapport de démarque, annulation ; migration `20261007_0900_inventaires.sql` (PR #42) |
+| 2026-10-08 | B12   | Partie 2 : écran Inventaires (ouverture, comptage en fenêtre, écart et motif en direct, validation, rapport, inventaires précédents) (PR #43) |
