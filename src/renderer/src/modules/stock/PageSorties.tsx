@@ -13,6 +13,9 @@ import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { BoutonExporter } from '@renderer/ui/BoutonExporter'
+import { jourLocal } from '@renderer/lib/exportExcel'
+import type { DemandeExport } from '@shared/ipc/exports'
 import { lireNombre } from '../achats/saisieReception'
 import {
   SANS_LOT,
@@ -27,6 +30,52 @@ import {
 } from './saisieSortie'
 
 type Action = { type: 'sortir'; fiche: FicheSortie } | { type: 'annuler'; sortie: SortieStock } | null
+
+/** L'export reprend la liste affichée, annulées comprises (REGLES_METIER § 11.2). */
+function exportSorties(sorties: SortieStock[]): DemandeExport {
+  const jour = jourLocal()
+  return {
+    nomFichier: `Sorties_stock_${jour}`,
+    titre: `Sorties de stock des 30 derniers jours, au ${formaterDate(jour)}`,
+    feuilles: [
+      {
+        nom: 'Sorties',
+        colonnes: [
+          { titre: 'Date et heure', type: 'date' },
+          { titre: 'Produit', type: 'texte' },
+          { titre: 'Lot', type: 'texte' },
+          { titre: 'Type', type: 'texte' },
+          { titre: 'Motif', type: 'texte' },
+          { titre: 'Quantité', type: 'nombre' },
+          { titre: 'Unité', type: 'texte' },
+          { titre: 'Valeur', type: 'montant' },
+          { titre: 'Retour à', type: 'texte' },
+          { titre: 'Avoir attendu', type: 'montant' },
+          { titre: 'Avoir', type: 'texte' },
+          { titre: 'Par', type: 'texte' },
+          { titre: 'État', type: 'texte' },
+          { titre: 'Motif d’annulation', type: 'texte' }
+        ],
+        lignes: sorties.map((s) => [
+          s.horodatage,
+          s.produit,
+          s.lot,
+          LIBELLES_MOUVEMENT[s.type],
+          s.motif,
+          s.quantite,
+          s.unite,
+          s.valeur,
+          s.retour?.fournisseur ?? null,
+          s.retour?.montantAttendu ?? null,
+          s.retour ? STATUTS_AVOIR[s.retour.statut].texte : null,
+          s.utilisateur,
+          s.motifAnnulation !== null ? 'Annulée' : 'Enregistrée',
+          s.motifAnnulation
+        ])
+      }
+    ]
+  }
+}
 
 export function PageSorties(): React.JSX.Element {
   const [sorties, setSorties] = useState<SortieStock[] | null>(null)
@@ -110,6 +159,12 @@ export function PageSorties(): React.JSX.Element {
     <div className="page">
       <header className="page-entete">
         <h1>Sorties de stock</h1>
+        <div className="tableau-actions">
+          <BoutonExporter
+            demande={() => exportSorties(sorties ?? [])}
+            desactive={!sorties || sorties.length === 0}
+          />
+        </div>
       </header>
 
       <div className="filtres">

@@ -5,11 +5,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { AlertePrix } from '@shared/catalogue'
 import type { Categorie, LigneProduit } from '@shared/ipc/catalogue'
-import { formaterFCFA, formaterQuantite } from '@shared/format'
+import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { normaliserRecherche } from '@shared/texte'
 import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { BoutonExporter } from '@renderer/ui/BoutonExporter'
+import { jourLocal } from '@renderer/lib/exportExcel'
+import type { DemandeExport } from '@shared/ipc/exports'
 import { FenetreImport } from './FenetreImport'
 import { FenetreProduit } from './FenetreProduit'
 import { champsDepuisCodeScanne } from './saisieProduit'
@@ -94,11 +97,48 @@ export function PageProduits(): React.JSX.Element {
       (cle === '' || normaliserRecherche(p.nom).includes(cle))
   )
 
+  // L'export reprend la liste affichée, filtres compris (REGLES_METIER § 11.2).
+  const demandeExport = (): DemandeExport => {
+    const jour = jourLocal()
+    const precisions = [
+      filtreRayon ? `rayon ${filtreRayon}` : null,
+      recherche.trim() ? `recherche « ${recherche.trim()} »` : null
+    ].filter(Boolean)
+    return {
+      nomFichier: `Produits_${jour}`,
+      titre: `Produits au ${formaterDate(jour)}${precisions.length ? ` (${precisions.join(', ')})` : ''}`,
+      feuilles: [
+        {
+          nom: 'Produits',
+          colonnes: [
+            { titre: 'Produit', type: 'texte' },
+            { titre: 'Catégorie', type: 'texte' },
+            { titre: 'Prix unité', type: 'montant' },
+            { titre: 'TVA (%)', type: 'nombre' },
+            { titre: 'Conditionnements', type: 'nombre' },
+            { titre: 'Stock', type: 'nombre' },
+            { titre: 'État', type: 'texte' }
+          ],
+          lignes: visibles.map((p) => [
+            p.nom,
+            p.categorie ?? 'Non classé',
+            p.prixUnite,
+            p.tauxTva,
+            p.nbConditionnements,
+            p.stockActuel,
+            p.actif ? 'En vente' : 'Désactivé'
+          ])
+        }
+      ]
+    }
+  }
+
   return (
     <div className="page">
       <header className="page-entete">
         <h1>Produits</h1>
         <div className="tableau-actions">
+          <BoutonExporter demande={demandeExport} desactive={visibles.length === 0} />
           <button className="btn btn-secondaire" onClick={() => ouvrir({ type: 'importer' })}>
             Importer depuis Excel
           </button>

@@ -12,6 +12,8 @@ import type {
 } from '@shared/ipc/inventaires'
 import type { Categorie } from '@shared/ipc/catalogue'
 import { LIBELLES_MOTIF_ECART, LIBELLES_STATUT_INVENTAIRE, type MotifEcart } from '@shared/inventaires'
+import { BoutonExporter } from '@renderer/ui/BoutonExporter'
+import { exportInventaire } from './exportInventaire'
 import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
@@ -612,6 +614,8 @@ function FenetreAnnulation(props: {
 function FenetreLecture(props: {
   titre: string
   pastille?: React.ReactNode
+  /** Boutons placés avant « Fermer » (ex. l'export Excel). */
+  actions?: React.ReactNode
   onFermer: () => void
   children: React.ReactNode
 }): React.JSX.Element {
@@ -632,6 +636,7 @@ function FenetreLecture(props: {
         </div>
         {props.children}
         <div className="formulaire-actions">
+          {props.actions}
           <button className="btn btn-secondaire" onClick={onFermer}>
             Fermer
           </button>
@@ -701,6 +706,7 @@ function FenetreDetail(props: { inventaire: InventaireDetail; onFermer: () => vo
   return (
     <FenetreLecture
       titre={`Inventaire ${inv.numero}`}
+      actions={<BoutonExporter demande={() => exportInventaire(inv)} />}
       pastille={
         <span className={`pastille ${CLASSES_STATUT[inv.statut]}`}>
           {LIBELLES_STATUT_INVENTAIRE[inv.statut]}

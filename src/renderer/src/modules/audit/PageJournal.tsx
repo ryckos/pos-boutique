@@ -9,6 +9,9 @@ import type { DetailAudit } from '@shared/audit'
 import type { ChoixJournal, EntreeJournal, FiltreJournal } from '@shared/ipc/audit'
 import { formaterDate } from '@shared/format'
 import { appel } from '@renderer/lib/api'
+import { suffixePeriode } from '@renderer/lib/exportExcel'
+import { BoutonExporter } from '@renderer/ui/BoutonExporter'
+import type { DemandeExport } from '@shared/ipc/exports'
 
 function texteDetails(details: DetailAudit[]): string {
   return details.map((d) => `${d.libelle} : ${d.valeur}`).join(' ; ')
@@ -54,10 +57,52 @@ export function PageJournal(): React.JSX.Element {
       .catch((e: Error) => setErreur(e.message))
   }, [])
 
+  // Le fichier contient tout le journal du filtre, pas seulement les pages affichées (REGLES_METIER § 11.2).
+  const demandeExport = async (): Promise<DemandeExport> => {
+    const toutes: EntreeJournal[] = []
+    let page = await appel('audit:journal', filtre)
+    toutes.push(...page.entrees)
+    while (page.suite) {
+      page = await appel('audit:journal', { ...filtre, avantId: toutes.at(-1)!.id })
+      toutes.push(...page.entrees)
+    }
+    const personne = choix?.utilisateurs.find((u) => String(u.id) === utilisateurId)?.nom
+    const libelleAction = choix?.actions.find((a) => a.action === action)?.libelle
+    const precisions = [personne, libelleAction].filter(Boolean)
+    return {
+      nomFichier: `Journal_${suffixePeriode(page.du, page.au)}`,
+      titre: `Journal des opérations du ${formaterDate(page.du)} au ${formaterDate(page.au)}${
+        precisions.length ? ` (${precisions.join(', ')})` : ''
+      }`,
+      feuilles: [
+        {
+          nom: 'Journal',
+          colonnes: [
+            { titre: 'Date et heure', type: 'date' },
+            { titre: 'Personne', type: 'texte' },
+            { titre: 'Action', type: 'texte' },
+            { titre: 'Détail', type: 'texte', largeur: 60 },
+            { titre: 'Avant', type: 'texte', largeur: 60 }
+          ],
+          lignes: toutes.map((e) => [
+            e.horodatage,
+            e.utilisateur,
+            e.libelle,
+            texteDetails(e.apres) || null,
+            texteDetails(e.avant) || null
+          ])
+        }
+      ]
+    }
+  }
+
   return (
     <div className="page">
       <header className="page-entete">
         <h1>Journal des opérations</h1>
+        <div className="tableau-actions">
+          <BoutonExporter demande={demandeExport} desactive={entrees.length === 0} />
+        </div>
       </header>
 
       <div className="filtres">

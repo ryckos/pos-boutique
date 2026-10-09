@@ -12,6 +12,9 @@ import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { BoutonExporter } from '@renderer/ui/BoutonExporter'
+import { jourLocal } from '@renderer/lib/exportExcel'
+import type { DemandeExport } from '@shared/ipc/exports'
 import {
   LIBELLES_STATUT,
   PASTILLE_STATUT,
@@ -40,6 +43,38 @@ type Fenetre =
   | { type: 'annuler'; commande: ResumeCommande }
   | { type: 'cloturer'; commande: ResumeCommande }
   | null
+
+/** L'export reprend la liste affichée (REGLES_METIER § 11.2). */
+function exportCommandes(commandes: ResumeCommande[]): DemandeExport {
+  const jour = jourLocal()
+  return {
+    nomFichier: `Commandes_${jour}`,
+    titre: `Commandes fournisseur au ${formaterDate(jour)}`,
+    feuilles: [
+      {
+        nom: 'Commandes',
+        colonnes: [
+          { titre: 'Numéro', type: 'texte' },
+          { titre: 'Date', type: 'date' },
+          { titre: 'Fournisseur', type: 'texte' },
+          { titre: 'Articles', type: 'nombre' },
+          { titre: 'Total prévu', type: 'montant' },
+          { titre: 'État', type: 'texte' },
+          { titre: 'Saisie par', type: 'texte' }
+        ],
+        lignes: commandes.map((c) => [
+          c.numero,
+          c.dateCommande,
+          c.fournisseur,
+          c.nbLignes,
+          c.totalPrevu || null,
+          LIBELLES_STATUT[c.statut],
+          c.utilisateur
+        ])
+      }
+    ]
+  }
+}
 
 export function PageCommandes(): React.JSX.Element {
   const [commandes, setCommandes] = useState<ResumeCommande[] | null>(null)
@@ -95,15 +130,21 @@ export function PageCommandes(): React.JSX.Element {
     <div className="page">
       <header className="page-entete">
         <h1>Commandes fournisseur</h1>
-        <button
-          className="btn"
-          onClick={() => {
-            setSucces(null)
-            setFenetre({ type: 'saisie', brouillon: commandeVide(), retires: [] })
-          }}
-        >
-          Nouvelle commande
-        </button>
+        <div className="tableau-actions">
+          <BoutonExporter
+            demande={() => exportCommandes(commandes ?? [])}
+            desactive={!commandes || commandes.length === 0}
+          />
+          <button
+            className="btn"
+            onClick={() => {
+              setSucces(null)
+              setFenetre({ type: 'saisie', brouillon: commandeVide(), retires: [] })
+            }}
+          >
+            Nouvelle commande
+          </button>
+        </div>
       </header>
       {succes && (
         <p className="succes page-message" role="status">
@@ -164,7 +205,9 @@ export function PageCommandes(): React.JSX.Element {
                           </button>
                           <button
                             className="btn"
-                            onClick={() => lire(c.id, (commande) => setFenetre({ type: 'envoyer', commande }))}
+                            onClick={() =>
+                              lire(c.id, (commande) => setFenetre({ type: 'envoyer', commande }))
+                            }
                           >
                             Marquer comme envoyée
                           </button>
@@ -204,7 +247,11 @@ export function PageCommandes(): React.JSX.Element {
         />
       )}
       {fenetre?.type === 'detail' && (
-        <FenetreDetailCommande commande={fenetre.commande} boutique={boutique} onFermer={() => setFenetre(null)} />
+        <FenetreDetailCommande
+          commande={fenetre.commande}
+          boutique={boutique}
+          onFermer={() => setFenetre(null)}
+        />
       )}
       {fenetre?.type === 'envoyer' && (
         <FenetreFormulaire
@@ -511,7 +558,9 @@ function FenetreSaisieCommande(props: {
   }
   const ajouterCoches = (): void => {
     const choisis = (alertes ?? []).filter((a) => coches.has(a.produitId))
-    Promise.all(choisis.map((a) => appel('achats:articleReception', { conditionnementId: a.conditionnementId })))
+    Promise.all(
+      choisis.map((a) => appel('achats:articleReception', { conditionnementId: a.conditionnementId }))
+    )
       .then((articles) => {
         ajouterArticles(articles)
         setAlertes(null)
@@ -624,7 +673,11 @@ function FenetreSaisieCommande(props: {
                     <tr key={a.produitId}>
                       <td>
                         {a.produit}{' '}
-                        <span className={a.niveau === 'rupture' ? 'pastille pastille-erreur' : 'pastille pastille-alerte'}>
+                        <span
+                          className={
+                            a.niveau === 'rupture' ? 'pastille pastille-erreur' : 'pastille pastille-alerte'
+                          }
+                        >
                           {a.niveau === 'rupture' ? 'Rupture' : 'Stock bas'}
                         </span>
                       </td>
@@ -720,7 +773,9 @@ function FenetreSaisieCommande(props: {
                         aria-label="Quantité commandée"
                         value={l.quantite}
                         onKeyDown={bloquerEntree}
-                        onChange={(ev) => setB((x) => modifierLigneCommande(x, l.cle, { quantite: ev.target.value }))}
+                        onChange={(ev) =>
+                          setB((x) => modifierLigneCommande(x, l.cle, { quantite: ev.target.value }))
+                        }
                       />
                     </td>
                     <td className="nombre">
@@ -731,7 +786,9 @@ function FenetreSaisieCommande(props: {
                         placeholder="facultatif"
                         value={l.prix}
                         onKeyDown={bloquerEntree}
-                        onChange={(ev) => setB((x) => modifierLigneCommande(x, l.cle, { prix: ev.target.value }))}
+                        onChange={(ev) =>
+                          setB((x) => modifierLigneCommande(x, l.cle, { prix: ev.target.value }))
+                        }
                       />
                     </td>
                     <td className="nombre montant">{e.total !== null ? formaterFCFA(e.total) : ''}</td>

@@ -12,6 +12,9 @@ import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { BoutonExporter } from '@renderer/ui/BoutonExporter'
+import { jourLocal } from '@renderer/lib/exportExcel'
+import type { DemandeExport } from '@shared/ipc/exports'
 import { FenetreDetailReception } from './FenetreDetailReception'
 import { FenetreProduit } from '@renderer/modules/catalogue/FenetreProduit'
 import { champsDepuisCodeScanne } from '@renderer/modules/catalogue/saisieProduit'
@@ -90,6 +93,38 @@ export function PageReceptions(): React.JSX.Element {
 
 // ─── Liste des réceptions validées ────────────────────────────────────────────
 
+/** L'export reprend la liste affichée (REGLES_METIER § 11.2). */
+function exportReceptions(receptions: ResumeReception[]): DemandeExport {
+  const jour = jourLocal()
+  return {
+    nomFichier: `Receptions_${jour}`,
+    titre: `Réceptions au ${formaterDate(jour)}`,
+    feuilles: [
+      {
+        nom: 'Réceptions',
+        colonnes: [
+          { titre: 'Numéro', type: 'texte' },
+          { titre: 'Date', type: 'date' },
+          { titre: 'Fournisseur', type: 'texte' },
+          { titre: 'Articles', type: 'nombre' },
+          { titre: 'Total', type: 'montant' },
+          { titre: 'À payer avant le', type: 'date' },
+          { titre: 'Saisie par', type: 'texte' }
+        ],
+        lignes: receptions.map((r) => [
+          r.numero,
+          r.dateReception,
+          r.fournisseur,
+          r.nbLignes,
+          r.total,
+          r.dateEcheance,
+          r.utilisateur
+        ])
+      }
+    ]
+  }
+}
+
 function ListeReceptions(props: { succes: string | null; onNouvelle: () => void }): React.JSX.Element {
   const [receptions, setReceptions] = useState<ResumeReception[] | null>(null)
   const [detail, setDetail] = useState<Reception | null>(null)
@@ -111,9 +146,15 @@ function ListeReceptions(props: { succes: string | null; onNouvelle: () => void 
     <div className="page">
       <header className="page-entete">
         <h1>Réceptions</h1>
-        <button className="btn" onClick={props.onNouvelle}>
-          Nouvelle réception
-        </button>
+        <div className="tableau-actions">
+          <BoutonExporter
+            demande={() => exportReceptions(receptions ?? [])}
+            desactive={!receptions || receptions.length === 0}
+          />
+          <button className="btn" onClick={props.onNouvelle}>
+            Nouvelle réception
+          </button>
+        </div>
       </header>
       {props.succes && (
         <p className="succes page-message" role="status">
@@ -403,8 +444,8 @@ function SaisieReception(props: {
       {b.commande ? (
         <div className="bandeau bandeau-action page-message">
           <span>
-            Cette réception livre la commande <strong>{b.commande.numero}</strong> : elle passera à « Reçue » ou
-            « Reçue en partie » à la validation.
+            Cette réception livre la commande <strong>{b.commande.numero}</strong> : elle passera à « Reçue »
+            ou « Reçue en partie » à la validation.
           </span>
           <button className="btn btn-secondaire" onClick={() => setB({ ...b, commande: null })}>
             Détacher la commande
@@ -414,8 +455,8 @@ function SaisieReception(props: {
         ouvertes.length > 0 && (
           <div className="bandeau bandeau-action page-message">
             <span>
-              {ouvertes.length > 1 ? 'Commandes attendues' : 'Commande attendue'} de ce fournisseur : choisissez
-              celle qui est livrée, ou recevez sans commande.
+              {ouvertes.length > 1 ? 'Commandes attendues' : 'Commande attendue'} de ce fournisseur :
+              choisissez celle qui est livrée, ou recevez sans commande.
             </span>
             {ouvertes.map((c) => (
               <button
