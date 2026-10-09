@@ -90,7 +90,7 @@ Le socle comprend :
 | A13   | Écran client définitif                    | A   | ⏳     |   |
 | B11   | Sorties de stock, retours fournisseur     | B   | ✅     | PR #39 (serveur : sorties, retours, avoirs déduits de la dette, migration `retours_fournisseur`) et #40 (écran Sorties de stock, avoirs reçus ou refusés dans « Dettes », avoir à valoir sur la page Fournisseurs) |
 | B12   | Inventaires                               | B   | ✅     | PR #42 (serveur : inventaire total ou par rayon, comptage par conditionnement, validation au CUMP, démarque, migration `20261007_0900_inventaires.sql`) et #43 (menu « Inventaires », comptage en fenêtre, rapport de démarque) ; testé à la main |
-| B13   | Dépenses                                  | B   | 🔄     | PR 1 `b/depenses` (serveur : catégories, numéro DEP, annulation, source « fonds propres » ; « caisse » refusée jusqu'à A8) ; PR 2 `b/depenses-ecran` (menu « Dépenses », fenêtres nouvelle dépense, annulation, catégories) |
+| B13   | Dépenses                                  | B   | 🔄     | PR #44 (serveur : catégories, numéro DEP, annulation avec motif, source « fonds propres », migration `20261008_0900_depenses.sql`) et #45 (menu « Dépenses », fenêtres nouvelle dépense, annulation, catégories) ; testé à la main. **Reste la source « caisse »**, en attente de `enregistrerMouvementCaisse()` (A8) |
 
 ## Phase 4 — Pilotage (S16–S18)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
@@ -149,3 +149,5 @@ Le socle comprend :
 | 2026-10-06 | B11   | Partie 2 : écran Sorties de stock (motif, lot, retour fournisseur avec avoir attendu, annulation), avoirs « reçu » / « refusé » dans la fenêtre des dettes, avoir à valoir sur la page Fournisseurs (PR #40) |
 | 2026-10-08 | B12   | Partie 1 : inventaires total ou par rayon, comptage par conditionnement enregistré aussitôt, validation au CUMP (manquant pris sur les lots les plus anciens), rapport de démarque, annulation ; migration `20261007_0900_inventaires.sql` (PR #42) |
 | 2026-10-08 | B12   | Partie 2 : écran Inventaires (ouverture, comptage en fenêtre, écart et motif en direct, validation, rapport, inventaires précédents) (PR #43) |
+| 2026-10-09 | B13   | Partie 1 : dépenses en fonds propres (catégories de départ, numéro DEP, annulation avec motif journalisée, `totalDepenses` pour B14) ; migration `20261008_0900_depenses.sql` (PR #44) |
+| 2026-10-09 | B13   | Partie 2 : écran Dépenses (nouvelle dépense, annulation, catégories en fenêtre) (PR #45) |
