@@ -532,6 +532,22 @@ Numéro (et auteur) / Date / Catégorie / Libellé (et justificatif) / Payée pa
   Active / Désactivée et « Désactiver » (confirmation en fenêtre rouge ; la dernière active ne se
   désactive pas).
 
+### 5.20 Rapports de gestion (Dev B — B14, gérant)
+Page « Rapports de gestion » du menu (`modules/rapports-gestion/PageRapports.tsx`), après « Dépenses ».
+Lecture seule. En-tête : quatre boutons d'onglet (l'onglet affiché en bouton plein) : **Pertes**,
+**Valeur du stock**, **Achats**, **Résultat**. Filtres Du / Au (mois en cours par défaut ; « Revenir au
+mois en cours ») sauf pour la valeur du stock, qui est celle d'aujourd'hui. Règles : `REGLES_METIER.md`
+§ 11.1.
+- **Pertes** : total de la période ; surplus d'inventaire rappelés à part (non déduits) ; tableau Cause /
+  Valeur avec les six causes, même à 0, et une ligne Total ; puis le détail Cause / Produit / Quantité /
+  Valeur (« — » pour un avoir non obtenu, qui est de l'argent).
+- **Valeur du stock** : total au coût moyen, tableau Rayon / Produits / Valeur (« Non classé » sans rayon).
+- **Achats** : tableau Fournisseur (pastille « Désactivé ») / Réceptions / Livré / Avoirs reçus / Réglé /
+  Reste dû (d'aujourd'hui ; « Avoir à valoir … » si négatif), ligne Total.
+- **Résultat** : Marge brute des ventes, − Dépenses, Résultat ; tant que les rapports de ventes (Dev A)
+  ne sont pas livrés, marge et résultat affichent « Disponible avec les rapports de ventes ». Les pertes
+  de la période sont rappelées pour information.
+
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
 - Les messages d'erreur portent `role="alert"`.
