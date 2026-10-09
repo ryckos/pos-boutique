@@ -66,7 +66,9 @@ describe('Catégories de dépenses', () => {
     const ids = listerCategories(db).map((c) => c.id)
     for (const id of ids.slice(1)) desactiverCategorie(db, id)
     expect(() => desactiverCategorie(db, ids[0])).toThrow(/au moins une catégorie/)
-    expect(() => executer(db, 'DELETE FROM categories_depense WHERE id = ?', ids[0])).toThrow(/ne se supprime pas/)
+    expect(() => executer(db, 'DELETE FROM categories_depense WHERE id = ?', ids[0])).toThrow(
+      /ne se supprime pas/
+    )
   })
 })
 
@@ -118,7 +120,12 @@ describe('Enregistrer une dépense (REGLES_METIER § 10)', () => {
       })
     ).toThrow(/à quoi correspond/)
     expect(() =>
-      enregistrerDepense(db, KOSSI, { categorieId: 999, libelle: 'X', montant: 1000, source: 'fonds_propres' })
+      enregistrerDepense(db, KOSSI, {
+        categorieId: 999,
+        libelle: 'X',
+        montant: 1000,
+        source: 'fonds_propres'
+      })
     ).toThrow(/Choisissez la catégorie/)
     // Aucun numéro consommé par les refus : la prochaine dépense est la première.
     expect(taxi(db).numero).toMatch(/-000001$/)
@@ -174,7 +181,11 @@ describe('Liste, totaux et annulation', () => {
        WHERE action = 'annulation_depense' AND entite_id = ?`,
       loyer.id
     )!
-    expect(JSON.parse(journal.ancienne)).toMatchObject({ numero: loyer.numero, montant: 15_000, categorie: 'Loyer' })
+    expect(JSON.parse(journal.ancienne)).toMatchObject({
+      numero: loyer.numero,
+      montant: 15_000,
+      categorie: 'Loyer'
+    })
     expect(JSON.parse(journal.nouvelle)).toEqual({ motif: 'saisi deux fois' })
   })
 
@@ -185,7 +196,9 @@ describe('Liste, totaux et annulation', () => {
     annulerDepense(db, KOSSI, d.id, 'erreur')
     expect(() => annulerDepense(db, KOSSI, d.id, 'encore')).toThrow(/déjà annulée/)
     expect(() => executer(db, 'DELETE FROM depenses WHERE id = ?', d.id)).toThrow(/ne se supprime pas/)
-    expect(() => executer(db, 'UPDATE depenses SET montant = 1 WHERE id = ?', d.id)).toThrow(/ne se modifie plus/)
+    expect(() => executer(db, 'UPDATE depenses SET montant = 1 WHERE id = ?', d.id)).toThrow(
+      /ne se modifie plus/
+    )
   })
 
   it('filtre par période (30 jours par défaut) et par catégorie', () => {

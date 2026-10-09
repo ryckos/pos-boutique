@@ -52,9 +52,10 @@ export function creerCategorie(db: Db, nom: string): CategorieDepense {
   return avecTransaction(db, () => {
     // Le schéma impose un nom unique parmi toutes les catégories, désactivées comprises.
     const cle = n.toLocaleLowerCase('fr')
-    const existante = toutes<{ nom: string; actif: number }>(db, 'SELECT nom, actif FROM categories_depense').find(
-      (c) => nettoyer(c.nom).toLocaleLowerCase('fr') === cle
-    )
+    const existante = toutes<{ nom: string; actif: number }>(
+      db,
+      'SELECT nom, actif FROM categories_depense'
+    ).find((c) => nettoyer(c.nom).toLocaleLowerCase('fr') === cle)
     if (existante) {
       throw new ErreurMetier(
         existante.actif
@@ -208,7 +209,11 @@ export function listerDepenses(
   const valables = depenses.filter((d) => !d.annuleLe)
   const parCategorie = new Map<number, { categorieId: number; categorie: string; total: number }>()
   for (const d of valables) {
-    const c = parCategorie.get(d.categorieId) ?? { categorieId: d.categorieId, categorie: d.categorie, total: 0 }
+    const c = parCategorie.get(d.categorieId) ?? {
+      categorieId: d.categorieId,
+      categorie: d.categorie,
+      total: 0
+    }
     c.total += d.montant
     parCategorie.set(d.categorieId, c)
   }

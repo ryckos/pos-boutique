@@ -18,6 +18,86 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-08 — b/depenses, b/depenses-ecran — B13 Dépenses (partie « fonds propres »)
+**Fait** :
+- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 10.1 (et § 1.4 pour le journal) :
+  - 9 catégories de départ (Loyer, Électricité, Eau, Salaires, Transport, Entretien et réparations,
+    Fournitures, Impôts et taxes, Autre), présentes aussi en production ; le gérant en crée et en
+    désactive, au moins une reste active ; **nom unique parmi toutes, désactivées comprises** (le
+    schéma d'origine l'impose : `categories_depense.nom UNIQUE`) ;
+  - catégorie active, libellé obligatoire, francs entiers > 0, pas de plafond ; date du jour par
+    défaut, passée acceptée, jamais future ; numéro `DEP` à l'enregistrement ;
+  - justificatif = référence texte facultative (photo reportée) ;
+  - gérant pour tout ; la caissière ne fera que des dépenses « caisse » sur sa session, après A8 ;
+  - correction = annulation avec motif, journalisée (`annulation_depense`), une seule fois ; reste
+    visible, ne compte plus.
+- **PR 1 `b/depenses`** (commit `bb66be0`, poussée) : migration `20261008_0900_depenses.sql`
+  (`depenses.numero` unique, `reference`, colonnes d'annulation ; `categories_depense.actif`,
+  `desactive_le` ; triggers : pas de suppression, dépense annulée figée ; catégories de départ),
+  module `src/main/modules/depenses/`, contrat `src/shared/ipc/depenses.ts`, `totalDepenses(db, du, au)`
+  pour B14. 11 tests (`tests/depenses.test.ts` : taxi-moto 1 000 → `DEP-AAAA-000001` ; 1 000 + loyer
+  15 000 = **16 000**, loyer annulé → **1 000** ; un refus ne consomme pas de numéro ; source « caisse »
+  refusée).
+- **PR 2 `b/depenses-ecran`** (commit `31f7a03`, empilée, poussée) : menu « Dépenses »
+  (`modules/depenses/PageDepenses.tsx`), fenêtres Nouvelle dépense / Annuler / Catégories, logique pure
+  `saisieDepense.ts` (4 tests), `UI_UX.md` § 5.19. **Scénario complet testé à la main par Dev B.**
+- 495 tests verts, typecheck OK. `MODELE_DONNEES.md` à jour.
+- Les deux branches B13 ont été **rebasées sur `b/docs-b12-fusion`** (pas encore fusionnée) pour éviter
+  un conflit sur ce carnet et sur `ETAT_AVANCEMENT.md` (lignes B12 / B13 voisines) ; poussées en
+  `--force-with-lease`.
+- Le fichier temporaire `electron.vite.config.1790196666553.mjs` signalé par Dev A n'est plus versionné.
+
+**En cours** : trois PR vers `test`, **dans l'ordre** (`gh` absent de ce poste ; texte des PR B13 fourni à
+Dev B dans la session) :
+1. `b/docs-b12-fusion` : https://github.com/ryckos/pos-boutique/compare/test...b/docs-b12-fusion?expand=1
+   (squash, supprimer la branche).
+2. `b/depenses` (PR 1 B13). Après la fusion de la 1 en squash :
+   `git switch b/depenses && git fetch && git rebase --onto origin/test 3bf695d && git push --force-with-lease`.
+3. `b/depenses-ecran` (PR 2 B13), après la fusion de la 2. Si squash :
+   `git switch b/depenses-ecran && git fetch && git rebase --onto origin/test bb66be0 && git push --force-with-lease`.
+   Ce carnet est commité sur `b/depenses-ecran`.
+
+**Prochaine étape** :
+1. Suivre les fusions : une ligne au journal des fusions de `ETAT_AVANCEMENT.md` par PR B13. **B13 reste
+   🔄** après la PR 2 : la partie « caisse » attend A8. Supprimer les branches fusionnées (local et
+   GitHub ; liste des anciennes dans l'entrée précédente).
+2. **B14 Rapports de gestion et journal d'audit** (`/tache B14`, branche `b/rapports-gestion` depuis
+   `test` à jour). Relire `REGLES_METIER.md` § 11 et la fiche B14 de `DEV_B_BACKOFFICE.md`. Disponible
+   sans Dev A : pertes par cause (casse, « Don » = libellé, vol, péremption, démarques d'inventaire =
+   `document_type = 'inventaire'`), valeur du stock, dépenses (`totalDepenses`), journal d'audit
+   (admin). Bloqué : la marge et le résultat attendent `caisse:ventesPeriode` (Dev A, fin S16) ;
+   prévoir le contrat et afficher « marge disponible avec les rapports de ventes » en attendant.
+3. **Quand A8 arrivera** (`grep -rn enregistrerMouvementCaisse src/main`) : terminer B13 —
+   - `enregistrerDepense` source `caisse` : `sessionOuverte(db, utilisateurId)` exigée, date = jour,
+     `session_caisse_id`, mouvement `sortie` motif `depense`, `document_type = 'depense'`, même
+     transaction ;
+   - ouvrir `depenses:enregistrer` (et `depenses:categories`) à la caissière pour la source caisse
+     seulement ; menu ou bouton depuis la caisse (à voir avec Dev A) ;
+   - annulation d'une dépense « caisse » = entrée compensatoire, refusée si la session est clôturée ;
+   - retirer `SOURCES_OUVERTES` limité dans `saisieDepense.ts` ; tests avec le scénario de clôture
+     (dépense taxi-moto 1 000 → espèces théoriques **58 700**).
+
+**Questions ouvertes** :
+- Où la caissière saisit-elle une dépense « caisse » : bouton dans l'écran Caisse (Dev A) ou menu
+  « Dépenses » restreint ? À décider avec Dev A au moment d'A8.
+- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
+- Plafond de remise caissier (D-A3) : en attente de la cliente. D-A4 (sauvegarde distante) bloquera B16.
+- Réactivation (produit, compte, catégorie, fournisseur, catégorie de dépense) : non prévue. Photos
+  (produits, justificatifs) : reportées.
+
+**Contrats** :
+- Ajoutés (gérant, **sans impact pour la caisse**) : `depenses:categories`, `creerCategorie`,
+  `desactiverCategorie`, `liste`, `enregistrer`, `annuler`. Fonction `totalDepenses(db, du, au)`
+  (principal) pour les rapports.
+- **Pour Dev A** : nouvelle migration (tables `depenses` et `categories_depense` seulement). Le contrat
+  accepte déjà `source: 'caisse'` ; il n'attend que `enregistrerMouvementCaisse()` (A8), qui devra
+  accepter `document_type = 'depense'` / `document_id` et le motif `depense` (déjà dans le CHECK de
+  `mouvements_caisse`).
+- Attendu : `enregistrerMouvementCaisse()` (Dev A, A8, prévu fin S10) toujours pas livré ;
+  `caisse:ventesPeriode` (fin S16) pour la marge de B14.
+
+---
+
 ## 2026-10-07 / 08 — b/inventaires, b/inventaires-ecran — B11 et B12 fusionnées (B12 Inventaires)
 **Fait** :
 - **B11 fusionnée** (PR #39, #40) ; la PR de documentation **#41** (`b/docs-b11-fusion`) a rattrapé
@@ -622,58 +702,3 @@ PR rempli) a été fourni à Dev B. Puis relecture par Dev A.
 
 ---
 
-## 2026-09-25 (suite) — b/import-excel — B3 Import Excel du catalogue
-**Fait** :
-- **B5 fusionnée** (PR #19) et passée à ✅. Branches fusionnées supprimées (local et GitHub) :
-  `b/recherche-scan`, `b/parametres`, `b/parametres-ecran`. Le commit du carnet resté seul sur
-  `b/parametres-ecran` a été repris sur `b/import-excel`.
-- **Dépendance `xlsx` accordée par Dev B**, installée en **0.20.3 depuis `cdn.sheetjs.com`**
-  (décision **D-18** : la 0.18.5 de npm a deux failles connues sur la lecture de fichiers). Intégrée
-  au code compilé du principal (`electron.vite.config.ts`, `externalizeDepsPlugin({ exclude: ['xlsx'] })`).
-- **Règles validées par Dev B** (écrites dans `REGLES_METIER.md` § 2.6) : import en deux temps
-  (vérifier sans rien écrire, puis tout ou rien) ; code déjà au catalogue = ligne ignorée ; une ligne
-  en erreur bloque tout ; rayon ou « Rayon / Sous-rayon » inconnu créé ; ligne sans code-barres =
-  produit sans code (pas de code interne généré) ; prix d'achat gardé **à titre indicatif**.
-- Migration `20260925_1100_prix_achat_indicatif.sql` : `produits.prix_achat_indicatif` (FCFA par
-  unité, facultatif), **jamais lu par le CUMP** ; il servira à pré-remplir le coût en B6.
-- Service `catalogue/import.ts` (lecture, analyse, import, modèle), 3 canaux gérant, fenêtre
-  `FenetreImport.tsx` + bouton « Importer depuis Excel » sur la page Produits (`UI_UX.md` § 5.14),
-  pastille commune `.pastille-erreur`. 225 tests verts (13 nouveaux), build OK, **scénario complet
-  testé à la main par Dev B** (fichier avec erreurs, corrigé, réimport, vente en caisse).
-- Commit `633b641` poussé sur `origin/b/import-excel`. **`gh` n'est pas installé sur ce poste** :
-  la PR s'ouvre depuis GitHub.
-
-**En cours** : PR B3 `b/import-excel` → `test` à ouvrir sur GitHub
-(https://github.com/ryckos/pos-boutique/compare/test...b/import-excel?expand=1), texte prêt
-(celui de la session : sections du modèle, zones partagées listées), puis relecture par Dev A.
-
-**Prochaine étape** :
-1. Après fusion de la PR B3 : B3 → ✅ dans `ETAT_AVANCEMENT.md` + ligne au journal des fusions
-   (« 2026-09-2x · B3 · Import Excel du catalogue, prix d'achat indicatif, xlsx 0.20.3 (PR #…) ») ;
-   supprimer `b/import-excel` (local et GitHub).
-2. **B6 Stock initial** en priorité (rendez-vous **fin S7** pour la recette de Dev A) :
-   `/tache B6`, branche `b/stock-initial` depuis `test` à jour. Mouvements `ajustement_inventaire`
-   via `core/mouvements.ts`, document `stock_initial`, le coût saisi initialise le CUMP ; **pré-remplir
-   le coût avec `produits.prix_achat_indicatif`** quand il existe. Relire `REGLES_METIER.md` § 3 et
-   `SCENARIO_REFERENCE.md` (dimanche soir) avant le plan.
-3. Puis **B4 Écran stock et historique produit**.
-
-**Questions ouvertes** :
-- Colonne « Suivi péremption » (Oui/Non) dans l'import : proposée, pas confirmée par Dev B. Pour
-  l'instant tout produit importé est créé **sans** suivi de péremption (à cocher ensuite dans la fiche).
-- Plafond de remise caissier (D-A3) : toujours en attente de la cliente.
-- Réactivation (produit, compte, catégorie) : non prévue. Photo des produits : reportée.
-
-**Contrats** :
-- **Pour Dev A — action requise après la fusion de B3 : `npm install`** (nouvelle dépendance `xlsx`
-  depuis `cdn.sheetjs.com` ; poste et CI doivent pouvoir joindre ce site).
-- Ajoutés (gérant, sans impact pour la caisse) : `catalogue:telechargerModeleImport`,
-  `catalogue:verifierImport`, `catalogue:importerCatalogue`, type `RapportImport`.
-  `ArticleCatalogue` inchangé.
-- Zones partagées touchées : `package.json`, `electron.vite.config.ts`, `ui/styles.css`
-  (`.pastille-erreur` utilisable par tous), nouvelle migration.
-- Pour la recette de Dev A : les produits peuvent maintenant être chargés en masse par Excel ; le
-  stock initial (B6, fin S7) reste à livrer.
-- Attendus inchangés : `sessionOuverte()` / `enregistrerMouvementCaisse()` (Dev A, fin S10).
-
----

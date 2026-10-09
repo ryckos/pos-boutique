@@ -90,7 +90,7 @@ Le socle comprend :
 | A13   | Écran client définitif                    | A   | ⏳     |   |
 | B11   | Sorties de stock, retours fournisseur     | B   | ✅     | PR #39 (serveur : sorties, retours, avoirs déduits de la dette, migration `retours_fournisseur`) et #40 (écran Sorties de stock, avoirs reçus ou refusés dans « Dettes », avoir à valoir sur la page Fournisseurs) |
 | B12   | Inventaires                               | B   | ✅     | PR #42 (serveur : inventaire total ou par rayon, comptage par conditionnement, validation au CUMP, démarque, migration `20261007_0900_inventaires.sql`) et #43 (menu « Inventaires », comptage en fenêtre, rapport de démarque) ; testé à la main |
-| B13   | Dépenses                                  | B   | 🔄     | PR 1 `b/depenses` (serveur : catégories, numéro DEP, annulation, source « fonds propres » ; « caisse » refusée jusqu'à A8), PR 2 écran à suivre |
+| B13   | Dépenses                                  | B   | 🔄     | PR 1 `b/depenses` (serveur : catégories, numéro DEP, annulation, source « fonds propres » ; « caisse » refusée jusqu'à A8) ; PR 2 `b/depenses-ecran` (menu « Dépenses », fenêtres nouvelle dépense, annulation, catégories) |
 
 ## Phase 4 — Pilotage (S16–S18)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
