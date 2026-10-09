@@ -779,6 +779,26 @@ repart à 1 chaque année.
 - **Pertes** : somme des mouvements de pertes (péremption, casse, vol, écarts négatifs
   d'inventaire), chacun valorisé à son `cout_unitaire`.
 
+### 11.1 Rapports de gestion (validé par Dev B le 2026-10-09, B14)
+- **Droits** : gérant (et admin). **Période** : mois en cours par défaut, dates libres, la fin
+  jamais dans le futur.
+- **Pertes par cause**, chacune à son `cout_unitaire`, arrondie au franc par produit :
+  péremption (`perte_peremption`), casse, **dons** (casse au libellé « Don », ligne à part), vol,
+  **démarque d'inventaire** (écarts négatifs d'un inventaire validé), **avoirs fournisseur non
+  obtenus** (avoir refusé = tout l'attendu, daté du refus ; avoir reçu en dessous de l'attendu = la
+  différence, datée de l'avoir ; un avoir encore attendu n'est pas une perte).
+  Ne comptent pas : une sortie annulée (contre-passée), le stock initial, le retour fournisseur
+  lui-même. Une casse issue d'un retour client (A7) compte comme casse. Les **surplus
+  d'inventaire** sont affichés à part et ne se déduisent pas des pertes.
+- **Valeur du stock** : aujourd'hui seulement, au CUMP actuel, par rayon (un sous-rayon compte dans
+  son rayon) ; même total que l'écran Stock.
+- **Achats par fournisseur** : livré (réceptions de la période), avoirs reçus et règlements non
+  annulés de la période, reste dû d'aujourd'hui. Un fournisseur apparaît s'il a une opération dans
+  la période ou un solde non nul.
+- **Résultat** : marge brute − dépenses non annulées. Tant que `caisse:ventesPeriode` (Dev A) n'est
+  pas livré, la marge et le résultat sont « en attente des rapports de ventes ». Les pertes sont
+  rappelées pour information, sans être déduites (elles ne font pas partie de la règle).
+
 ---
 
 ## 12. Utilisateurs et sécurité (Dev B)

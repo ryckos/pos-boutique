@@ -15,7 +15,7 @@ const DELAI_MAX = 365
 
 // Même calcul que v_dettes_fournisseurs, mais aussi pour les désactivés (la vue les écarte).
 // Un règlement annulé ne compte plus (B10) ; un avoir reçu se déduit (B11). Négatif = avoir à valoir.
-const SOLDE_DU = `COALESCE((SELECT SUM(r.total) FROM receptions r WHERE r.fournisseur_id = f.id), 0)
+export const SOLDE_DU = `COALESCE((SELECT SUM(r.total) FROM receptions r WHERE r.fournisseur_id = f.id), 0)
   - COALESCE((SELECT SUM(g.montant) FROM reglements_fournisseurs g
               WHERE g.fournisseur_id = f.id AND g.annule_le IS NULL), 0)
   - COALESCE((SELECT SUM(a.montant_recu) FROM retours_fournisseur a
