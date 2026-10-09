@@ -14,6 +14,16 @@ import type {
 } from '@shared/ipc/rapports-gestion'
 import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
+import { jourLocal } from '@renderer/lib/exportExcel'
+import { BoutonExporter } from '@renderer/ui/BoutonExporter'
+import type { DemandeExport } from '@shared/ipc/exports'
+import {
+  EN_ATTENTE_VENTES,
+  exportAchats,
+  exportPertes,
+  exportResultat,
+  exportValeurStock
+} from './exportRapports'
 
 type Onglet = 'pertes' | 'valeur' | 'achats' | 'resultat'
 
@@ -51,6 +61,32 @@ function Erreur({ message }: { message: string | null }): React.JSX.Element | nu
     <p className="alerte" role="alert" style={{ marginBottom: 16 }}>
       {message}
     </p>
+  )
+}
+
+/** Phrase de synthèse d'un onglet, avec le bouton d'export de ce rapport à droite. */
+function EnteteOnglet({
+  demande,
+  children
+}: {
+  demande: () => DemandeExport
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 12,
+        marginBottom: 16
+      }}
+    >
+      <p>{children}</p>
+      <div className="tableau-actions">
+        <BoutonExporter demande={demande} />
+      </div>
+    </div>
   )
 }
 
@@ -130,14 +166,14 @@ function OngletPertes({ periode, cle }: ProprietesPeriode): React.JSX.Element {
   const libelles = Object.fromEntries(r.causes.map((c) => [c.cause, c.libelle]))
   return (
     <>
-      <p style={{ marginBottom: 16 }}>
+      <EnteteOnglet demande={() => exportPertes(r)}>
         Pertes {textePeriode(r)} : <span className="montant">{formaterFCFA(r.total)}</span>
         {r.surplusInventaire > 0 && (
           <span className="detail">
             Surplus trouvés aux inventaires (non déduits) : {formaterFCFA(r.surplusInventaire)}
           </span>
         )}
-      </p>
+      </EnteteOnglet>
       <div className="tableau-cadre" style={{ marginBottom: 24 }}>
         <table className="tableau">
           <thead>
@@ -203,9 +239,9 @@ function OngletValeur(): React.JSX.Element {
   if (!r) return <p className="vide">Chargement…</p>
   return (
     <>
-      <p style={{ marginBottom: 16 }}>
+      <EnteteOnglet demande={() => exportValeurStock(r, jourLocal())}>
         Valeur du stock aujourd’hui, au coût moyen : <span className="montant">{formaterFCFA(r.total)}</span>
-      </p>
+      </EnteteOnglet>
       <div className="tableau-cadre">
         <table className="tableau">
           <thead>
@@ -242,10 +278,10 @@ function OngletAchats({ periode, cle }: ProprietesPeriode): React.JSX.Element {
   if (r.fournisseurs.length === 0) return <p className="vide">Aucun achat {textePeriode(r)}.</p>
   return (
     <>
-      <p style={{ marginBottom: 16 }}>
+      <EnteteOnglet demande={() => exportAchats(r)}>
         Livré {textePeriode(r)} : <span className="montant">{formaterFCFA(r.totalLivre)}</span>
         <span className="detail">Le reste dû est celui d’aujourd’hui, toutes livraisons confondues.</span>
-      </p>
+      </EnteteOnglet>
       <div className="tableau-cadre">
         <table className="tableau">
           <thead>
@@ -297,15 +333,15 @@ function OngletAchats({ periode, cle }: ProprietesPeriode): React.JSX.Element {
   )
 }
 
-const EN_ATTENTE_VENTES = 'Disponible avec les rapports de ventes'
-
 function OngletResultat({ periode, cle }: ProprietesPeriode): React.JSX.Element {
   const { donnees: r, erreur } = useRapport<RapportResultat>(() => appel('rapports:resultat', periode), cle)
   if (erreur) return <Erreur message={erreur} />
   if (!r) return <p className="vide">Chargement…</p>
   return (
     <>
-      <p style={{ marginBottom: 16 }}>Résultat {textePeriode(r)} = marge brute des ventes − dépenses.</p>
+      <EnteteOnglet demande={() => exportResultat(r)}>
+        Résultat {textePeriode(r)} = marge brute des ventes − dépenses.
+      </EnteteOnglet>
       <div className="tableau-cadre">
         <table className="tableau">
           <tbody>

@@ -9,6 +9,9 @@ import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { normaliserRecherche } from '@shared/texte'
 import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
+import { jourLocal } from '@renderer/lib/exportExcel'
+import { BoutonExporter } from '@renderer/ui/BoutonExporter'
+import type { DemandeExport } from '@shared/ipc/exports'
 import { FenetreHistorique } from './FenetreHistorique'
 import { texteRepartition } from './affichageStock'
 
@@ -79,6 +82,49 @@ export function PageStock(): React.JSX.Element {
       (cle === '' || normaliserRecherche(l.nom).includes(cle))
   )
 
+  // L'export reprend la liste affichée, filtres compris (REGLES_METIER § 11.2).
+  const demandeExport = (): DemandeExport => {
+    const jour = jourLocal()
+    const precisions = [
+      filtre === 'alertes' ? 'ruptures et stocks bas' : filtre === 'dormants' ? 'produits dormants' : null,
+      rayon ? `rayon ${rayon}` : null,
+      recherche.trim() ? `recherche « ${recherche.trim()} »` : null
+    ].filter(Boolean)
+    return {
+      nomFichier: `Stock_${jour}`,
+      titre: `Stock au ${formaterDate(jour)}${precisions.length ? ` (${precisions.join(', ')})` : ''}`,
+      feuilles: [
+        {
+          nom: 'Stock',
+          colonnes: [
+            { titre: 'Produit', type: 'texte' },
+            { titre: 'Rayon', type: 'texte' },
+            { titre: 'Stock', type: 'nombre' },
+            { titre: 'Unité', type: 'texte' },
+            { titre: 'Répartition indicative', type: 'texte' },
+            { titre: 'Seuil', type: 'nombre' },
+            { titre: 'Coût moyen', type: 'nombre' },
+            { titre: 'Valeur', type: 'montant' },
+            { titre: 'État', type: 'texte' },
+            { titre: 'Dernière vente', type: 'date' }
+          ],
+          lignes: visibles.map((l) => [
+            l.nom,
+            l.rayon ?? 'Non classé',
+            l.stock,
+            l.unite,
+            l.repartition ? texteRepartition(l.repartition).replace(/^= /, '') : null,
+            l.seuil,
+            Math.round(l.cump * 10) / 10,
+            l.valeur,
+            [NIVEAUX[l.niveau]?.texte, l.dormant ? 'Dormant' : null].filter(Boolean).join(', ') || null,
+            l.derniereVente
+          ])
+        }
+      ]
+    }
+  }
+
   return (
     <div className="page">
       <header className="page-entete">
@@ -97,6 +143,7 @@ export function PageStock(): React.JSX.Element {
               </span>
             )}
             <span className="montant">Valeur : {formaterFCFA(etat.valeurTotale)}</span>
+            <BoutonExporter demande={demandeExport} desactive={visibles.length === 0} />
           </div>
         )}
       </header>

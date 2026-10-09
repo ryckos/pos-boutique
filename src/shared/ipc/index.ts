@@ -11,6 +11,7 @@ import type { ContratAuth } from './auth'
 import type { ContratCaisse } from './caisse'
 import type { ContratCatalogue } from './catalogue'
 import type { ContratDepenses } from './depenses'
+import type { ContratExports } from './exports'
 import type { ContratFournisseurs } from './fournisseurs'
 import type { ContratInventaires } from './inventaires'
 import type { ContratMateriel } from './materiel'
@@ -32,6 +33,7 @@ export type ContratIpc = ContratSysteme &
   ContratDepenses &
   ContratRapportsGestion &
   ContratAudit &
+  ContratExports &
   ContratCaisse &
   ContratMateriel
 
