@@ -18,6 +18,80 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-07 / 08 — b/inventaires, b/inventaires-ecran — B11 et B12 fusionnées (B12 Inventaires)
+**Fait** :
+- **B11 fusionnée** (PR #39, #40) ; la PR de documentation **#41** (`b/docs-b11-fusion`) a rattrapé
+  les deux commits restés hors de la PR #40 (B10 → ✅, carnet B11) et passé B11 à ✅.
+- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 9.0 (et § 1.4 pour le journal) :
+  - gérant seul (ouvrir, compter, valider, annuler) ; **un seul inventaire en cours** ; numéro `INV`
+    dès l'ouverture ;
+  - total, ou partiel = un rayon **et ses sous-rayons** (ou un sous-rayon) ;
+  - chaque comptage **enregistré aussitôt**, théorique photographié à ce moment (une vente faite
+    ensuite reste dans le stock) ; **recomptage = remplace** tant que l'inventaire est en cours ;
+  - motif obligatoire au comptage si écart (liste du schéma : casse, vol, erreur de saisie,
+    péremption, don, autre) + commentaire facultatif ;
+  - **produits non comptés : stock inchangé** (avertissement avant validation) ;
+  - périssables comptés **par produit** : un manquant est retiré des lots, date la plus ancienne
+    d'abord (périmés compris), le reste sans lot ; un surplus entre sans lot ;
+  - démarque = manquants × CUMP ; surplus chiffrés à part ; net ;
+  - annulation d'un inventaire en cours : motif, journalisée (`annulation_inventaire`), aucun
+    mouvement ; validé ou annulé = figé.
+- **PR #42 `b/inventaires`** : migration `20261007_0900_inventaires.sql` (`inventaires.categorie_id`,
+  `motif_annulation` ; `lignes_inventaire.compte_le`, `commentaire` ; index unique inventaire +
+  produit ; triggers : pas de suppression, inventaire figé), module `src/main/modules/inventaires/`,
+  contrat `src/shared/ipc/inventaires.ts`, règles pures `src/shared/inventaires.ts`
+  (`repartirManquant`, `valeurEcart`, libellés). 18 tests (`tests/inventaires.test.ts` : 41 = écart
+  nul ; savon 29 → 27 = **300 F** ; vente après comptage → 26 ; lots A −3 / B −2 ; panne → tout annulé).
+- **PR #43 `b/inventaires-ecran`** : menu « Inventaires » (`modules/inventaires/PageInventaires.tsx`),
+  logique pure `saisieInventaire.ts` (7 tests). Choix d'écran : **tableau + comptage en fenêtre**
+  (règle des formulaires en fenêtre modale) au lieu de cartes dans la page ; `UI_UX.md` § 5.11
+  réécrit. **Scénario complet testé à la main par Dev B.**
+- B12 → ✅ et deux lignes au journal des fusions (dans `test`, le statut de B12 était resté ⏳ après
+  la résolution d'un conflit de fusion : corrigé ici). 480 tests verts, typecheck et build OK.
+- Astuce poste de Dev B : `C:\temp` n'existe pas ; base jetable avec
+  `$env:POS_DB="$env:TEMP\inventaire.db"; npm run dev` (puis `Remove-Item Env:POS_DB`).
+
+**En cours** : PR de documentation `b/docs-b12-fusion` → `test` (B12 ✅, journal des fusions, ce
+carnet, archive de l'entrée du 2026-09-25) :
+https://github.com/ryckos/pos-boutique/compare/test...b/docs-b12-fusion?expand=1
+
+**Prochaine étape** :
+1. Faire fusionner `b/docs-b12-fusion`. Supprimer sur GitHub les branches fusionnées :
+   `b/inventaires`, `b/inventaires-ecran`, `b/docs-b11-fusion`, `b/docs-b12-fusion`, `b/sorties`,
+   `b/sorties-ecran`, `b/docs-b10-fusion`, `b/commandes`, `b/commandes-ecran`, `b/docs-b8-fusion`,
+   `b/receptions`, `b/receptions-ecran`, `b/fournisseurs`, `b/fournisseurs-achats`, `b/fefo`,
+   `b/peremptions`, `b/reglements`, `b/reglements-ecran`.
+2. **B13 Dépenses** (`/tache B13`, branche `b/depenses` depuis `test` à jour). Relire
+   `REGLES_METIER.md` § 10, `UI_UX.md` (écran des dépenses s'il existe), tables `categories_depense` et
+   `depenses` (`source` `caisse` / `fonds_propres`, `session_caisse_id`), numéro `DEP`.
+   - Vérifier d'abord si `enregistrerMouvementCaisse()` (Dev A, A8) est arrivé dans `test` :
+     `grep -rn enregistrerMouvementCaisse src/main`. Si non, ne faire que la source
+     **« fonds propres »** et prévoir la source « caisse » dans le contrat (refus clair en attendant).
+   - Questions à poser à Dev B avant le plan : catégories de dépenses de départ (loyer, électricité,
+     eau, salaires, transport… créables par le gérant ?) ; droits (gérant seul, ou caissière pour une
+     petite dépense de caisse ?) ; pièce justificative (référence texte) ; correction = annulation
+     avec motif journalisée ? ; date passée acceptée ; plafond éventuel.
+3. Ensuite Phase 4 : B14 rapports de gestion (rapport des pertes par cause : dons = libellé « Don »,
+   démarques d'inventaire = document `inventaire`), B15 exports Excel, B16 sauvegardes (D-A4 en attente).
+
+**Questions ouvertes** :
+- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
+- Plafond de remise caissier (D-A3) : en attente de la cliente.
+- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photo des produits : reportée.
+- Paiement d'un fournisseur depuis le tiroir : après A8.
+
+**Contrats** :
+- Ajoutés (gérant, **sans impact pour la caisse**) : `inventaires:ouvrir`, `enCours`, `detail`,
+  `liste`, `compter`, `valider`, `annuler`. Nouveau module enregistré dans `src/main/ipc/index.ts`,
+  `src/shared/ipc/index.ts` et `app/routes.tsx`.
+- **Pour Dev A** : nouvelle migration (tables `inventaires` et `lignes_inventaire` seulement, plus des
+  triggers) ; aucune table de la caisse touchée. L'historique d'un produit affiche « Inventaire
+  INV-… ».
+- Attendu : `enregistrerMouvementCaisse()` (Dev A, A8, prévu fin S10) toujours pas livré ; il bloque
+  B13 (source caisse) et le paiement des fournisseurs au tiroir.
+
+---
+
 ## 2026-10-06 (suite) — b/sorties, b/sorties-ecran — B11 Sorties de stock et retours fournisseur
 **Fait** :
 - **B10 fusionnée** (PR #37 et #38) : B10 → ✅ et deux lignes au journal des fusions. Le commit
@@ -603,54 +677,3 @@ PR rempli) a été fourni à Dev B. Puis relecture par Dev A.
 - Attendus inchangés : `sessionOuverte()` / `enregistrerMouvementCaisse()` (Dev A, fin S10).
 
 ---
-
-## 2026-09-25 — b/parametres-ecran — B2.3 (fusionnée) et B5 Paramètres
-**Fait** :
-- **B2.3 fusionnée** (PR #16) : recherche sans accents ni casse (fonction SQL `sans_accents`
-  enregistrée sur la connexion ; F2 de la caisse en profite sans changement de contrat), création
-  d'un produit depuis un code scanné sur l'écran Produits. Le fichier temporaire
-  `electron.vite.config.<nombre>.mjs` signalé par Dev A est retiré et ignoré (`.gitignore`).
-- **B5 partie 1 fusionnée** (PR #17) : `parametres:lire` livré à Dev A (rendez-vous fin S5 tenu).
-- **Règle validée par Dev B** (écrite dans `REGLES_METIER.md` § 13) : lecture des paramètres par
-  tous les rôles ; écriture par l'admin, **le gérant pouvant aussi modifier les trois clés
-  `imprimante_*`** (écran « Réglages matériel » d'A3) ; chaque clé réellement changée est
-  journalisée (`modification_parametre`, avant/après).
-- **B5 partie 2** terminée, testée à la main par Dev B, poussée sur `b/parametres-ecran` (rebasée
-  sur `test` après #17) : `parametres:ecrire` (tout ou rien, valeurs revérifiées, `null` = retour au
-  défaut), écran « Paramètres » admin (blocs Boutique et ticket / Stock / Caisse, fenêtres
-  modales, `UI_UX.md` § 5.13), TVA par défaut proposée dans la fiche d'un nouveau produit.
-- 194 tests verts (25 nouveaux sur B5), build OK. Aucune migration.
-- Les PR #16 et #17 ont été fusionnées par commit de fusion (pas en squash) : sans conséquence,
-  mais une branche empilée se rebase alors par un simple `git rebase test`.
-
-**En cours** : PR B5 partie 2 (`b/parametres-ecran` → `test`) à ouvrir ou en relecture par Dev A.
-
-**Prochaine étape** :
-1. Après fusion de la partie 2 : B5 → ✅ dans `ETAT_AVANCEMENT.md` (ligne B5 et journal des
-   fusions), supprimer `b/parametres-ecran` ; supprimer aussi sur GitHub les branches déjà
-   fusionnées `b/recherche-scan` et `b/parametres` si ce n'est pas fait.
-2. Tâche suivante dans l'ordre du brief : **B3 Import Excel**, toujours bloquée par l'accord sur la
-   dépendance `xlsx` → la demander d'abord à Dev B. Sinon enchaîner **B4 Écran stock et
-   historique produit** (`/tache B4`, branche `b/stock` depuis `test` à jour), puis **B6 Stock
-   initial** (rendez-vous fin S7 pour la recette de Dev A).
-
-**Questions ouvertes** :
-- `xlsx` pour B3 : toujours à valider (bloque B3).
-- Plafond de remise caissier (D-A3) : toujours en attente de la cliente ; `plafondRemiseCaissier`
-  vaut `null` et l'admin pourra le saisir dans « Paramètres » dès la décision prise.
-- Réactivation (produit, compte, catégorie) : non prévue (cliente). Photo des produits : reportée.
-
-**Contrats** :
-- **Livré à Dev A** (PR #17) : `parametres:lire`, sans requête → `ParametresBoutique` : objet typé,
-  défauts appliqués (`ticketPied` « Merci de votre visite ! », `tvaDefaut` 18,
-  `peremptionSeuilJours` 15, `dormantJours` 60, `imprimanteMethode` 'spooler'), `null` si non
-  renseigné (`boutiqueNom`, `boutiqueAdresse`, `boutiqueNif`, `imprimanteCible`,
-  `plafondRemiseCaissier`, `imprimantePageCodes`). Tous les rôles connectés. **Pour le ticket
-  imprimé dans le principal, appeler directement `lireParametres(db)`** de
-  `modules/parametres/service.ts`, sans IPC. Débloque l'en-tête et le pied du ticket d'A3.
-- **En relecture** : `parametres:ecrire`, `Partial<ParametresBoutique>` → `ParametresBoutique`.
-  **Pour Dev A** : le gérant peut enregistrer `imprimanteMethode`, `imprimanteCible`,
-  `imprimantePageCodes` par ce canal → les réglages matériel d'A3 peuvent aller en base au lieu
-  d'un fichier local ; la page de codes gagnante (D-A2) aussi. Tout autre champ envoyé par un
-  gérant fait refuser l'ensemble.
-- Attendus inchangés : `sessionOuverte()` / `enregistrerMouvementCaisse()` (Dev A, fin S10).
