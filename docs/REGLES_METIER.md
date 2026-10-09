@@ -814,6 +814,16 @@ repart à 1 chaque année.
   pas livré, la marge et le résultat sont « en attente des rapports de ventes ». Les pertes sont
   rappelées pour information, sans être déduites (elles ne font pas partie de la règle).
 
+### 11.2 Exports Excel (validé par Dev B le 2026-10-09, B15)
+- On exporte **ce que l'écran affiche, filtres compris** ; mêmes droits que l'écran.
+- Chaque feuille : une ligne de titre (« Pertes du 01/10/2026 au 09/10/2026 — exporté le 09/10/2026
+  à 10 h 52 par Kossi »), une ligne vide, les en-têtes, les lignes.
+- Montants et quantités en vrais nombres (montants affichés « 1 000 F »), dates en vraies dates ; un
+  code-barres reste du texte (zéros gardés) ; un texte n'est jamais interprété comme une formule.
+- Nom proposé : `<Liste>_<période ou jour>.xlsx` ; la personne choisit le dossier.
+- Le journal des opérations s'exporte en entier pour le filtre choisi, pas seulement les lignes
+  affichées.
+
 ---
 
 ## 12. Utilisateurs et sécurité (Dev B)

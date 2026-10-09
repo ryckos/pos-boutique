@@ -9,6 +9,9 @@ import type { CategorieDepense, Depense, ListeDepenses, SourceDepense } from '@s
 import { formaterDate, formaterFCFA } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { BoutonExporter } from '@renderer/ui/BoutonExporter'
+import { suffixePeriode } from '@renderer/lib/exportExcel'
+import type { DemandeExport } from '@shared/ipc/exports'
 import {
   LIBELLES_SOURCE,
   SOURCES_OUVERTES,
@@ -63,6 +66,57 @@ export function PageDepenses(): React.JSX.Element {
 
   const actives = categories.filter((c) => c.actif)
 
+  // L'export reprend la liste affichée, annulées comprises (REGLES_METIER § 11.2).
+  const demandeExport = (): DemandeExport => {
+    const l = liste!
+    const categorie = categories.find((c) => String(c.id) === categorieId)
+    return {
+      nomFichier: `Depenses_${suffixePeriode(l.du, l.au)}`,
+      titre: `Dépenses du ${formaterDate(l.du)} au ${formaterDate(l.au)}${categorie ? ` (${categorie.nom})` : ''}`,
+      feuilles: [
+        {
+          nom: 'Dépenses',
+          colonnes: [
+            { titre: 'Numéro', type: 'texte' },
+            { titre: 'Date', type: 'date' },
+            { titre: 'Catégorie', type: 'texte' },
+            { titre: 'Libellé', type: 'texte' },
+            { titre: 'Justificatif', type: 'texte' },
+            { titre: 'Payée par', type: 'texte' },
+            { titre: 'Montant', type: 'montant' },
+            { titre: 'État', type: 'texte' },
+            { titre: 'Saisie par', type: 'texte' },
+            { titre: 'Annulée le', type: 'date' },
+            { titre: 'Annulée par', type: 'texte' },
+            { titre: 'Motif d’annulation', type: 'texte' }
+          ],
+          lignes: l.depenses.map((d) => [
+            d.numero,
+            d.date,
+            d.categorie,
+            d.libelle,
+            d.reference,
+            LIBELLES_SOURCE[d.source],
+            d.montant,
+            d.annuleLe ? 'Annulée' : 'Enregistrée',
+            d.utilisateur,
+            d.annuleLe,
+            d.annulePar,
+            d.motifAnnulation
+          ])
+        },
+        {
+          nom: 'Par catégorie',
+          colonnes: [
+            { titre: 'Catégorie', type: 'texte' },
+            { titre: 'Total (hors annulées)', type: 'montant' }
+          ],
+          lignes: [...l.parCategorie.map((c) => [c.categorie, c.total]), ['Total', l.total]]
+        }
+      ]
+    }
+  }
+
   return (
     <div className="page">
       <header className="page-entete">
@@ -73,6 +127,7 @@ export function PageDepenses(): React.JSX.Element {
               Total de la période : <span className="montant">{formaterFCFA(liste.total)}</span>
             </span>
           )}
+          <BoutonExporter demande={demandeExport} desactive={!liste || liste.depenses.length === 0} />
           <button className="btn btn-secondaire" onClick={() => ouvrir({ type: 'categories' })}>
             Catégories
           </button>
