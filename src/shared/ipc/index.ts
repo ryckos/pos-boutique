@@ -14,6 +14,7 @@ import type { ContratFournisseurs } from './fournisseurs'
 import type { ContratInventaires } from './inventaires'
 import type { ContratMateriel } from './materiel'
 import type { ContratParametres } from './parametres'
+import type { ContratRapportsGestion } from './rapports-gestion'
 import type { ContratStock } from './stock'
 import type { ContratSysteme } from './systeme'
 import type { ContratUtilisateurs } from './utilisateurs'
@@ -28,6 +29,7 @@ export type ContratIpc = ContratSysteme &
   ContratAchats &
   ContratInventaires &
   ContratDepenses &
+  ContratRapportsGestion &
   ContratCaisse &
   ContratMateriel
 
