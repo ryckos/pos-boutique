@@ -10,6 +10,9 @@ import { UNITES_FRACTIONNAIRES } from '@shared/achats'
 import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { BoutonExporter } from '@renderer/ui/BoutonExporter'
+import { jourLocal } from '@renderer/lib/exportExcel'
+import type { DemandeExport } from '@shared/ipc/exports'
 import { lireNombre } from '../achats/saisieReception'
 
 /** « Périmé depuis 2 j », « Périme aujourd'hui », « Dans 8 j ». */
@@ -17,6 +20,43 @@ export function texteEcheance(jours: number): string {
   if (jours < 0) return `Périmé depuis ${-jours} j`
   if (jours === 0) return 'Périme aujourd’hui'
   return `Dans ${jours} j`
+}
+
+/** L'export reprend le tableau affiché (REGLES_METIER § 11.2). */
+function exportPeremptions(t: TableauPeremptions): DemandeExport {
+  const jour = jourLocal()
+  return {
+    nomFichier: `Peremptions_${jour}`,
+    titre: `Péremptions sous ${t.horizonJours} jours, au ${formaterDate(jour)}`,
+    feuilles: [
+      {
+        nom: 'Péremptions',
+        colonnes: [
+          { titre: 'Produit', type: 'texte' },
+          { titre: 'Lot', type: 'texte' },
+          { titre: 'Périme le', type: 'date' },
+          { titre: 'Échéance', type: 'texte' },
+          { titre: 'Restant', type: 'nombre' },
+          { titre: 'Unité', type: 'texte' },
+          { titre: 'Prix d’achat', type: 'montant' },
+          { titre: 'Valeur en jeu', type: 'montant' }
+        ],
+        lignes: [
+          ...t.lots.map((l) => [
+            l.produit,
+            l.numeroLot ?? 'Sans numéro',
+            l.datePeremption,
+            texteEcheance(l.joursRestants),
+            l.restant,
+            l.unite,
+            l.prixAchat,
+            l.valeur
+          ]),
+          ['Total', null, null, null, null, null, null, t.valeurTotale]
+        ]
+      }
+    ]
+  }
 }
 
 export function PagePeremptions(): React.JSX.Element {
@@ -43,7 +83,15 @@ export function PagePeremptions(): React.JSX.Element {
     <div className="page">
       <header className="page-entete">
         <h1>Péremptions — sous {tableau?.horizonJours ?? 15} jours</h1>
-        {tableau && <span className="montant">Valeur en jeu : {formaterFCFA(tableau.valeurTotale)}</span>}
+        {tableau && (
+          <div className="tableau-actions">
+            <span className="montant">Valeur en jeu : {formaterFCFA(tableau.valeurTotale)}</span>
+            <BoutonExporter
+              demande={() => exportPeremptions(tableau)}
+              desactive={tableau.lots.length === 0}
+            />
+          </div>
+        )}
       </header>
 
       {erreur && (

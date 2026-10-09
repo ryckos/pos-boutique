@@ -9,6 +9,9 @@ import type { Fournisseur, SaisieFournisseur } from '@shared/ipc/fournisseurs'
 import { formaterDate, formaterFCFA } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { BoutonExporter } from '@renderer/ui/BoutonExporter'
+import { jourLocal } from '@renderer/lib/exportExcel'
+import type { DemandeExport } from '@shared/ipc/exports'
 import { FenetreAchats } from './FenetreAchats'
 import { FenetreDettes } from './FenetreDettes'
 
@@ -18,6 +21,46 @@ type Action =
   | null
 
 const libelleDelai = (jours: number): string => (jours === 0 ? 'Comptant' : `${jours} jours`)
+
+/** L'export reprend la liste affichée, désactivés compris (REGLES_METIER § 11.2). */
+function exportFournisseurs(fournisseurs: Fournisseur[]): DemandeExport {
+  const jour = jourLocal()
+  return {
+    nomFichier: `Fournisseurs_${jour}`,
+    titre: `Fournisseurs au ${formaterDate(jour)}`,
+    feuilles: [
+      {
+        nom: 'Fournisseurs',
+        colonnes: [
+          { titre: 'Fournisseur', type: 'texte' },
+          { titre: 'Contact', type: 'texte' },
+          { titre: 'Téléphone', type: 'texte' },
+          { titre: 'Adresse', type: 'texte' },
+          { titre: 'Délai de paiement (jours)', type: 'nombre' },
+          { titre: 'Solde dû (négatif = avoir à valoir)', type: 'montant' },
+          { titre: 'En retard', type: 'montant' },
+          { titre: 'Prochaine échéance', type: 'date' },
+          { titre: 'Avoirs attendus', type: 'montant' },
+          { titre: 'Dernière réception', type: 'date' },
+          { titre: 'État', type: 'texte' }
+        ],
+        lignes: fournisseurs.map((f) => [
+          f.nom,
+          f.contact,
+          f.telephone,
+          f.adresse,
+          f.delaiPaiementJours,
+          f.soldeDu,
+          f.enRetard || null,
+          f.prochaineEcheance ?? null,
+          f.avoirsAttendus || null,
+          f.derniereReception,
+          f.actif ? 'Actif' : 'Désactivé'
+        ])
+      }
+    ]
+  }
+}
 
 export function PageFournisseurs(): React.JSX.Element {
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([])
@@ -62,6 +105,10 @@ export function PageFournisseurs(): React.JSX.Element {
           {totalRetard > 0 && (
             <span className="pastille pastille-erreur">En retard : {formaterFCFA(totalRetard)}</span>
           )}
+          <BoutonExporter
+            demande={() => exportFournisseurs(fournisseurs)}
+            desactive={fournisseurs.length === 0}
+          />
           <button className="btn" onClick={() => ouvrir({ type: 'creer' })}>
             Créer un fournisseur
           </button>
@@ -325,14 +372,14 @@ function FormulaireDesactivation(props: {
       )}
       {fournisseur.soldeDu < 0 && (
         <p className="alerte formulaire-bloc">
-          Il vous doit un avoir de {formaterFCFA(-fournisseur.soldeDu)} : utilisez-le sur une livraison avant de
-          le désactiver.
+          Il vous doit un avoir de {formaterFCFA(-fournisseur.soldeDu)} : utilisez-le sur une livraison avant
+          de le désactiver.
         </p>
       )}
       {(fournisseur.avoirsAttendus ?? 0) > 0 && (
         <p className="alerte formulaire-bloc">
-          Vous attendez un avoir de {formaterFCFA(fournisseur.avoirsAttendus!)} : notez-le reçu ou refusé (bouton
-          « Dettes ») avant de le désactiver.
+          Vous attendez un avoir de {formaterFCFA(fournisseur.avoirsAttendus!)} : notez-le reçu ou refusé
+          (bouton « Dettes ») avant de le désactiver.
         </p>
       )}
       <label className="champ champ-large">

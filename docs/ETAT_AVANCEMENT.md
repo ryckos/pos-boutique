@@ -99,7 +99,7 @@ Le socle comprend :
 | A15   | Tableau de bord d'accueil                 | A   | ⏳     |   |
 | A16   | Promotions programmées                    | A   | ⏳     |   |
 | B14   | Rapports de gestion, journal d'audit      | B   | 🔄     | PR 1 `b/rapports-gestion` (serveur : pertes par cause, valeur du stock, achats par fournisseur, résultat sans marge) ; PR 2 `b/rapports-ecran` (menu « Rapports de gestion ») ; PR 3 `b/journal-audit` (journal des opérations, admin, `audit:journal` / `audit:choix`). Marge en attente de `caisse:ventesPeriode` (A14) |
-| B15   | Exports Excel                             | B   | 🔄     | PR 1 `b/exports-excel` (canal générique `exports:excel`, `BoutonExporter`, Stock, Dépenses, Rapports de gestion) ; PR 2 `b/exports-listes` (autres listes) à faire |
+| B15   | Exports Excel                             | B   | 🔄     | PR 1 `b/exports-excel` (canal générique `exports:excel`, `BoutonExporter`, Stock, Dépenses, Rapports de gestion) ; PR 2 `b/exports-listes` (Produits, Péremptions, Sorties, Réceptions, Commandes, Fournisseurs, détail d'un inventaire, Journal en entier) |
 | B16   | Sauvegardes et restauration               | B   | ⏳     |   |
 
 ## Phase 5 — Mise en service (S19–S20)

@@ -404,6 +404,9 @@ n'existe jamais : on propose « Désactiver » ou « Annuler », avec un motif. 
 que la liste est vide ; pour les Rapports de gestion, à droite de la phrase de synthèse de chaque
 onglet. Il exporte ce que l'écran affiche, filtres compris, après « Enregistrer sous » ; « Fichier Excel
 enregistré. » s'affiche à côté du bouton, ou l'erreur en rouge (`REGLES_METIER.md` § 11.2).
+Écrans concernés : Produits, Stock, Péremptions, Sorties de stock, Réceptions, Commandes, Fournisseurs,
+Dépenses, Rapports de gestion, Journal des opérations, et la fenêtre de détail d'un inventaire (comptages
+et démarque, bouton à côté de « Fermer »).
 
 **Écran Produits** : la recherche ignore accents et majuscules (« pate » trouve « Pâte »). La
 douchette y est écoutée hors des champs, et dans le champ de recherche des chiffres suivis d'Entrée
