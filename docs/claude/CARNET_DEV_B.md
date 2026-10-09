@@ -18,6 +18,90 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-09 — b/rapports-gestion → b/exports-listes (6 branches empilées) — B14 et B15
+**Fait** :
+- **B13 fusionnée** (PR #44, #45) : petite PR de documentation `b/docs-b13-fusion` (2 lignes au journal
+  des fusions ; B13 reste 🔄, la source « caisse » attend A8).
+- **B14 Rapports de gestion et journal d'audit** — règles validées par Dev B, écrites dans
+  `REGLES_METIER.md` § 11.1 et § 1.4 :
+  - pertes par cause : péremption, casse, **dons** (casse « Don », ligne à part), vol, **démarque
+    d'inventaire** (écarts négatifs), **avoirs fournisseur non obtenus** (refusé = tout l'attendu ; reçu
+    sous l'attendu = la différence ; attendu = pas encore une perte). Ne comptent pas : sortie annulée,
+    stock initial, le retour lui-même. Surplus d'inventaire à part, non déduits ;
+  - valeur du stock **aujourd'hui seulement**, au CUMP, par rayon (sous-rayon dans son rayon) ;
+  - achats par fournisseur : livré, avoirs reçus, réglé sur la période ; reste dû d'aujourd'hui ;
+  - résultat = marge − dépenses ; **marge `null`** tant que `caisse:ventesPeriode` manque ; pertes
+    rappelées pour information, non déduites ;
+  - période : mois en cours par défaut, fin jamais future ; gérant (rapports), **admin seul** (journal :
+    7 jours par défaut, filtres personne / action, 200 par page + « Afficher plus », tout en français).
+  - § 1.4 complété des 8 actions journalisées qui n'y figuraient pas.
+  - PR 1 `b/rapports-gestion` (`ef94bd9`) : module `src/main/modules/rapports-gestion/`, contrat
+    `src/shared/ipc/rapports-gestion.ts`, `SOLDE_DU` exporté de `fournisseurs/service.ts`. 17 tests.
+  - PR 2 `b/rapports-ecran` (`f889d65`) : menu « Rapports de gestion » (`/rapports-gestion`, pour laisser
+    `/rapports` à A14), 4 onglets, `UI_UX.md` § 5.20.
+  - PR 3 `b/journal-audit` (`af45b6c`) : `src/shared/audit.ts` (libellés des actions, des champs et des
+    valeurs ; ids → noms), module `src/main/modules/audit/`, menu « Journal des opérations » (admin,
+    `roles: []`), `UI_UX.md` § 5.21. 10 tests.
+- **B15 Exports Excel** — règles validées par Dev B (`REGLES_METIER.md` § 11.2) : on exporte **ce que
+  l'écran affiche, filtres compris** ; ligne de titre « … — exporté le … par … », ligne vide, en-têtes ;
+  montants / quantités en nombres (format « 1 000 F »), dates en vraies dates, codes-barres en texte,
+  jamais de formule ; journal exporté en entier pour le filtre.
+  - PR 4 `b/exports-excel` (`7386f6d`) : canal générique `exports:excel` (module
+    `src/main/modules/exports/`, `classeurExcel` pur), `lib/exportExcel.ts`, `ui/BoutonExporter.tsx`,
+    boutons sur Stock, Dépenses, Rapports (pure `exportRapports.ts`). 13 tests.
+  - PR 5 `b/exports-listes` (`caae836`) : Produits, Péremptions, Sorties, Réceptions, Commandes,
+    Fournisseurs, Journal, fenêtre de détail d'un inventaire (`exportInventaire.ts`, comptages + démarque
+    300 F). 2 tests.
+- **Tout testé à la main par Dev B** (scénarios rapports, journal, exports). 537 tests verts, typecheck OK.
+  Aucune migration.
+
+**En cours** : 6 PR vers `test` à ouvrir et fusionner **dans l'ordre** (`gh` absent ; textes fournis à
+Dev B dans la session). Si squash, rebaser la suivante :
+1. `b/docs-b13-fusion` ;
+2. `b/rapports-gestion` ;
+3. `b/rapports-ecran` — `git rebase --onto origin/test ef94bd9` ;
+4. `b/journal-audit` — `git rebase --onto origin/test f889d65` ;
+5. `b/exports-excel` — `git rebase --onto origin/test af45b6c` ;
+6. `b/exports-listes` — `git rebase --onto origin/test 7386f6d` (ce carnet est commité dessus).
+Puis `git push --force-with-lease` à chaque rebase.
+
+**Prochaine étape** :
+1. Suivre les fusions : une ligne au journal des fusions de `ETAT_AVANCEMENT.md` par PR ; **B15 → ✅**
+   après la PR 6 ; **B14 reste 🔄** (marge). Supprimer les branches fusionnées (local et GitHub), dont
+   les anciennes listées dans l'entrée du 2026-10-07 / 08.
+2. **B16 Sauvegardes et restauration** (`/tache B16`, branche `b/sauvegardes` depuis `test` à jour) :
+   sauvegarde à chaque clôture de caisse (API de sauvegarde SQLite, WAL), rotation 30 + 1 par semaine,
+   copie sur clé USB, **restauration testée** (journal `restauration_sauvegarde`, libellé déjà dans
+   `src/shared/audit.ts`). **D-A4 (hébergement distant) en attente** : faire la partie locale seulement,
+   prévoir l'envoi distant. Point de branchement « à chaque clôture » : `caisse/service-cloture.ts`
+   appartient à Dev A — à convenir avec lui (appel après la transaction, jamais dedans).
+3. **Quand `caisse:ventesPeriode` (A14) arrivera** : remplir `marge` dans `rapports-gestion/resultat.ts`
+   (marge brute = Σ total_ligne − Σ quantite × cout_unitaire), tests, B14 → ✅.
+4. **Quand A8 arrivera** : terminer B13 (voir l'entrée du 2026-10-08).
+
+**Questions ouvertes** :
+- Où la caissière saisit une dépense « caisse » (A8) : à décider avec Dev A.
+- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
+- D-A3 (plafond de remise), **D-A4 (sauvegarde distante, bloque une partie de B16)** : en attente.
+- Les pertes doivent-elles un jour être déduites du résultat ? La règle § 11 dit non ; à confirmer avec la
+  cliente si elle le demande.
+- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photos : reportées.
+
+**Contrats** :
+- Ajoutés (sans impact pour la caisse) : `rapports:pertes`, `rapports:valeurStock`, `rapports:achats`,
+  `rapports:resultat` (gérant) ; `audit:journal`, `audit:choix` (admin) ; `exports:excel` (toute session).
+- **Pour Dev A** :
+  - `ui/BoutonExporter.tsx` + `exports:excel` sont génériques : utilisables pour A14 / la clôture
+    (`demande={() => ({ nomFichier, titre, feuilles })}`, colonnes `texte | nombre | montant | date`) ;
+  - **toute nouvelle action passée à `journaliser()` doit recevoir son libellé** dans
+    `src/shared/audit.ts` (`LIBELLES_ACTION`, et ses champs dans `LIBELLES_CHAMP`), sinon le journal
+    l'affiche en mots bruts ;
+  - menu : « Rapports de gestion » est sur `/rapports-gestion` ; `/rapports` reste libre pour A14 ;
+  - `RapportResultat.marge` attend `caisse:ventesPeriode` (A14, fin S16).
+- Attendus : `enregistrerMouvementCaisse()` (A8, prévu fin S10, en retard) ; `caisse:ventesPeriode` (fin S16).
+
+---
+
 ## 2026-10-08 — b/depenses, b/depenses-ecran — B13 Dépenses (partie « fonds propres »)
 **Fait** :
 - **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 10.1 (et § 1.4 pour le journal) :
@@ -647,58 +731,3 @@ fusion de la précédente. Le texte de chacune a été fourni à Dev B dans la s
   `sessionOuverte()` / `enregistrerMouvementCaisse()` (Dev A, fin S10).
 
 ---
-
-## 2026-09-25 (fin) — b/stock-initial — B3 fusionnée, B6 Stock initial
-**Fait** :
-- **B3 fusionnée** (PR #20) et passée à ✅ (commit `4dd5f42` sur cette branche) ; `b/import-excel`
-  supprimée (local et GitHub).
-- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 9.1 : comptage produit par
-  produit, par conditionnement, **enregistré aussitôt** (une transaction par produit, résiste aux
-  coupures) ; une seule fois par produit et seulement **sans réception** (sinon « non concerné ») ;
-  la quantité comptée est le stock réel ; coût par unité en francs entiers > 0, pré-rempli par
-  `prix_achat_indicatif` (B3), **CUMP = coût saisi** ; alerte non bloquante si coût ≥ prix de
-  l'unité ; péremption : date obligatoire, n° de lot facultatif, un lot créé ; correction par
-  « Annuler » (contre-passation, motif obligatoire, journalisée).
-- Précision d'implémentation (écrite au § 9.1) : si des ventes ont eu lieu avant le comptage, **deux
-  mouvements** `ajustement_inventaire` / `stock_initial` : le comptage (+41, porté par le lot s'il y
-  en a un) puis la remise à zéro de l'antérieur (+3). Stock final identique, historique lisible.
-- Module `src/main/modules/stock/` (`stock-initial.ts`, `ipc.ts`), contrat `src/shared/ipc/stock.ts`,
-  écran `modules/stock/PageStockInitial.tsx` + logique pure `saisieStockInitial.ts`, menu « Stock
-  initial » (gérant), `UI_UX.md` § 5.15. Aucune migration.
-- 238 tests verts (13 nouveaux), build OK, **scénario complet testé à la main par Dev B**.
-- Commit `b441cab` poussé sur `origin/b/stock-initial`.
-
-**En cours** : PR B6 `b/stock-initial` → `test` à ouvrir sur GitHub (`gh` absent de ce poste) :
-https://github.com/ryckos/pos-boutique/compare/test...b/stock-initial?expand=1 — le texte (modèle de
-PR rempli) a été fourni à Dev B. Puis relecture par Dev A.
-
-**Prochaine étape** :
-1. Après fusion de la PR B6 : B6 → ✅ et rendez-vous « Stock initial de démarrage » → ✅ dans
-   `ETAT_AVANCEMENT.md`, ligne au journal des fusions ; supprimer `b/stock-initial`.
-2. **B4 Écran stock et historique produit** (`/tache B4`, branche `b/stock` depuis `test` à jour) :
-   liste stock / valeur / alertes (rupture ≤ 0, stock bas ≤ seuil, `v_alertes_stock`), historique
-   d'un produit (chaque mouvement : type, quantité, document, utilisateur, date — « pourquoi il reste
-   41 boîtes »), répartition indicative par conditionnement (« 46 = 1 carton + 7 lots + 1 unité »),
-   produits dormants (`dormantJours` des paramètres). Remplace l'aperçu actuel `/stock`
-   (`catalogue/PageCatalogue.tsx`). À ranger dans le module `stock/` créé en B6 (contrat
-   `src/shared/ipc/stock.ts`). Libellés lisibles pour les motifs `stock_initial` et `demo`.
-3. Puis Phase 2 : B7 Fournisseurs, B8 Réceptions (CUMP).
-
-**Questions ouvertes** :
-- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
-- Plafond de remise caissier (D-A3) : en attente de la cliente.
-- Réactivation (produit, compte, catégorie) : non prévue. Photo des produits : reportée.
-
-**Contrats** :
-- **Pour Dev A — rendez-vous fin S7 tenu dès la fusion de B6** : le stock initial est saisissable
-  pour la recette de Phase 1 (partir de produits importés par Excel : les produits de démo, déjà
-  « réceptionnés », ne sont pas concernés).
-- Ajoutés (gérant, sans impact pour la caisse) : `stock:stockInitial`, `stock:ficheStockInitial`,
-  `stock:enregistrerStockInitial`, `stock:annulerStockInitial`. Nouveau module `stock` enregistré
-  dans `src/main/ipc/index.ts`, contrat dans `src/shared/ipc/index.ts`, menu dans `app/routes.tsx`.
-- Rappel B3 (fusionnée) : **Dev A doit lancer `npm install`** (dépendance `xlsx` depuis
-  `cdn.sheetjs.com`).
-- Attendus inchangés : `sessionOuverte()` / `enregistrerMouvementCaisse()` (Dev A, fin S10).
-
----
-
