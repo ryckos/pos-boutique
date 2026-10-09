@@ -4,6 +4,7 @@
  */
 import type { DefinitionRoute } from './types'
 import { routesAchats } from '@renderer/modules/achats/routes'
+import { routesAudit } from '@renderer/modules/audit/routes'
 import { routesCaisse } from '@renderer/modules/caisse/routes'
 import { routesCatalogue } from '@renderer/modules/catalogue/routes'
 import { routesDepenses } from '@renderer/modules/depenses/routes'
@@ -25,6 +26,7 @@ export const routes: DefinitionRoute[] = [
   ...routesDepenses, // Dev B
   ...routesRapportsGestion, // Dev B
   ...routesUtilisateurs, // Dev B
+  ...routesAudit, // Dev B
   ...routesParametres, // Dev B
   ...routesReglagesMateriel // Dev A
 ]

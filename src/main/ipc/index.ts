@@ -3,6 +3,7 @@
  * Ajouter un module = ajouter une ligne ici (conflit git trivial à résoudre).
  */
 import { enregistrerIpcAchats } from '../modules/achats/ipc'
+import { enregistrerIpcAudit } from '../modules/audit/ipc'
 import { enregistrerIpcAuth } from '../modules/auth/ipc'
 import { enregistrerIpcCaisse } from '../modules/caisse/ipc'
 import { enregistrerIpcCatalogue } from '../modules/catalogue/ipc'
@@ -29,6 +30,7 @@ export function enregistrerTousLesIpc(options: { cheminBase: string; modeDev: bo
   enregistrerIpcInventaires()
   enregistrerIpcDepenses()
   enregistrerIpcRapportsGestion()
+  enregistrerIpcAudit()
   // ─── Dev A ───
   enregistrerIpcCaisse()
   enregistrerIpcMateriel()

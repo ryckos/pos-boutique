@@ -548,6 +548,14 @@ mois en cours ») sauf pour la valeur du stock, qui est celle d'aujourd'hui. Rè
   ne sont pas livrés, marge et résultat affichent « Disponible avec les rapports de ventes ». Les pertes
   de la période sont rappelées pour information.
 
+### 5.21 Journal des opérations (Dev B — B14, admin)
+Page « Journal des opérations » du menu (`modules/audit/PageJournal.tsx`), après « Comptes
+utilisateurs », visible de l'admin seulement. Lecture seule. Filtres Du / Au (7 derniers jours par
+défaut), Personne (« Tout le monde », comptes désactivés compris) et Action (les actions présentes dans
+le journal). Tableau Date et heure / Personne / Action / Détail : le détail donne ce que l'action a fait
+(« Motif : doublon »), puis en petit « Avant : … ». Les plus récentes d'abord, 200 lignes, puis
+« Afficher plus ». Aucun code ni JSON n'apparaît (`REGLES_METIER.md` § 1.4).
+
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
 - Les messages d'erreur portent `role="alert"`.

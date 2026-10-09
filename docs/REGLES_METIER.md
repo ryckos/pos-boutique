@@ -42,16 +42,24 @@ Actions à journaliser avec `journaliser()` :
 | `echec_connexion_verrouillage`| n° du verrouillage, délai (au nom du compte visé) |
 | `modification_prix`           | avant/après        |
 | `desactivation_produit`       | motif, stock restant |
+| `import_catalogue`            | fichier, produits créés, lignes ignorées, nouveaux rayons (B3) |
+| `stock_initial`               | quantité, coût par unité, comptage, stock avant (§ 9.1) |
+| `annulation_stock_initial`    | quantité ; motif, stock après (§ 9.1) |
 | `remise`                      | montant, ticket    |
 | `annulation_ligne`            |                    |
 | `annulation_ticket`           |                    |
+| `impression_ticket`           | duplicata ou non |
 | `ouverture_tiroir_hors_vente` |                    |
+| `ouverture_session_caisse`    | fond de caisse |
+| `cloture_session_caisse`      | caissier, espèces attendues et comptées, écart, commentaire (§ 6.9) |
+| `impression_rapport_z`        | duplicata ou non (§ 6.9) |
 | `modification_parametre`      |                    |
 | `creation_utilisateur`        | nom, rôle, code provisoire |
 | `modification_role`           |                    |
 | `desactivation_utilisateur`   | motif              |
 | `modification_pin`            | la personne a choisi son code ; jamais la valeur |
 | `reinitialisation_pin`        | l'admin a donné un code provisoire ; jamais la valeur |
+| `desactivation_fournisseur`   | nom ; motif (§ 4.6) |
 | `annulation_commande`         | numéro, statut, motif (§ 4.7) |
 | `cloture_commande`            | numéro, reste non livré, motif (§ 4.7) |
 | `annulation_reglement_fournisseur` | fournisseur, montant, date, motif (§ 4.5) |
@@ -61,6 +69,13 @@ Actions à journaliser avec `journaliser()` :
 | `annulation_inventaire`       | numéro, rayon, comptés, motif (§ 9) |
 | `annulation_depense`          | numéro, date, catégorie, libellé, montant, source ; motif (§ 10) |
 | `restauration_sauvegarde`     |                    |
+
+**Lecture du journal (B14, validé par Dev B le 2026-10-09)** : écran « Journal des opérations »,
+**admin seulement**. Filtres période (7 derniers jours par défaut, fin jamais dans le futur),
+personne, action ; les plus récentes d'abord, 200 par page puis « Afficher plus ». Chaque action et
+chaque valeur sont écrites en français (montants en F, rôles, noms des personnes au lieu des
+identifiants) ; jamais de code ni de JSON à l'écran. **Toute nouvelle action journalisée doit
+recevoir son libellé dans `src/shared/audit.ts`** (sinon elle s'affiche avec ses mots bruts).
 
 ---
 
