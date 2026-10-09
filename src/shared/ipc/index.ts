@@ -6,6 +6,7 @@
  * ZONE PARTAGÉE.
  */
 import type { ContratAchats } from './achats'
+import type { ContratAudit } from './audit'
 import type { ContratAuth } from './auth'
 import type { ContratCaisse } from './caisse'
 import type { ContratCatalogue } from './catalogue'
@@ -30,6 +31,7 @@ export type ContratIpc = ContratSysteme &
   ContratInventaires &
   ContratDepenses &
   ContratRapportsGestion &
+  ContratAudit &
   ContratCaisse &
   ContratMateriel
 

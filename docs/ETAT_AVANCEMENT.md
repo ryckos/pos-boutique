@@ -98,7 +98,7 @@ Le socle comprend :
 | A14   | Rapports ventes et caisse                 | A   | ⏳     |   |
 | A15   | Tableau de bord d'accueil                 | A   | ⏳     |   |
 | A16   | Promotions programmées                    | A   | ⏳     |   |
-| B14   | Rapports de gestion, journal d'audit      | B   | 🔄     | PR 1 `b/rapports-gestion` (serveur : pertes par cause, valeur du stock, achats par fournisseur, résultat sans marge) ; PR 2 `b/rapports-ecran` (menu « Rapports de gestion ») ; PR 3 journal d'audit à faire. Marge en attente de `caisse:ventesPeriode` (A14) |
+| B14   | Rapports de gestion, journal d'audit      | B   | 🔄     | PR 1 `b/rapports-gestion` (serveur : pertes par cause, valeur du stock, achats par fournisseur, résultat sans marge) ; PR 2 `b/rapports-ecran` (menu « Rapports de gestion ») ; PR 3 `b/journal-audit` (journal des opérations, admin, `audit:journal` / `audit:choix`). Marge en attente de `caisse:ventesPeriode` (A14) |
 | B15   | Exports Excel                             | B   | ⏳     |   |
 | B16   | Sauvegardes et restauration               | B   | ⏳     |   |
 
