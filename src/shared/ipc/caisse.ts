@@ -1,9 +1,10 @@
 /**
  * Propriétaire : Dev A.
  *
- * Canaux de la caisse : session, vente, ticket (A2, A3), clôture et rapports X / Z (A4).
- * Voir docs/DEV_A_COMPTOIR.md.
+ * Canaux de la caisse : session, vente, ticket (A2, A3), clôture et rapports X / Z (A4),
+ * mouvements de caisse (A8). Voir docs/DEV_A_COMPTOIR.md.
  */
+import type { MotifMouvementCaisse, MotifSaisiAuTiroir, SensMouvementCaisse } from '../caisse'
 
 /** Modes acceptés à la caisse pour l'instant. Le crédit arrive avec la fiche client (A11). */
 export type ModePaiementCaisse = 'especes' | 'tmoney' | 'flooz'
@@ -108,6 +109,47 @@ export interface RapportCaisse {
   commentaire: string | null
 }
 
+/** Un mouvement de caisse tel que la liste de la caisse l'affiche. */
+export interface MouvementCaisse {
+  id: number
+  sessionId: number
+  sens: SensMouvementCaisse
+  motif: MotifMouvementCaisse
+  /** Ex : « Apport (monnaie de la banque) », « Annulation : Retrait (erreur) ». */
+  libelle: string
+  montant: number
+  commentaire: string | null
+  /** Document à l'origine du mouvement (dépense, règlement…), sinon null. */
+  documentType: string | null
+  documentId: number | null
+  /** Qui l'a saisi. */
+  auteur: string
+  /** 'AAAA-MM-JJ HH:MM:SS', heure locale. */
+  horodatage: string
+  /** Sur un contre-mouvement : l'id du mouvement annulé. */
+  mouvementOrigineId: number | null
+  /** Sur un mouvement annulé : l'id de son contre-mouvement. */
+  annuleParId: number | null
+}
+
+/** Apport ou retrait saisi par le gérant (règle 6.10). */
+export interface RequeteMouvementCaisse {
+  /** Absent : la seule caisse ouverte. Plusieurs caisses ouvertes : le gérant choisit. */
+  sessionId?: number
+  /** Ignoré pour un apport (entrée) et un retrait (sortie) ; obligatoire pour « Autre ». */
+  sens?: SensMouvementCaisse
+  motif: MotifSaisiAuTiroir
+  montant: number
+  /** Motif en clair, obligatoire : « monnaie de la banque », « versement à la banque »… */
+  commentaire: string
+}
+
+/** Le mouvement est enregistré même si le tiroir n'a pas pu s'ouvrir (imprimante en panne). */
+export interface MouvementEnregistre {
+  mouvement: MouvementCaisse
+  tiroirOuvert: boolean
+}
+
 export interface RequeteCloture {
   /** Absent : la session ouverte de la personne connectée. Le gérant peut clôturer celle d'un autre. */
   sessionId?: number
@@ -120,14 +162,14 @@ export interface ContratCaisse {
   'caisse:sessionCourante': { requete: void; reponse: SessionCaisse | null }
   'caisse:ouvrirSession': { requete: { fondOuverture: number }; reponse: SessionCaisse }
   'caisse:enregistrerVente': { requete: RequeteVente; reponse: VenteEnregistree }
-  /**
-   * Journalise une ligne supprimée, ou toutes les lignes d'un ticket abandonné, avant encaissement.
-   * `abandon` : le ticket entier a été vidé. Rien n'est enregistré si la liste est vide.
-   */
   /** Gérants et admins actifs : ceux qui peuvent autoriser une remise au-delà du plafond. */
   'caisse:gerants': { requete: void; reponse: { id: number; nom: string }[] }
   /** Vérifie le code du gérant (verrouillage de la connexion) et remet un accord à usage unique. */
   'caisse:autoriserRemise': { requete: RequeteAccordRemise; reponse: AccordRemiseDonne }
+  /**
+   * Journalise une ligne supprimée, ou toutes les lignes d'un ticket abandonné, avant encaissement.
+   * `abandon` : le ticket entier a été vidé. Rien n'est enregistré si la liste est vide.
+   */
   'caisse:journaliserAnnulationLigne': {
     requete: { lignes: LigneAnnulee[]; abandon: boolean }
     reponse: void
@@ -156,5 +198,17 @@ export interface ContratCaisse {
   'caisse:imprimerRapport': {
     requete: { sessionId: number; type: 'X' | 'Z' }
     reponse: { duplicata: boolean }
+  }
+  /** Gérant : les mouvements d'une session, du plus ancien au plus récent. Absent : la seule ouverte. */
+  'caisse:mouvementsSession': { requete: { sessionId?: number }; reponse: MouvementCaisse[] }
+  /** Gérant : apport ou retrait, puis ouverture du tiroir HORS transaction. */
+  'caisse:enregistrerMouvement': { requete: RequeteMouvementCaisse; reponse: MouvementEnregistre }
+  /**
+   * Gérant : annule un apport, un retrait ou un « Autre » par un contre-mouvement, puis ouvre le
+   * tiroir. Les mouvements nés d'un document s'annulent depuis ce document.
+   */
+  'caisse:annulerMouvement': {
+    requete: { mouvementId: number; motif: string }
+    reponse: MouvementEnregistre
   }
 }

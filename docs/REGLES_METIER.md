@@ -53,6 +53,8 @@ Actions à journaliser avec `journaliser()` :
 | `ouverture_session_caisse`    | fond de caisse |
 | `cloture_session_caisse`      | caissier, espèces attendues et comptées, écart, commentaire (§ 6.9) |
 | `impression_rapport_z`        | duplicata ou non (§ 6.9) |
+| `mouvement_caisse`            | session, sens, motif, montant, commentaire, document (§ 6.10) |
+| `annulation_mouvement_caisse` | mouvement annulé, contre-mouvement, motif (§ 6.10) |
 | `modification_parametre`      |                    |
 | `creation_utilisateur`        | nom, rôle, code provisoire |
 | `modification_role`           |                    |
@@ -340,8 +342,8 @@ Les règlements peuvent être partiels (espèces, mobile money, virement). La vu
 - **Modes** : espèces, TMoney, Flooz, virement, autre. Référence (n° de transaction) facultative.
 - **Date** : aujourd'hui par défaut ; une date passée est acceptée, jamais une date future.
 - **Hors caisse** pour l'instant : un règlement n'écrit rien dans la caisse. Payer depuis le tiroir
-  viendra après `enregistrerMouvementCaisse()` (Dev A, A8), avec un motif de mouvement de caisse à
-  prévoir (aujourd'hui seulement `autre`).
+  viendra après `enregistrerMouvementCaisse()` (Dev A, A8), avec le motif de mouvement de caisse
+  `reglement_fournisseur` (ajouté par A8, § 6.10).
 - **Pas de numéro** de règlement. Le paiement n'est pas journalisé (comme une réception).
 - **Correction** : un règlement saisi par erreur est **annulé** avec motif obligatoire, journalisé
   (`annulation_reglement_fournisseur`). Il reste visible, marqué annulé, et ne compte plus ; on
@@ -608,6 +610,30 @@ Exemple de référence :
 - Apports et retraits d'espèces hors vente : motif obligatoire, réservés au gérant.
 - Dev A fournit à Dev B `sessionOuverte(db)` et `enregistrerMouvementCaisse(db, …)`, utilisés pour
   les dépenses payées au tiroir.
+
+**Précisions validées par Dev A (2026-10-08, tâche A8)** :
+- **Saisie au tiroir** : le gérant (et l'admin) saisit un **apport** (entrée), un **retrait** (sortie)
+  ou un **« Autre »** (il choisit le sens), avec un montant en francs entiers > 0 et un **motif en
+  clair obligatoire**, imprimé sur le X et le Z (« Retrait (versement à la banque) »). Les autres
+  motifs (dépense, encaissement de créance, remboursement, règlement fournisseur) naissent de leur
+  document et ne se saisissent pas à la main.
+- **Session visée** : une seule caisse ouverte → elle est prise d'office ; plusieurs → le gérant
+  choisit celle du tiroir. `sessionOuverte(db)` sans utilisateur renvoie la seule session ouverte,
+  sinon `null` (aucune ou plusieurs : l'écran fait choisir dans `sessionsOuvertes(db)`).
+- **Une sortie ne dépasse jamais les espèces théoriques** du tiroir à cet instant (« Il n'y a que
+  12 500 F en caisse… »). Cela vaut pour les dépenses et les règlements payés au tiroir.
+- **Session clôturée = figée** : aucun mouvement ne s'y rattache (service et trigger de la base).
+- **Tiroir** : il s'ouvre après l'enregistrement, hors transaction. S'il ne s'ouvre pas (imprimante
+  en panne), le mouvement reste enregistré et l'écran le dit. Pas de bon imprimé.
+- **Journal** : chaque mouvement de caisse (`mouvement_caisse`), quelle que soit son origine.
+- **Correction** : un mouvement ne se modifie ni ne s'efface. Il s'**annule** par un contre-mouvement
+  de sens inverse, même montant, même motif et même document, lié à l'original
+  (`mouvement_origine_id`), avec un motif d'annulation obligatoire, journalisé
+  (`annulation_mouvement_caisse`). Une seule annulation par mouvement, jamais d'annulation d'une
+  annulation, et seulement **tant que la session est ouverte**. Annuler une entrée est une sortie :
+  elle doit tenir dans le tiroir. Au tiroir, le gérant n'annule que ce qui s'y saisit (apport,
+  retrait, autre) ; une dépense ou un règlement s'annule depuis son document, qui appelle
+  `annulerMouvementCaisse`. Le X et le Z listent les deux lignes (« Annulation : Apport (erreur) »).
 
 ### 6.11 Numérotation
 | Préfixe | Document                 | Module | Développeur |
