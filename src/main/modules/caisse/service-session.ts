@@ -6,20 +6,28 @@
  */
 import type { SessionCaisse } from '@shared/ipc/caisse'
 import type { Db } from '../../db/connexion'
-import { avecTransaction, executer, une } from '../../db/requetes'
+import { avecTransaction, executer, toutes, une } from '../../db/requetes'
 import { journaliser } from '../../core/audit'
 import { ErreurMetier } from '../../core/erreurs'
 
-/** La session ouverte du caissier, ou null. Un caissier a au plus une session ouverte. */
-export function sessionOuverte(db: Db, utilisateurId: number): SessionCaisse | null {
-  return (
-    une<SessionCaisse>(
-      db,
-      `SELECT id, fond_ouverture AS fondOuverture, date_ouverture AS dateOuverture
-       FROM sessions_caisse WHERE utilisateur_id = ? AND statut = 'ouverte'`,
-      utilisateurId
-    ) ?? null
-  )
+/**
+ * Avec `utilisateurId` : la session ouverte de ce caissier, ou null (il en a au plus une).
+ *
+ * Sans utilisateur (pour Dev B, dépenses payées au tiroir, A8) : la session du tiroir quand une
+ * seule caisse est ouverte, sinon null — aucune caisse ouverte, ou plusieurs : l'écran fait alors
+ * choisir le gérant parmi `sessionsOuvertes(db)` (service-cloture.ts) et transmet le `sessionId`.
+ */
+export function sessionOuverte(db: Db, utilisateurId?: number): SessionCaisse | null {
+  const colonnes =
+    'SELECT id, fond_ouverture AS fondOuverture, date_ouverture AS dateOuverture FROM sessions_caisse'
+  if (utilisateurId !== undefined) {
+    return (
+      une<SessionCaisse>(db, `${colonnes} WHERE utilisateur_id = ? AND statut = 'ouverte'`, utilisateurId) ??
+      null
+    )
+  }
+  const ouvertes = toutes<SessionCaisse>(db, `${colonnes} WHERE statut = 'ouverte' LIMIT 2`)
+  return ouvertes.length === 1 ? ouvertes[0] : null
 }
 
 export function ouvrirSession(db: Db, utilisateurId: number, fondOuverture: number): SessionCaisse {

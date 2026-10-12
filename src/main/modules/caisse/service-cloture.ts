@@ -17,6 +17,7 @@ import type {
   RequeteCloture,
   SessionOuverteResume
 } from '@shared/ipc/caisse'
+import { libelleMouvementCaisse } from '@shared/caisse'
 import type { UtilisateurConnecte } from '@shared/types'
 import type { Db } from '../../db/connexion'
 import { avecTransaction, executer, toutes, une } from '../../db/requetes'
@@ -36,15 +37,6 @@ interface SessionEnBase {
   montantCompte: number | null
   ecart: number | null
   commentaire: string | null
-}
-
-const LIBELLES_MOTIFS: Record<string, string> = {
-  apport: 'Apport',
-  retrait: 'Retrait',
-  depense: 'Dépense',
-  encaissement_creance: 'Encaissement de créance',
-  remboursement: 'Remboursement',
-  autre: 'Autre'
 }
 
 function lireSession(db: Db, sessionId: number): SessionEnBase {
@@ -128,23 +120,23 @@ export function rapportSession(db: Db, sessionId: number): RapportCaisse {
     sessionId
   )!
 
+  // Un mouvement annulé reste listé, suivi de son contre-mouvement : les deux s'annulent au total.
   const mouvements = toutes<{
     sens: 'entree' | 'sortie'
     motif: string
     commentaire: string | null
     montant: number
+    annulation: number
   }>(
     db,
-    'SELECT sens, motif, commentaire, montant FROM mouvements_caisse WHERE session_caisse_id = ? ORDER BY id',
+    `SELECT sens, motif, commentaire, montant, mouvement_origine_id IS NOT NULL AS annulation
+     FROM mouvements_caisse WHERE session_caisse_id = ? ORDER BY id`,
     sessionId
-  ).map<LigneMouvementCaisse>((m) => {
-    const motif = LIBELLES_MOTIFS[m.motif] ?? m.motif
-    return {
-      sens: m.sens,
-      libelle: m.commentaire ? `${motif} (${m.commentaire})` : motif,
-      montant: m.montant
-    }
-  })
+  ).map<LigneMouvementCaisse>((m) => ({
+    sens: m.sens,
+    libelle: libelleMouvementCaisse({ ...m, annulation: m.annulation === 1 }),
+    montant: m.montant
+  }))
 
   // Espèces : la part payée en espèces (paiements), jamais le montant reçu — la monnaie est rendue.
   const ventesEspeces = totauxParMode.especes

@@ -15,9 +15,11 @@ import {
   verifierAccesSession,
   verifierTypeRapport
 } from '../src/main/modules/caisse/service-cloture'
+import { enregistrerMouvementCaisse } from '../src/main/modules/caisse/service-mouvements'
 import { ouvrirSession, sessionOuverte } from '../src/main/modules/caisse/service-session'
 import { enregistrerVente } from '../src/main/modules/caisse/service-vente'
 import { dateHeure, etatCompte } from '../src/renderer/src/modules/caisse/cloture'
+import type { MotifMouvementCaisse } from '../src/shared/caisse'
 import type { RapportCaisse } from '../src/shared/ipc/caisse'
 import type { UtilisateurConnecte } from '../src/shared/types'
 import { baseAvecDemo } from './aide'
@@ -34,26 +36,16 @@ const BAGUETTE = '101' // 300 F
 
 const id = (db: Db, code: string): number => rechercherParCode(db, code)!.conditionnementId
 
-/** Mouvement de caisse posé directement : l'API arrive avec A8 (dépenses de Dev B, B13). */
+/** Mouvement de caisse par l'API d'A8 (celle qu'appellent les dépenses de Dev B, B13). */
 function mouvementCaisse(
   db: Db,
   sessionId: number,
   sens: 'entree' | 'sortie',
-  motif: string,
+  motif: MotifMouvementCaisse,
   montant: number,
   commentaire: string
 ): void {
-  executer(
-    db,
-    `INSERT INTO mouvements_caisse (session_caisse_id, sens, motif, montant, commentaire, utilisateur_id)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    sessionId,
-    sens,
-    motif,
-    montant,
-    commentaire,
-    AFI.id
-  )
+  enregistrerMouvementCaisse(db, { sessionId, utilisateurId: AFI.id, sens, motif, montant, commentaire })
 }
 
 /**
@@ -363,10 +355,19 @@ describe('Écran de clôture — écart en direct', () => {
 })
 
 describe('Session clôturée — montants figés', () => {
-  it('le théorique figé à la clôture fait foi, même si une écriture arrive après', () => {
+  it('aucune écriture tardive : la base refuse un mouvement sur une session clôturée, le Z reste juste', () => {
     const { db, sessionId } = vendrediAfi()
     cloturerSession(db, AFI, { montantCompte: 58200, commentaire: 'manque' })
-    mouvementCaisse(db, sessionId, 'sortie', 'retrait', 2000, 'écriture tardive')
+    // Même en contournant le service : le trigger de la migration A8 bloque l'écriture.
+    expect(() =>
+      executer(
+        db,
+        `INSERT INTO mouvements_caisse (session_caisse_id, sens, motif, montant, commentaire, utilisateur_id)
+         VALUES (?, 'sortie', 'retrait', 2000, 'écriture tardive', ?)`,
+        sessionId,
+        AFI.id
+      )
+    ).toThrow(/clôturée/)
     expect(rapportSession(db, sessionId)).toMatchObject({ especesTheoriques: 58700, ecart: -500 })
   })
 })

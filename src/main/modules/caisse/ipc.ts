@@ -2,12 +2,14 @@
  * Propriétaire : Dev A.
  * Canaux caisse:* — minces : droits, puis appel du service. Organisation du module :
  *   service-session.ts · service-vente.ts · service-ticket.ts · service-cloture.ts ·
- *   calculs.ts (TVA, totaux — testés) · ipc.ts
+ *   service-mouvements.ts · calculs.ts (TVA, totaux — testés) · ipc.ts
  */
+import type { MouvementCaisse, MouvementEnregistre } from '@shared/ipc/caisse'
 import type { UtilisateurConnecte } from '@shared/types'
 import { base } from '../../db/connexion'
 import { gerer } from '../../ipc/gerer'
 import { session } from '../../core/session'
+import { buildDrawerPulse } from '../../materiel/escpos'
 import { envoyerBrut } from '../../materiel/imprimante'
 import { enteteDepuis, reglagesDepuis } from '../../materiel/reglages'
 import { mettreEnPageRapport } from '../../materiel/rapport'
@@ -23,6 +25,12 @@ import {
   verifierAccesSession,
   verifierTypeRapport
 } from './service-cloture'
+import {
+  annulerMouvementAuTiroir,
+  mouvementsSession,
+  saisirMouvementAuTiroir,
+  sessionPourMouvement
+} from './service-mouvements'
 import { ouvrirSession, sessionOuverte } from './service-session'
 import { autoriserRemise, enregistrerVente, gerantsActifs } from './service-vente'
 import { journaliserLignesAnnulees } from './service-lignes-annulees'
@@ -54,6 +62,21 @@ async function imprimer(u: UtilisateurConnecte, venteId: number): Promise<{ dupl
   await envoyerBrut(reglages.methode, reglages.cible, octets)
   noterImpression(db, u.id, venteId, duplicata)
   return { duplicata }
+}
+
+/**
+ * Ouvre le tiroir après un mouvement de caisse, HORS transaction. Le mouvement est déjà enregistré :
+ * une imprimante en panne ne l'annule pas, l'écran dit seulement d'ouvrir le tiroir à la clé.
+ * Pas de journal `ouverture_tiroir_hors_vente` : le mouvement lui-même est journalisé.
+ */
+async function ouvrirTiroirApresMouvement(mouvement: MouvementCaisse): Promise<MouvementEnregistre> {
+  try {
+    const reglages = reglagesDepuis(lireParametres(base()))
+    await envoyerBrut(reglages.methode, reglages.cible, buildDrawerPulse())
+    return { mouvement, tiroirOuvert: true }
+  } catch {
+    return { mouvement, tiroirOuvert: false }
+  }
 }
 
 /** Rapport X ou Z, toujours APRÈS la clôture : une imprimante en panne ne l'annule jamais. */
@@ -129,5 +152,18 @@ export function enregistrerIpcCaisse(): void {
   gerer('caisse:imprimerRapport', ({ sessionId, type }) => {
     const u = session.exiger(['caissier', 'gerant'])
     return imprimerRapport(u, sessionId, type)
+  })
+  gerer('caisse:mouvementsSession', ({ sessionId }) => {
+    session.exiger(['gerant'])
+    const db = base()
+    return mouvementsSession(db, sessionPourMouvement(db, sessionId))
+  })
+  gerer('caisse:enregistrerMouvement', (requete) => {
+    const u = session.exiger(['gerant'])
+    return ouvrirTiroirApresMouvement(saisirMouvementAuTiroir(base(), u, requete))
+  })
+  gerer('caisse:annulerMouvement', (annulation) => {
+    const u = session.exiger(['gerant'])
+    return ouvrirTiroirApresMouvement(annulerMouvementAuTiroir(base(), u, annulation))
   })
 }

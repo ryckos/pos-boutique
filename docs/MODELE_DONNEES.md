@@ -38,7 +38,7 @@ document à jour.
 | `ventes`            | Ticket, facture, proforma ou retour : `numero_ticket`, totaux HT/TVA/TTC, `statut`, `vente_origine_id`, `est_credit`. **Suppression interdite** |
 | `lignes_vente`      | Photocopie au moment T : `conditionnement_id`, `designation`, `quantite`, `prix_unitaire`, `cout_unitaire` (d'un conditionnement), `quantite_base_totale`, `taux_tva`, `lot_id`. **Suppression interdite** |
 | `paiements`         | Un ou plusieurs par vente : `mode`, `montant` (négatif pour un remboursement), `reference` |
-| `mouvements_caisse` | Entrées et sorties d'espèces hors vente, rattachées à une session    |
+| `mouvements_caisse` | Entrées et sorties d'espèces hors vente, rattachées à une session **ouverte** : `sens`, `motif` (apport, retrait, dépense, encaissement de créance, remboursement, règlement fournisseur, autre), `montant` > 0, document d'origine, `mouvement_origine_id` sur un contre-mouvement d'annulation (un seul par mouvement). **Ni modification ni suppression** |
 | `promotions`        | Remises programmées (Phase 4)                                        |
 
 ### Achats — Dev B
@@ -90,6 +90,8 @@ document à jour.
 | `trg_retours_fournisseur_no_delete` | Interdit tout `DELETE` sur `retours_fournisseur` |
 | `trg_inventaires_no_delete`, `trg_lignes_inventaire_no_delete` | Interdisent tout `DELETE` sur `inventaires` et `lignes_inventaire` |
 | `trg_inventaires_fige`, `trg_lignes_inventaire_figees`, `trg_lignes_inventaire_ajout_fige` | Un inventaire validé ou annulé ne se modifie plus, ses comptages non plus |
+| `trg_mouvements_caisse_no_update`, `trg_mouvements_caisse_no_delete` | Interdisent tout `UPDATE` et `DELETE` sur `mouvements_caisse` (on annule par contre-mouvement) |
+| `trg_mouvements_caisse_session_figee` | Refuse tout mouvement de caisse sur une session qui n'est pas ouverte |
 
 ## Migrations appliquées
 | Fichier                                  | Contenu                                              |
@@ -104,6 +106,7 @@ document à jour.
 | `20261006_1400_retours_fournisseur.sql` | Table `retours_fournisseur` (avoir attendu, reçu, refusé ou annulé) et son trigger ; `v_dettes_fournisseurs` recréée avec `total_avoirs` déduit du solde |
 | `20261007_0900_inventaires.sql` | `inventaires.categorie_id`, `motif_annulation` ; `lignes_inventaire.compte_le`, `commentaire`, une ligne par produit (index unique) ; triggers : pas de suppression, inventaire figé une fois validé ou annulé |
 | `20261008_0900_depenses.sql` | `depenses.numero` (index unique), `reference`, `annule_le`, `annule_par`, `motif_annulation` ; `categories_depense.actif`, `desactive_le` ; 9 catégories de départ ; triggers : pas de suppression (dépense, catégorie), dépense annulée figée |
+| `20261008_1704_mouvements_caisse.sql` | `mouvements_caisse` recréée (lignes recopiées) : motif `reglement_fournisseur`, `mouvement_origine_id` (index unique) ; triggers : ni modification ni suppression, rien sur une session clôturée |
 
 Ajouter ici chaque nouvelle migration (nom et contenu en une ligne).
 
