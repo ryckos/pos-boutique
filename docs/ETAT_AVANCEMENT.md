@@ -100,7 +100,7 @@ Le socle comprend :
 | A16   | Promotions programmées                    | A   | ⏳     |   |
 | B14   | Rapports de gestion, journal d'audit      | B   | 🔄     | PR 1 `b/rapports-gestion` (serveur : pertes par cause, valeur du stock, achats par fournisseur, résultat sans marge) ; PR 2 `b/rapports-ecran` (menu « Rapports de gestion ») ; PR 3 `b/journal-audit` (journal des opérations, admin, `audit:journal` / `audit:choix`). Marge en attente de `caisse:ventesPeriode` (A14) |
 | B15   | Exports Excel                             | B   | 🔄     | PR 1 `b/exports-excel` (canal générique `exports:excel`, `BoutonExporter`, Stock, Dépenses, Rapports de gestion) ; PR 2 `b/exports-listes` (Produits, Péremptions, Sorties, Réceptions, Commandes, Fournisseurs, détail d'un inventaire, Journal en entier) |
-| B16   | Sauvegardes et restauration               | B   | ⏳     |   |
+| B16   | Sauvegardes et restauration               | B   | 🔄     | PR 1 `b/sauvegardes` (serveur : API de sauvegarde SQLite, rotation 30 + 1 par semaine sur 52, clé USB, sauvegarde avant mise à jour et au démarrage, canaux `sauvegardes:etat` / `liste` / `creer`). Reste : branchement à la clôture (ligne dans `caisse/ipc.ts`, Dev A), PR 2 restauration et écran, envoi distant (D-A4) |
 
 ## Phase 5 — Mise en service (S19–S20)
 | Tâche | Intitulé                                            | Dev | Statut | Notes (branche, blocage) |

@@ -877,6 +877,7 @@ repart à 1 chaque année.
 | `imprimante_methode`             | `spooler` ou `share`                       | spooler                 |
 | `imprimante_cible`               | Nom de l'imprimante ou du partage          | —                       |
 | `imprimante_page_codes`          | Page de codes validée en Phase 0           | voir DECISIONS.md       |
+| `sauvegarde_dossier_externe`     | Dossier de la clé USB des sauvegardes (§ 14) | —                     |
 
 **Utilisation par la caisse (A3)** : le ticket prend son en-tête et son pied dans `boutique_nom`,
 `boutique_adresse` (une ligne imprimée par ligne saisie) et `ticket_pied` ; « Ma Boutique » s'imprime si
@@ -894,3 +895,34 @@ modifier (écran « Réglages matériel » de Dev A, A3). Chaque clé réellemen
 **Lecture** : `parametres:lire` (ou `lireParametres(db)` dans le processus principal) renvoie un objet
 typé, défauts appliqués. Une valeur vide ou illisible vaut son défaut ; une clé sans défaut vaut
 `null` (non renseignée) — c'est le cas du plafond de remise tant que D-A3 n'est pas tranchée.
+
+---
+
+## 14. Sauvegardes et restauration (Dev B, validé par Dev B le 2026-10-12)
+
+- **Méthode** : API de sauvegarde de SQLite (`backup` de `node:sqlite`), compatible avec le mode WAL,
+  jamais pendant une transaction. La copie est écrite sous un nom provisoire, vérifiée (contrôle
+  d'intégrité), puis renommée : une coupure de courant ne laisse jamais une sauvegarde à moitié écrite.
+- **Où** : dossier `sauvegardes` à côté de la base. Nom : `boutique_AAAA-MM-JJ_HHMMSS_<motif>.db`.
+- **Quand** (motifs) :
+  - `cloture` : après chaque clôture de caisse, une fois la clôture enregistrée ;
+  - `mise_a_jour` : au démarrage, **avant** d'appliquer une migration (mise à jour sur site) ;
+  - `demarrage` : au démarrage, si la dernière sauvegarde a plus de 24 heures ;
+  - `manuelle` : bouton « Sauvegarder maintenant » ;
+  - `avant_restauration` : la base en place, juste avant une restauration.
+- **Jamais bloquante** : une sauvegarde automatique qui échoue ne bloque ni la clôture ni la caisse ;
+  l'échec est noté et l'écran Sauvegardes signale une dernière sauvegarde trop ancienne (plus de 2 jours).
+  Une seule sauvegarde à la fois : une demande pendant une autre attend son tour.
+- **Rotation** : on garde les **30 plus récentes**, plus **la plus récente de chaque semaine** (lundi
+  au dimanche) sur les **52 dernières semaines**. Les autres fichiers de sauvegarde sont effacés (ce sont
+  des copies, pas de l'historique).
+- **Clé USB** : l'admin choisit une fois un dossier (`sauvegarde_dossier_externe`, ex. `E:\Sauvegardes`).
+  Chaque sauvegarde y est copiée si le dossier est présent (même rotation) ; sinon, simple avertissement.
+- **Droits** : consulter et « Sauvegarder maintenant » = gérant (et admin) ; choisir le dossier de la
+  clé et **restaurer** = admin seul.
+- **Restauration** (admin) : depuis la liste, ou depuis un fichier choisi (sur la clé). Le fichier est
+  vérifié (base lisible et intègre) ; une sauvegarde d'une **version plus récente** de l'application
+  (migration inconnue) est refusée. La base en place est d'abord sauvegardée (`avant_restauration`),
+  puis remplacée, et l'application redémarre. Au redémarrage, `restauration_sauvegarde` est journalisée
+  **dans la base restaurée** (fichier restauré, date de la sauvegarde, sauvegarde de la base remplacée).
+- **Distant** : envoi chiffré quand Internet est disponible, **en attente de D-A4** (hébergement).

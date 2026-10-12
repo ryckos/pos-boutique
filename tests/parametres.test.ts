@@ -22,7 +22,8 @@ describe('Lecture des paramètres', () => {
       dormantJours: 60,
       imprimanteMethode: 'spooler',
       imprimanteCible: null,
-      imprimantePageCodes: null
+      imprimantePageCodes: null,
+      sauvegardeDossierExterne: null
     })
   })
 
