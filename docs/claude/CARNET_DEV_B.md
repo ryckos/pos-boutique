@@ -18,6 +18,169 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-12 — b/docs-b15-fusion, b/sauvegardes, b/sauvegardes-ecran — B16 Sauvegardes et restauration
+**Fait** :
+- **B14 et B15 fusionnées** (PR #47 à #51). Le carnet du 09/10 et la petite PR de documentation de
+  B13 (`b/docs-b13-fusion`, jamais ouverte) étaient restés hors de `test` : repris sur
+  `b/docs-b15-fusion` avec B15 → ✅, B14 🔄 (marge) et cinq lignes au journal des fusions.
+  **Ménage** : 9 branches locales et 21 branches GitHub fusionnées supprimées.
+- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 14 (et nouvelle clé
+  `sauvegarde_dossier_externe` au § 13) :
+  - moments : après chaque **clôture de caisse**, au démarrage **avant une migration**, au démarrage
+    si la dernière a **plus de 24 h**, bouton « Sauvegarder maintenant », et avant une restauration ;
+  - jamais bloquante ; une à la fois ; échec signalé à l'écran ; retard signalé au-delà de 2 jours ;
+  - rotation : 30 dernières + la plus récente de chaque semaine sur 52 semaines ;
+  - clé USB = dossier choisi une fois par l'admin, copie si présent ;
+  - droits : gérant (consulter, sauvegarder), admin (clé, restaurer) ;
+  - restauration : vérifiée, version plus récente refusée, base en place sauvegardée d'abord,
+    redémarrage, `restauration_sauvegarde` journalisée **dans la base restaurée**.
+- **PR 1 `b/sauvegardes`** (commit `10608f5`, poussée) : `src/main/modules/sauvegardes/`
+  (`service.ts` : `backup()` de `node:sqlite` vers un fichier provisoire, copie repassée en un seul
+  fichier, `quick_check`, renommage, rotation, clé ; `automatique.ts` : file d'attente,
+  `sauvegarderEnFond`, sauvegarde du démarrage ; `ipc.ts`), contrat `src/shared/ipc/sauvegardes.ts`,
+  `migrationsConnues` / `migrationsEnAttente` dans `db/migrations.ts`, `main/index.ts`.
+  14 tests (`tests/sauvegardes.test.ts`). **Testée à la main par Dev B.**
+- **PR 2 `b/sauvegardes-ecran`** (commit `6aabed6`, empilée, poussée) : `restauration.ts`
+  (préparer → sauvegarder la base en place → confirmer ; appliquée au démarrage avant d'ouvrir la
+  base), 3 canaux admin, menu « Sauvegardes » (`modules/sauvegardes/PageSauvegardes.tsx`),
+  `formaterDateHeure` dans `src/shared/format.ts`, libellés du journal, `UI_UX.md` § 5.22.
+  9 tests (`tests/restauration.test.ts`, `tests/affichage-sauvegardes.test.ts`). **Testée à la main
+  par Dev B** (droits, clé, restauration depuis la liste et depuis un fichier, retour arrière).
+- 560 tests verts, typecheck OK. Aucune migration.
+- Constats utiles :
+  - `backup()` laisse la copie en mode WAL : il faut la repasser en `journal_mode = DELETE`, sinon
+    des fichiers `-wal` / `-shm` traînent à côté ;
+  - SQLite ne crée pas le dossier d'une base : avec `POS_DB`, créer le dossier d'abord
+    (`New-Item -ItemType Directory -Force …`).
+
+**En cours** : trois PR vers `test`, **dans l'ordre** (`gh` absent ; textes fournis à Dev B dans la
+session) :
+1. `b/docs-b15-fusion` (ce carnet est commité dessus) ;
+2. `b/sauvegardes` ;
+3. `b/sauvegardes-ecran`. Si la 2 est fusionnée en squash :
+   `git switch b/sauvegardes-ecran; git fetch; git rebase --onto origin/test 10608f5; git push --force-with-lease`.
+Les deux branches B16 ont été créées depuis `test` **avant** `b/docs-b15-fusion` : si `ETAT_AVANCEMENT.md`
+entre en conflit (lignes B14 / B15 / B16 voisines), garder les deux côtés.
+
+**Prochaine étape** :
+1. Suivre les fusions : une ligne au journal des fusions par PR B16 ; **B16 reste 🔄**.
+2. **Branchement à la clôture** (à convenir avec Dev A) : dans `src/main/modules/caisse/ipc.ts`
+   (fichier de Dev A), canal `caisse:cloturerSession`, après `cloturerSession(base(), u, requete)` et
+   avant le `return` : `sauvegarderEnFond('cloture')` (import depuis
+   `../sauvegardes/automatique`). Ne lève jamais d'erreur, n'attend pas. Soit Dev A l'ajoute, soit il
+   autorise Dev B à le faire dans une petite PR.
+3. **Essai de restauration sur le terminal** (OMA POS), puis PR 3 : procédure de restauration écrite
+   (guide du gérant / admin, Phase 5) ; ensuite B16 → ✅ (hors envoi distant, D-A4).
+4. Puis **Phase 5** (S19–S20) : installateur `npm run dist`, mode kiosque, démarrage automatique, mises à
+   jour sur site (la sauvegarde `mise_a_jour` est déjà en place), guide, import du vrai catalogue.
+5. En attente de Dev A : A8 (`enregistrerMouvementCaisse`) pour finir B13 ; A14
+   (`caisse:ventesPeriode`) pour la marge de B14 (voir l'entrée du 09/10).
+
+**Questions ouvertes** :
+- Branchement de la sauvegarde à la clôture : qui ajoute la ligne dans `caisse/ipc.ts` ?
+- **D-A4** (hébergement de la sauvegarde distante) : toujours en attente, bloque la fin de B16.
+- Dev A n'a rien poussé depuis le 01/10 (A4) ; A8 est en retard (fin S10).
+- Questions déjà ouvertes : saisie d'une dépense « caisse » (A8), colonne « Suivi péremption » de
+  l'import, D-A3, pertes dans le résultat, réactivations, photos.
+
+**Contrats** :
+- Ajoutés (sans impact pour la caisse) : `sauvegardes:etat`, `liste`, `creer` (gérant) ;
+  `sauvegardes:choisirDossierExterne`, `restaurer`, `restaurerFichier` (admin) ; champ
+  `ParametresBoutique.sauvegardeDossierExterne` (ajout seul).
+- **Pour Dev A** :
+  - `sauvegarderEnFond('cloture')` (`src/main/modules/sauvegardes/automatique.ts`) à appeler après la
+    clôture, **hors transaction** ;
+  - `src/main/index.ts` modifié (zone partagée) : restauration appliquée avant l'ouverture de la base,
+    sauvegarde avant migration, sauvegarde du démarrage ;
+  - `formaterDateHeure('2026-10-12 18:30:05')` → « 12/10/2026 à 18 h 30 » dans `src/shared/format.ts`.
+- Attendus : `enregistrerMouvementCaisse()` (A8, en retard) ; `caisse:ventesPeriode` (A14, fin S16).
+
+---
+
+## 2026-10-09 — b/rapports-gestion → b/exports-listes (6 branches empilées) — B14 et B15
+**Fait** :
+- **B13 fusionnée** (PR #44, #45) : petite PR de documentation `b/docs-b13-fusion` (2 lignes au journal
+  des fusions ; B13 reste 🔄, la source « caisse » attend A8).
+- **B14 Rapports de gestion et journal d'audit** — règles validées par Dev B, écrites dans
+  `REGLES_METIER.md` § 11.1 et § 1.4 :
+  - pertes par cause : péremption, casse, **dons** (casse « Don », ligne à part), vol, **démarque
+    d'inventaire** (écarts négatifs), **avoirs fournisseur non obtenus** (refusé = tout l'attendu ; reçu
+    sous l'attendu = la différence ; attendu = pas encore une perte). Ne comptent pas : sortie annulée,
+    stock initial, le retour lui-même. Surplus d'inventaire à part, non déduits ;
+  - valeur du stock **aujourd'hui seulement**, au CUMP, par rayon (sous-rayon dans son rayon) ;
+  - achats par fournisseur : livré, avoirs reçus, réglé sur la période ; reste dû d'aujourd'hui ;
+  - résultat = marge − dépenses ; **marge `null`** tant que `caisse:ventesPeriode` manque ; pertes
+    rappelées pour information, non déduites ;
+  - période : mois en cours par défaut, fin jamais future ; gérant (rapports), **admin seul** (journal :
+    7 jours par défaut, filtres personne / action, 200 par page + « Afficher plus », tout en français).
+  - § 1.4 complété des 8 actions journalisées qui n'y figuraient pas.
+  - PR 1 `b/rapports-gestion` (`ef94bd9`) : module `src/main/modules/rapports-gestion/`, contrat
+    `src/shared/ipc/rapports-gestion.ts`, `SOLDE_DU` exporté de `fournisseurs/service.ts`. 17 tests.
+  - PR 2 `b/rapports-ecran` (`f889d65`) : menu « Rapports de gestion » (`/rapports-gestion`, pour laisser
+    `/rapports` à A14), 4 onglets, `UI_UX.md` § 5.20.
+  - PR 3 `b/journal-audit` (`af45b6c`) : `src/shared/audit.ts` (libellés des actions, des champs et des
+    valeurs ; ids → noms), module `src/main/modules/audit/`, menu « Journal des opérations » (admin,
+    `roles: []`), `UI_UX.md` § 5.21. 10 tests.
+- **B15 Exports Excel** — règles validées par Dev B (`REGLES_METIER.md` § 11.2) : on exporte **ce que
+  l'écran affiche, filtres compris** ; ligne de titre « … — exporté le … par … », ligne vide, en-têtes ;
+  montants / quantités en nombres (format « 1 000 F »), dates en vraies dates, codes-barres en texte,
+  jamais de formule ; journal exporté en entier pour le filtre.
+  - PR 4 `b/exports-excel` (`7386f6d`) : canal générique `exports:excel` (module
+    `src/main/modules/exports/`, `classeurExcel` pur), `lib/exportExcel.ts`, `ui/BoutonExporter.tsx`,
+    boutons sur Stock, Dépenses, Rapports (pure `exportRapports.ts`). 13 tests.
+  - PR 5 `b/exports-listes` (`caae836`) : Produits, Péremptions, Sorties, Réceptions, Commandes,
+    Fournisseurs, Journal, fenêtre de détail d'un inventaire (`exportInventaire.ts`, comptages + démarque
+    300 F). 2 tests.
+- **Tout testé à la main par Dev B** (scénarios rapports, journal, exports). 537 tests verts, typecheck OK.
+  Aucune migration.
+
+**En cours** : 6 PR vers `test` à ouvrir et fusionner **dans l'ordre** (`gh` absent ; textes fournis à
+Dev B dans la session). Si squash, rebaser la suivante :
+1. `b/docs-b13-fusion` ;
+2. `b/rapports-gestion` ;
+3. `b/rapports-ecran` — `git rebase --onto origin/test ef94bd9` ;
+4. `b/journal-audit` — `git rebase --onto origin/test f889d65` ;
+5. `b/exports-excel` — `git rebase --onto origin/test af45b6c` ;
+6. `b/exports-listes` — `git rebase --onto origin/test 7386f6d` (ce carnet est commité dessus).
+Puis `git push --force-with-lease` à chaque rebase.
+
+**Prochaine étape** :
+1. Suivre les fusions : une ligne au journal des fusions de `ETAT_AVANCEMENT.md` par PR ; **B15 → ✅**
+   après la PR 6 ; **B14 reste 🔄** (marge). Supprimer les branches fusionnées (local et GitHub), dont
+   les anciennes listées dans l'entrée du 2026-10-07 / 08.
+2. **B16 Sauvegardes et restauration** (`/tache B16`, branche `b/sauvegardes` depuis `test` à jour) :
+   sauvegarde à chaque clôture de caisse (API de sauvegarde SQLite, WAL), rotation 30 + 1 par semaine,
+   copie sur clé USB, **restauration testée** (journal `restauration_sauvegarde`, libellé déjà dans
+   `src/shared/audit.ts`). **D-A4 (hébergement distant) en attente** : faire la partie locale seulement,
+   prévoir l'envoi distant. Point de branchement « à chaque clôture » : `caisse/service-cloture.ts`
+   appartient à Dev A — à convenir avec lui (appel après la transaction, jamais dedans).
+3. **Quand `caisse:ventesPeriode` (A14) arrivera** : remplir `marge` dans `rapports-gestion/resultat.ts`
+   (marge brute = Σ total_ligne − Σ quantite × cout_unitaire), tests, B14 → ✅.
+4. **Quand A8 arrivera** : terminer B13 (voir l'entrée du 2026-10-08).
+
+**Questions ouvertes** :
+- Où la caissière saisit une dépense « caisse » (A8) : à décider avec Dev A.
+- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
+- D-A3 (plafond de remise), **D-A4 (sauvegarde distante, bloque une partie de B16)** : en attente.
+- Les pertes doivent-elles un jour être déduites du résultat ? La règle § 11 dit non ; à confirmer avec la
+  cliente si elle le demande.
+- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photos : reportées.
+
+**Contrats** :
+- Ajoutés (sans impact pour la caisse) : `rapports:pertes`, `rapports:valeurStock`, `rapports:achats`,
+  `rapports:resultat` (gérant) ; `audit:journal`, `audit:choix` (admin) ; `exports:excel` (toute session).
+- **Pour Dev A** :
+  - `ui/BoutonExporter.tsx` + `exports:excel` sont génériques : utilisables pour A14 / la clôture
+    (`demande={() => ({ nomFichier, titre, feuilles })}`, colonnes `texte | nombre | montant | date`) ;
+  - **toute nouvelle action passée à `journaliser()` doit recevoir son libellé** dans
+    `src/shared/audit.ts` (`LIBELLES_ACTION`, et ses champs dans `LIBELLES_CHAMP`), sinon le journal
+    l'affiche en mots bruts ;
+  - menu : « Rapports de gestion » est sur `/rapports-gestion` ; `/rapports` reste libre pour A14 ;
+  - `RapportResultat.marge` attend `caisse:ventesPeriode` (A14, fin S16).
+- Attendus : `enregistrerMouvementCaisse()` (A8, prévu fin S10, en retard) ; `caisse:ventesPeriode` (fin S16).
+
+---
+
 ## 2026-10-08 — b/depenses, b/depenses-ecran — B13 Dépenses (partie « fonds propres »)
 **Fait** :
 - **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 10.1 (et § 1.4 pour le journal) :
@@ -590,115 +753,3 @@ fusion de la précédente. Le texte de chacune a été fourni à Dev B dans la s
 - Attendus, inchangés : `sessionOuverte()` et `enregistrerMouvementCaisse()` (Dev A, fin S10).
 
 ---
-
-## 2026-09-28 — b/stock et b/stock-historique — B4 Écran stock et historique produit
-**Fait** :
-- **B6 fusionnée** (PR #21) : B6 et le rendez-vous « Stock initial » (fin S7) passés à ✅ ; branche
-  `b/stock-initial` supprimée (local et GitHub).
-- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 3.3 : dormant = produit **avec
-  stock**, sans vente **terminée** (ticket ou facture) depuis `dormant_jours` ; jamais vendu → compté
-  depuis la première entrée en stock ; répartition indicative en remplissant le plus grand
-  conditionnement d'abord (46 = 1 carton + 7 lots + 1 unité), rien si stock ≤ 0 ou sans intérêt ;
-  historique sur une période (30 jours par défaut), stock de début, stock après chaque mouvement,
-  stock de fin ; documents lisibles.
-- **Partie 1** (`b/stock`, commit `ab413b4`, poussé) : canal `stock:etat`, service
-  `stock/etat.ts`, règle pure `src/shared/stock.ts` (`repartirStock`, réutilisable en B12), écran
-  `modules/stock/PageStock.tsx` (pastilles ruptures / stocks bas / dormants, valeur totale, filtres,
-  douchette). L'ancien aperçu est retiré : `catalogue:produitsStock`, `ProduitStock`,
-  `PageCatalogue.tsx`. Styles communs `.tableau .detail` et espacement des pastilles. `UI_UX.md` § 5.16.
-- **Partie 2** (`b/stock-historique`, partie de `b/stock`, commit `396faea`, poussé) : canal
-  `stock:historiqueProduit`, service `stock/historique.ts`, `LIBELLES_MOUVEMENT` dans
-  `src/shared/stock.ts`, fenêtre `FenetreHistorique.tsx` (bouton « Historique » sur chaque ligne).
-- 259 tests verts (22 nouveaux dans `tests/stock.test.ts`), typecheck OK ; **les deux parties testées à
-  la main par Dev B**. Aucune migration.
-- Constat hors tâche : dans la base de développement de ce poste, le code d'Afi n'est plus `0000`
-  (changé pendant les essais de B1 le 23/09). Pas un bug ; se règle par « Réinitialiser le code » (Patron).
-
-**En cours** : deux PR à ouvrir sur GitHub (`gh` absent de ce poste), texte fourni à Dev B :
-1. PR 1 `b/stock` → `test` : https://github.com/ryckos/pos-boutique/compare/test...b/stock?expand=1
-2. PR 2 `b/stock-historique` → `test`, **seulement après la fusion de la PR 1** (elle contient le
-   commit de la PR 1) : https://github.com/ryckos/pos-boutique/compare/test...b/stock-historique?expand=1
-
-**Prochaine étape** :
-1. Après fusion de la PR 1 : `git switch b/stock-historique && git fetch && git rebase origin/test`
-   (si fusion en squash, le commit `ab413b4` doit tomber de lui-même ; sinon `git rebase --onto
-   origin/test ab413b4`), `git push --force-with-lease`, puis ouvrir la PR 2.
-2. Après fusion des deux : B4 → ✅ dans `ETAT_AVANCEMENT.md` + lignes au journal des fusions ;
-   supprimer `b/stock` et `b/stock-historique` (local et GitHub).
-3. Phase 2 : **B7 Fournisseurs** (`/tache B7`, branche `b/fournisseurs` depuis `test` à jour), puis
-   **B8 Commandes et réceptions** (CUMP : 3 cartons à 6 000 → 250 ; puis 46 à 250 + 48 à 275 →
-   262,8). En B8, compléter l'historique si le `document_type` des réceptions n'est pas `reception`
-   (l'historique lit `receptions.numero` pour `reception`, `inventaires.numero` pour `inventaire`).
-
-**Questions ouvertes** :
-- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
-- Plafond de remise caissier (D-A3) : en attente de la cliente.
-- Réactivation (produit, compte, catégorie) : non prévue. Photo des produits : reportée.
-
-**Contrats** :
-- Ajoutés (gérant, sans impact pour la caisse) : `stock:etat` → `EtatStock` ;
-  `stock:historiqueProduit` `{ produitId, du?, au? }` → `HistoriqueProduit`.
-- **Retiré** : `catalogue:produitsStock` et le type `ProduitStock` (utilisés seulement par l'ancien
-  aperçu de Dev B). `ArticleCatalogue` et les canaux de la caisse inchangés.
-- Pour Dev A : l'historique affiche « Ticket <numero_ticket> » pour `document_type = 'vente'` ; une
-  annulation (A6) faite par `contrePasser()` s'affichera « Annulation » avec le même ticket et son
-  motif. `LIBELLES_MOUVEMENT` (`src/shared/stock.ts`) est utilisable pour ses écrans.
-- Prochain rendez-vous à livrer : `allouerFefo()` (fin S10). Attendus inchangés :
-  `sessionOuverte()` / `enregistrerMouvementCaisse()` (Dev A, fin S10).
-
----
-
-## 2026-09-25 (fin) — b/stock-initial — B3 fusionnée, B6 Stock initial
-**Fait** :
-- **B3 fusionnée** (PR #20) et passée à ✅ (commit `4dd5f42` sur cette branche) ; `b/import-excel`
-  supprimée (local et GitHub).
-- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 9.1 : comptage produit par
-  produit, par conditionnement, **enregistré aussitôt** (une transaction par produit, résiste aux
-  coupures) ; une seule fois par produit et seulement **sans réception** (sinon « non concerné ») ;
-  la quantité comptée est le stock réel ; coût par unité en francs entiers > 0, pré-rempli par
-  `prix_achat_indicatif` (B3), **CUMP = coût saisi** ; alerte non bloquante si coût ≥ prix de
-  l'unité ; péremption : date obligatoire, n° de lot facultatif, un lot créé ; correction par
-  « Annuler » (contre-passation, motif obligatoire, journalisée).
-- Précision d'implémentation (écrite au § 9.1) : si des ventes ont eu lieu avant le comptage, **deux
-  mouvements** `ajustement_inventaire` / `stock_initial` : le comptage (+41, porté par le lot s'il y
-  en a un) puis la remise à zéro de l'antérieur (+3). Stock final identique, historique lisible.
-- Module `src/main/modules/stock/` (`stock-initial.ts`, `ipc.ts`), contrat `src/shared/ipc/stock.ts`,
-  écran `modules/stock/PageStockInitial.tsx` + logique pure `saisieStockInitial.ts`, menu « Stock
-  initial » (gérant), `UI_UX.md` § 5.15. Aucune migration.
-- 238 tests verts (13 nouveaux), build OK, **scénario complet testé à la main par Dev B**.
-- Commit `b441cab` poussé sur `origin/b/stock-initial`.
-
-**En cours** : PR B6 `b/stock-initial` → `test` à ouvrir sur GitHub (`gh` absent de ce poste) :
-https://github.com/ryckos/pos-boutique/compare/test...b/stock-initial?expand=1 — le texte (modèle de
-PR rempli) a été fourni à Dev B. Puis relecture par Dev A.
-
-**Prochaine étape** :
-1. Après fusion de la PR B6 : B6 → ✅ et rendez-vous « Stock initial de démarrage » → ✅ dans
-   `ETAT_AVANCEMENT.md`, ligne au journal des fusions ; supprimer `b/stock-initial`.
-2. **B4 Écran stock et historique produit** (`/tache B4`, branche `b/stock` depuis `test` à jour) :
-   liste stock / valeur / alertes (rupture ≤ 0, stock bas ≤ seuil, `v_alertes_stock`), historique
-   d'un produit (chaque mouvement : type, quantité, document, utilisateur, date — « pourquoi il reste
-   41 boîtes »), répartition indicative par conditionnement (« 46 = 1 carton + 7 lots + 1 unité »),
-   produits dormants (`dormantJours` des paramètres). Remplace l'aperçu actuel `/stock`
-   (`catalogue/PageCatalogue.tsx`). À ranger dans le module `stock/` créé en B6 (contrat
-   `src/shared/ipc/stock.ts`). Libellés lisibles pour les motifs `stock_initial` et `demo`.
-3. Puis Phase 2 : B7 Fournisseurs, B8 Réceptions (CUMP).
-
-**Questions ouvertes** :
-- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
-- Plafond de remise caissier (D-A3) : en attente de la cliente.
-- Réactivation (produit, compte, catégorie) : non prévue. Photo des produits : reportée.
-
-**Contrats** :
-- **Pour Dev A — rendez-vous fin S7 tenu dès la fusion de B6** : le stock initial est saisissable
-  pour la recette de Phase 1 (partir de produits importés par Excel : les produits de démo, déjà
-  « réceptionnés », ne sont pas concernés).
-- Ajoutés (gérant, sans impact pour la caisse) : `stock:stockInitial`, `stock:ficheStockInitial`,
-  `stock:enregistrerStockInitial`, `stock:annulerStockInitial`. Nouveau module `stock` enregistré
-  dans `src/main/ipc/index.ts`, contrat dans `src/shared/ipc/index.ts`, menu dans `app/routes.tsx`.
-- Rappel B3 (fusionnée) : **Dev A doit lancer `npm install`** (dépendance `xlsx` depuis
-  `cdn.sheetjs.com`).
-- Attendus inchangés : `sessionOuverte()` / `enregistrerMouvementCaisse()` (Dev A, fin S10).
-
----
-

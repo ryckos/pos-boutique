@@ -5,6 +5,117 @@ Entrées les plus anciennes, retirées de `docs/claude/CARNET_DEV_B.md` quand il
 
 ---
 
+## 2026-09-28 — b/stock et b/stock-historique — B4 Écran stock et historique produit
+**Fait** :
+- **B6 fusionnée** (PR #21) : B6 et le rendez-vous « Stock initial » (fin S7) passés à ✅ ; branche
+  `b/stock-initial` supprimée (local et GitHub).
+- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 3.3 : dormant = produit **avec
+  stock**, sans vente **terminée** (ticket ou facture) depuis `dormant_jours` ; jamais vendu → compté
+  depuis la première entrée en stock ; répartition indicative en remplissant le plus grand
+  conditionnement d'abord (46 = 1 carton + 7 lots + 1 unité), rien si stock ≤ 0 ou sans intérêt ;
+  historique sur une période (30 jours par défaut), stock de début, stock après chaque mouvement,
+  stock de fin ; documents lisibles.
+- **Partie 1** (`b/stock`, commit `ab413b4`, poussé) : canal `stock:etat`, service
+  `stock/etat.ts`, règle pure `src/shared/stock.ts` (`repartirStock`, réutilisable en B12), écran
+  `modules/stock/PageStock.tsx` (pastilles ruptures / stocks bas / dormants, valeur totale, filtres,
+  douchette). L'ancien aperçu est retiré : `catalogue:produitsStock`, `ProduitStock`,
+  `PageCatalogue.tsx`. Styles communs `.tableau .detail` et espacement des pastilles. `UI_UX.md` § 5.16.
+- **Partie 2** (`b/stock-historique`, partie de `b/stock`, commit `396faea`, poussé) : canal
+  `stock:historiqueProduit`, service `stock/historique.ts`, `LIBELLES_MOUVEMENT` dans
+  `src/shared/stock.ts`, fenêtre `FenetreHistorique.tsx` (bouton « Historique » sur chaque ligne).
+- 259 tests verts (22 nouveaux dans `tests/stock.test.ts`), typecheck OK ; **les deux parties testées à
+  la main par Dev B**. Aucune migration.
+- Constat hors tâche : dans la base de développement de ce poste, le code d'Afi n'est plus `0000`
+  (changé pendant les essais de B1 le 23/09). Pas un bug ; se règle par « Réinitialiser le code » (Patron).
+
+**En cours** : deux PR à ouvrir sur GitHub (`gh` absent de ce poste), texte fourni à Dev B :
+1. PR 1 `b/stock` → `test` : https://github.com/ryckos/pos-boutique/compare/test...b/stock?expand=1
+2. PR 2 `b/stock-historique` → `test`, **seulement après la fusion de la PR 1** (elle contient le
+   commit de la PR 1) : https://github.com/ryckos/pos-boutique/compare/test...b/stock-historique?expand=1
+
+**Prochaine étape** :
+1. Après fusion de la PR 1 : `git switch b/stock-historique && git fetch && git rebase origin/test`
+   (si fusion en squash, le commit `ab413b4` doit tomber de lui-même ; sinon `git rebase --onto
+   origin/test ab413b4`), `git push --force-with-lease`, puis ouvrir la PR 2.
+2. Après fusion des deux : B4 → ✅ dans `ETAT_AVANCEMENT.md` + lignes au journal des fusions ;
+   supprimer `b/stock` et `b/stock-historique` (local et GitHub).
+3. Phase 2 : **B7 Fournisseurs** (`/tache B7`, branche `b/fournisseurs` depuis `test` à jour), puis
+   **B8 Commandes et réceptions** (CUMP : 3 cartons à 6 000 → 250 ; puis 46 à 250 + 48 à 275 →
+   262,8). En B8, compléter l'historique si le `document_type` des réceptions n'est pas `reception`
+   (l'historique lit `receptions.numero` pour `reception`, `inventaires.numero` pour `inventaire`).
+
+**Questions ouvertes** :
+- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
+- Plafond de remise caissier (D-A3) : en attente de la cliente.
+- Réactivation (produit, compte, catégorie) : non prévue. Photo des produits : reportée.
+
+**Contrats** :
+- Ajoutés (gérant, sans impact pour la caisse) : `stock:etat` → `EtatStock` ;
+  `stock:historiqueProduit` `{ produitId, du?, au? }` → `HistoriqueProduit`.
+- **Retiré** : `catalogue:produitsStock` et le type `ProduitStock` (utilisés seulement par l'ancien
+  aperçu de Dev B). `ArticleCatalogue` et les canaux de la caisse inchangés.
+- Pour Dev A : l'historique affiche « Ticket <numero_ticket> » pour `document_type = 'vente'` ; une
+  annulation (A6) faite par `contrePasser()` s'affichera « Annulation » avec le même ticket et son
+  motif. `LIBELLES_MOUVEMENT` (`src/shared/stock.ts`) est utilisable pour ses écrans.
+- Prochain rendez-vous à livrer : `allouerFefo()` (fin S10). Attendus inchangés :
+  `sessionOuverte()` / `enregistrerMouvementCaisse()` (Dev A, fin S10).
+
+---
+
+## 2026-09-25 (fin) — b/stock-initial — B3 fusionnée, B6 Stock initial
+**Fait** :
+- **B3 fusionnée** (PR #20) et passée à ✅ (commit `4dd5f42` sur cette branche) ; `b/import-excel`
+  supprimée (local et GitHub).
+- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 9.1 : comptage produit par
+  produit, par conditionnement, **enregistré aussitôt** (une transaction par produit, résiste aux
+  coupures) ; une seule fois par produit et seulement **sans réception** (sinon « non concerné ») ;
+  la quantité comptée est le stock réel ; coût par unité en francs entiers > 0, pré-rempli par
+  `prix_achat_indicatif` (B3), **CUMP = coût saisi** ; alerte non bloquante si coût ≥ prix de
+  l'unité ; péremption : date obligatoire, n° de lot facultatif, un lot créé ; correction par
+  « Annuler » (contre-passation, motif obligatoire, journalisée).
+- Précision d'implémentation (écrite au § 9.1) : si des ventes ont eu lieu avant le comptage, **deux
+  mouvements** `ajustement_inventaire` / `stock_initial` : le comptage (+41, porté par le lot s'il y
+  en a un) puis la remise à zéro de l'antérieur (+3). Stock final identique, historique lisible.
+- Module `src/main/modules/stock/` (`stock-initial.ts`, `ipc.ts`), contrat `src/shared/ipc/stock.ts`,
+  écran `modules/stock/PageStockInitial.tsx` + logique pure `saisieStockInitial.ts`, menu « Stock
+  initial » (gérant), `UI_UX.md` § 5.15. Aucune migration.
+- 238 tests verts (13 nouveaux), build OK, **scénario complet testé à la main par Dev B**.
+- Commit `b441cab` poussé sur `origin/b/stock-initial`.
+
+**En cours** : PR B6 `b/stock-initial` → `test` à ouvrir sur GitHub (`gh` absent de ce poste) :
+https://github.com/ryckos/pos-boutique/compare/test...b/stock-initial?expand=1 — le texte (modèle de
+PR rempli) a été fourni à Dev B. Puis relecture par Dev A.
+
+**Prochaine étape** :
+1. Après fusion de la PR B6 : B6 → ✅ et rendez-vous « Stock initial de démarrage » → ✅ dans
+   `ETAT_AVANCEMENT.md`, ligne au journal des fusions ; supprimer `b/stock-initial`.
+2. **B4 Écran stock et historique produit** (`/tache B4`, branche `b/stock` depuis `test` à jour) :
+   liste stock / valeur / alertes (rupture ≤ 0, stock bas ≤ seuil, `v_alertes_stock`), historique
+   d'un produit (chaque mouvement : type, quantité, document, utilisateur, date — « pourquoi il reste
+   41 boîtes »), répartition indicative par conditionnement (« 46 = 1 carton + 7 lots + 1 unité »),
+   produits dormants (`dormantJours` des paramètres). Remplace l'aperçu actuel `/stock`
+   (`catalogue/PageCatalogue.tsx`). À ranger dans le module `stock/` créé en B6 (contrat
+   `src/shared/ipc/stock.ts`). Libellés lisibles pour les motifs `stock_initial` et `demo`.
+3. Puis Phase 2 : B7 Fournisseurs, B8 Réceptions (CUMP).
+
+**Questions ouvertes** :
+- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
+- Plafond de remise caissier (D-A3) : en attente de la cliente.
+- Réactivation (produit, compte, catégorie) : non prévue. Photo des produits : reportée.
+
+**Contrats** :
+- **Pour Dev A — rendez-vous fin S7 tenu dès la fusion de B6** : le stock initial est saisissable
+  pour la recette de Phase 1 (partir de produits importés par Excel : les produits de démo, déjà
+  « réceptionnés », ne sont pas concernés).
+- Ajoutés (gérant, sans impact pour la caisse) : `stock:stockInitial`, `stock:ficheStockInitial`,
+  `stock:enregistrerStockInitial`, `stock:annulerStockInitial`. Nouveau module `stock` enregistré
+  dans `src/main/ipc/index.ts`, contrat dans `src/shared/ipc/index.ts`, menu dans `app/routes.tsx`.
+- Rappel B3 (fusionnée) : **Dev A doit lancer `npm install`** (dépendance `xlsx` depuis
+  `cdn.sheetjs.com`).
+- Attendus inchangés : `sessionOuverte()` / `enregistrerMouvementCaisse()` (Dev A, fin S10).
+
+---
+
 ## 2026-09-25 (suite) — b/import-excel — B3 Import Excel du catalogue
 **Fait** :
 - **B5 fusionnée** (PR #19) et passée à ✅. Branches fusionnées supprimées (local et GitHub) :
