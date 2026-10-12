@@ -6,7 +6,7 @@
  * attente.ts (fonctions pures, testées), les onglets de la grille dans grille.ts. Sans session
  * ouverte, seul « Ouvrir la caisse » s'affiche.
  * La clôture, les rapports X et Z sont dans PageClotureCaisse (A4). Remises et journal des lignes
- * retirées : A5 (règle 6.6).
+ * retirées : A5 (règle 6.6). Apports et retraits du gérant : FenetreTiroir (A8, règle 6.10).
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -37,6 +37,7 @@ import { FenetreConditionnement } from './FenetreConditionnement'
 import { FenetreReimpression } from './FenetreReimpression'
 import { FenetrePaiement } from './FenetrePaiement'
 import { FenetreRemise } from './FenetreRemise'
+import { FenetreTiroir } from './FenetreTiroir'
 import { OuvertureCaisse } from './OuvertureCaisse'
 
 /** Durée du surlignage d'une ligne ajoutée : un retour visuel, pas une animation décorative. */
@@ -64,6 +65,8 @@ export function PageCaisse(): React.JSX.Element {
   /** conditionnementId de la ligne dont on change le conditionnement ; null = fenêtre fermée. */
   const [conditionnementOuvert, setConditionnementOuvert] = useState<number | null>(null)
   const [reimpressionOuverte, setReimpressionOuverte] = useState(false)
+  /** Fenêtre « Espèces du tiroir » (gérant, A8). */
+  const [tiroirOuvert, setTiroirOuvert] = useState(false)
   /** Remise en cours de saisie : sur une ligne (son conditionnementId) ou sur le ticket ; null = fermée. */
   const [remiseOuverte, setRemiseOuverte] = useState<{ ligne: number | null } | null>(null)
   /** Plafond de remise de la caissière (paramètres de B5) ; null = non fixé (D-A3). */
@@ -155,6 +158,7 @@ export function PageCaisse(): React.JSX.Element {
         paiement === null &&
         conditionnementOuvert === null &&
         !reimpressionOuverte &&
+        !tiroirOuvert &&
         remiseOuverte === null
     }
   )
@@ -197,6 +201,7 @@ export function PageCaisse(): React.JSX.Element {
     paiement !== null ||
     conditionnementOuvert !== null ||
     reimpressionOuverte ||
+    tiroirOuvert ||
     remiseOuverte !== null
   useEffect(() => {
     if (fenetreOuverte || !caisseOuverte) return
@@ -564,6 +569,12 @@ export function PageCaisse(): React.JSX.Element {
           <button className="btn btn-discret" onClick={() => setReimpressionOuverte(true)}>
             Réimprimer un ticket
           </button>
+          {/* Apports et retraits : gérant seulement (règle 6.10). */}
+          {utilisateur.role !== 'caissier' && (
+            <button className="btn btn-discret" onClick={() => setTiroirOuvert(true)}>
+              Espèces du tiroir
+            </button>
+          )}
           <button
             className="btn btn-discret"
             onClick={() => {
@@ -593,6 +604,8 @@ export function PageCaisse(): React.JSX.Element {
           onFermer={() => setReimpressionOuverte(false)}
         />
       )}
+
+      {tiroirOuvert && <FenetreTiroir sessionInitiale={session.id} onFermer={() => setTiroirOuvert(false)} />}
 
       {rechercheOuverte && (
         <FenetreRecherche
