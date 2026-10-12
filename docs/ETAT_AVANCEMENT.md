@@ -90,7 +90,7 @@ Le socle comprend :
 | A13   | Écran client définitif                    | A   | ⏳     |   |
 | B11   | Sorties de stock, retours fournisseur     | B   | ✅     | PR #39 (serveur : sorties, retours, avoirs déduits de la dette, migration `retours_fournisseur`) et #40 (écran Sorties de stock, avoirs reçus ou refusés dans « Dettes », avoir à valoir sur la page Fournisseurs) |
 | B12   | Inventaires                               | B   | ✅     | PR #42 (serveur : inventaire total ou par rayon, comptage par conditionnement, validation au CUMP, démarque, migration `20261007_0900_inventaires.sql`) et #43 (menu « Inventaires », comptage en fenêtre, rapport de démarque) ; testé à la main |
-| B13   | Dépenses                                  | B   | 🔄     | PR 1 `b/depenses` (serveur : catégories, numéro DEP, annulation, source « fonds propres » ; « caisse » refusée jusqu'à A8) ; PR 2 `b/depenses-ecran` (menu « Dépenses », fenêtres nouvelle dépense, annulation, catégories) |
+| B13   | Dépenses                                  | B   | 🔄     | PR #44 (serveur : catégories, numéro DEP, annulation avec motif, source « fonds propres », migration `20261008_0900_depenses.sql`) et #45 (menu « Dépenses », fenêtres nouvelle dépense, annulation, catégories) ; testé à la main. **Reste la source « caisse »**, en attente de `enregistrerMouvementCaisse()` (A8) |
 
 ## Phase 4 — Pilotage (S16–S18)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
@@ -98,9 +98,9 @@ Le socle comprend :
 | A14   | Rapports ventes et caisse                 | A   | ⏳     |   |
 | A15   | Tableau de bord d'accueil                 | A   | ⏳     |   |
 | A16   | Promotions programmées                    | A   | ⏳     |   |
-| B14   | Rapports de gestion, journal d'audit      | B   | 🔄     | PR 1 `b/rapports-gestion` (serveur : pertes par cause, valeur du stock, achats par fournisseur, résultat sans marge) ; PR 2 `b/rapports-ecran` (menu « Rapports de gestion ») ; PR 3 `b/journal-audit` (journal des opérations, admin, `audit:journal` / `audit:choix`). Marge en attente de `caisse:ventesPeriode` (A14) |
-| B15   | Exports Excel                             | B   | 🔄     | PR 1 `b/exports-excel` (canal générique `exports:excel`, `BoutonExporter`, Stock, Dépenses, Rapports de gestion) ; PR 2 `b/exports-listes` (Produits, Péremptions, Sorties, Réceptions, Commandes, Fournisseurs, détail d'un inventaire, Journal en entier) |
-| B16   | Sauvegardes et restauration               | B   | 🔄     | PR 1 `b/sauvegardes` (serveur : API de sauvegarde SQLite, rotation 30 + 1 par semaine sur 52, clé USB, sauvegarde avant mise à jour et au démarrage, canaux `sauvegardes:etat` / `liste` / `creer`). PR 2 `b/sauvegardes-ecran` (restauration admin en deux temps avec sauvegarde de la base en place, journal dans la base restaurée, menu « Sauvegardes »). Reste : branchement à la clôture (ligne dans `caisse/ipc.ts`, Dev A), essai de restauration sur le terminal, envoi distant (D-A4) |
+| B14   | Rapports de gestion, journal d'audit      | B   | 🔄     | PR #47 (serveur : pertes par cause, valeur du stock par rayon, achats par fournisseur, résultat sans marge), #48 (menu « Rapports de gestion », quatre onglets) et #49 (journal des opérations, admin, `audit:journal` / `audit:choix`) ; testé à la main. **Reste la marge**, en attente de `caisse:ventesPeriode` (A14) |
+| B15   | Exports Excel                             | B   | ✅     | PR #50 (canal générique `exports:excel`, `BoutonExporter`, Stock, Dépenses, Rapports de gestion) et #51 (Produits, Péremptions, Sorties, Réceptions, Commandes, Fournisseurs, détail d'un inventaire, Journal en entier) ; testé à la main |
+| B16   | Sauvegardes et restauration               | B   | ⏳     |   |
 
 ## Phase 5 — Mise en service (S19–S20)
 | Tâche | Intitulé                                            | Dev | Statut | Notes (branche, blocage) |
@@ -149,3 +149,10 @@ Le socle comprend :
 | 2026-10-06 | B11   | Partie 2 : écran Sorties de stock (motif, lot, retour fournisseur avec avoir attendu, annulation), avoirs « reçu » / « refusé » dans la fenêtre des dettes, avoir à valoir sur la page Fournisseurs (PR #40) |
 | 2026-10-08 | B12   | Partie 1 : inventaires total ou par rayon, comptage par conditionnement enregistré aussitôt, validation au CUMP (manquant pris sur les lots les plus anciens), rapport de démarque, annulation ; migration `20261007_0900_inventaires.sql` (PR #42) |
 | 2026-10-08 | B12   | Partie 2 : écran Inventaires (ouverture, comptage en fenêtre, écart et motif en direct, validation, rapport, inventaires précédents) (PR #43) |
+| 2026-10-09 | B13   | Partie 1 : dépenses en fonds propres (catégories de départ, numéro DEP, annulation avec motif journalisée, `totalDepenses` pour B14) ; migration `20261008_0900_depenses.sql` (PR #44) |
+| 2026-10-09 | B13   | Partie 2 : écran Dépenses (nouvelle dépense, annulation, catégories en fenêtre) (PR #45) |
+| 2026-10-09 | B14   | Partie 1 : rapports de gestion côté serveur (pertes par cause, valeur du stock par rayon, achats par fournisseur, résultat dont la marge attend A14) (PR #47) |
+| 2026-10-09 | B14   | Partie 2 : écran Rapports de gestion en quatre onglets, menu `/rapports-gestion` (`/rapports` laissé à A14) (PR #48) |
+| 2026-10-09 | B14   | Partie 3 : journal des opérations (admin), filtres, détail en français ; libellés dans `src/shared/audit.ts` (PR #49) |
+| 2026-10-09 | B15   | Partie 1 : export Excel générique (`exports:excel`, `BoutonExporter`) sur Stock, Dépenses et Rapports de gestion — réutilisable par A (PR #50) |
+| 2026-10-09 | B15   | Partie 2 : export des Produits, Péremptions, Sorties, Réceptions, Commandes, Fournisseurs, inventaires et du Journal (PR #51) |
