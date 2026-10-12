@@ -26,7 +26,8 @@ const CLES: Record<Champ, string> = {
   dormantJours: 'dormant_jours',
   imprimanteMethode: 'imprimante_methode',
   imprimanteCible: 'imprimante_cible',
-  imprimantePageCodes: 'imprimante_page_codes'
+  imprimantePageCodes: 'imprimante_page_codes',
+  sauvegardeDossierExterne: 'sauvegarde_dossier_externe'
 }
 
 /** Le gérant règle l'imprimante (écran « Réglages matériel », A3) ; le reste est à l'admin. */
@@ -69,7 +70,8 @@ export function lireParametres(db: Db): ParametresBoutique {
     dormantJours: jours(v('dormantJours'), 60),
     imprimanteMethode: v('imprimanteMethode')?.trim() === 'share' ? 'share' : 'spooler',
     imprimanteCible: texte(v('imprimanteCible')),
-    imprimantePageCodes: texte(v('imprimantePageCodes'))
+    imprimantePageCodes: texte(v('imprimantePageCodes')),
+    sauvegardeDossierExterne: texte(v('sauvegardeDossierExterne'))
   }
 }
 
@@ -105,6 +107,7 @@ function valeurAEnregistrer(champ: Champ, valeur: unknown): string | null {
     case 'ticketPied':
     case 'imprimanteCible':
     case 'imprimantePageCodes':
+    case 'sauvegardeDossierExterne':
       return exigerTexte(valeur)
     case 'tvaDefaut':
       if (valeur !== 0 && valeur !== 18)

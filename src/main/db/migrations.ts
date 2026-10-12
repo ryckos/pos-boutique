@@ -17,6 +17,24 @@ const fichiers = import.meta.glob('./migrations/*.sql', {
   eager: true
 }) as Record<string, string>
 
+/** Noms des migrations connues de cette version de l'application, dans l'ordre. */
+export function migrationsConnues(): string[] {
+  return Object.keys(fichiers)
+    .sort()
+    .map((chemin) => chemin.split('/').pop() as string)
+}
+
+/**
+ * Migrations pas encore appliquées, sans rien modifier (une base neuve, sans table des migrations,
+ * les attend toutes). Sert à sauvegarder la base avant une mise à jour.
+ */
+export function migrationsEnAttente(db: Db): string[] {
+  const table = toutes(db, "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations'")
+  if (!table.length) return migrationsConnues()
+  const deja = new Set(toutes<{ nom: string }>(db, 'SELECT nom FROM schema_migrations').map((r) => r.nom))
+  return migrationsConnues().filter((nom) => !deja.has(nom))
+}
+
 /** Applique les migrations manquantes. Renvoie la liste de celles appliquées. */
 export function migrer(db: Db): string[] {
   db.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (

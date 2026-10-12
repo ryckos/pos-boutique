@@ -30,6 +30,8 @@ export interface ParametresBoutique {
   imprimanteCible: string | null
   /** Page de codes validée en Phase 0. `null` tant qu'elle n'est pas reportée (D-A2). */
   imprimantePageCodes: string | null
+  /** Dossier de la clé USB où copier chaque sauvegarde (B16, admin). `null` = pas de copie. */
+  sauvegardeDossierExterne: string | null
 }
 
 export interface ContratParametres {

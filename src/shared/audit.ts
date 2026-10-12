@@ -137,7 +137,8 @@ const PARAMETRES: Record<string, string> = {
   dormant_jours: 'Produit dormant après',
   imprimante_methode: 'Imprimante : raccordement',
   imprimante_cible: 'Imprimante : nom ou port',
-  imprimante_page_codes: 'Imprimante : page de codes'
+  imprimante_page_codes: 'Imprimante : page de codes',
+  sauvegarde_dossier_externe: 'Sauvegardes : dossier de la clé USB'
 }
 
 /** « stockApres » → « Stock apres » : dernier recours pour un champ que ce fichier ne connaît pas encore. */
