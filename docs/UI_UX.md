@@ -564,6 +564,18 @@ le journal). Tableau Date et heure / Personne / Action / Détail : le détail do
 (« Motif : doublon »), puis en petit « Avant : … ». Les plus récentes d'abord, 200 lignes, puis
 « Afficher plus ». Aucun code ni JSON n'apparaît (`REGLES_METIER.md` § 1.4).
 
+### 5.22 Sauvegardes (Dev B — B16, gérant ; restauration admin)
+Page « Sauvegardes » du menu (`modules/sauvegardes/PageSauvegardes.tsx`), après « Paramètres ».
+En tête : « Sauvegarder maintenant » (bouton principal) et, pour l'admin, « Restaurer depuis un
+fichier ». Bloc d'état : dernière sauvegarde (date, heure, motif), alerte si elle a plus de 2 jours ou
+si la dernière sauvegarde automatique a échoué ; clé USB (dossier, pastille « Branchée » / « Non
+branchée » ; admin : « Choisir la clé USB », « Ne plus copier sur une clé »). Après « Sauvegarder
+maintenant », un message dit si la copie sur la clé est faite ou pourquoi elle ne l'est pas. Tableau
+Date et heure / Faite (motif) / Taille, les plus récentes d'abord ; admin : « Restaurer » sur chaque
+ligne. La restauration s'ouvre en fenêtre (bouton rouge) : ce qui disparaîtra, la base actuelle
+sauvegardée d'abord, le redémarrage ; case « J'ai compris » obligatoire. Puis « l'application
+redémarre… » (`REGLES_METIER.md` § 14).
+
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
 - Les messages d'erreur portent `role="alert"`.

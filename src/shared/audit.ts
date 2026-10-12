@@ -2,7 +2,7 @@
  * Lecture du journal d'audit (B14) : chaque action et chaque valeur en français lisible, jamais de
  * code technique ni de JSON à l'écran. Propriétaire : Dev B. Règles pures, testées.
  */
-import { formaterDelai, formaterFCFA, formaterQuantite } from './format'
+import { formaterDateHeure, formaterDelai, formaterFCFA, formaterQuantite } from './format'
 import { LIBELLES_MOUVEMENT } from './stock'
 import type { TypeMouvement } from './types'
 
@@ -95,6 +95,8 @@ const LIBELLES_CHAMP: Record<string, string> = {
   manquants: 'Manquants',
   surplus: 'Surplus',
   fichier: 'Fichier',
+  dateSauvegarde: 'Sauvegarde du',
+  sauvegardeAvant: 'Base remplacée, copiée dans',
   crees: 'Produits créés',
   ignorees: 'Lignes ignorées',
   nouvellesCategories: 'Nouveaux rayons'
@@ -188,6 +190,7 @@ function valeurChamp(cle: string, v: unknown, nomDe: (id: number) => string): st
     if (cle === 'source') return SOURCES[v] ?? v
     if (cle === 'portee') return PORTEES[v] ?? v
     if (cle === 'type') return LIBELLES_MOUVEMENT[v as TypeMouvement] ?? v
+    if (cle === 'dateSauvegarde') return formaterDateHeure(v)
     return v
   }
   // Un objet imbriqué : ses valeurs à la suite, sans accolades.

@@ -12,6 +12,7 @@ import { routesFournisseurs } from '@renderer/modules/fournisseurs/routes'
 import { routesInventaires } from '@renderer/modules/inventaires/routes'
 import { routesParametres } from '@renderer/modules/parametres/routes'
 import { routesRapportsGestion } from '@renderer/modules/rapports-gestion/routes'
+import { routesSauvegardes } from '@renderer/modules/sauvegardes/routes'
 import { routesStock } from '@renderer/modules/stock/routes'
 import { routesUtilisateurs } from '@renderer/modules/utilisateurs/routes'
 import { routesReglagesMateriel } from '@renderer/modules/reglages-materiel/routes'
@@ -28,5 +29,6 @@ export const routes: DefinitionRoute[] = [
   ...routesUtilisateurs, // Dev B
   ...routesAudit, // Dev B
   ...routesParametres, // Dev B
+  ...routesSauvegardes, // Dev B
   ...routesReglagesMateriel // Dev A
 ]
