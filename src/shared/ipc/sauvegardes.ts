@@ -47,4 +47,16 @@ export interface ContratSauvegardes {
   'sauvegardes:liste': { requete: void; reponse: Sauvegarde[] }
   /** Gérant : « Sauvegarder maintenant ». Attend la fin de la sauvegarde (quelques secondes). */
   'sauvegardes:creer': { requete: void; reponse: ResultatSauvegarde }
+  /**
+   * Admin. Ouvre le choix d'un dossier (la clé USB) et l'enregistre (journalisé). `null` si la
+   * personne annule. Pour ne plus copier sur une clé : `parametres:ecrire` avec `null`.
+   */
+  'sauvegardes:choisirDossierExterne': { requete: void; reponse: string | null }
+  /**
+   * Admin. Restaure une sauvegarde de la liste : la base en place est d'abord sauvegardée, puis
+   * l'application redémarre aussitôt la réponse envoyée (`redemarrage: true`).
+   */
+  'sauvegardes:restaurer': { requete: { nom: string }; reponse: { redemarrage: boolean } }
+  /** Admin. Pareil, depuis un fichier choisi (sur la clé USB). `redemarrage: false` si la personne annule. */
+  'sauvegardes:restaurerFichier': { requete: void; reponse: { redemarrage: boolean } }
 }

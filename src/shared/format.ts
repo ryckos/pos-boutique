@@ -21,3 +21,9 @@ export function formaterDate(dateSql: string): string {
   const [a, m, j] = dateSql.slice(0, 10).split('-')
   return `${j}/${m}/${a}`
 }
+
+/** Date et heure SQLite locales « 2026-10-12 18:30:05 » → "12/10/2026 à 18 h 30". */
+export function formaterDateHeure(dateSql: string): string {
+  const [h, m] = dateSql.slice(11, 16).split(':')
+  return h && m ? `${formaterDate(dateSql)} à ${h} h ${m}` : formaterDate(dateSql)
+}

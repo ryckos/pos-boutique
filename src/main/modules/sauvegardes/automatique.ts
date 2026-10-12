@@ -8,13 +8,20 @@ import { base, type Db } from '../../db/connexion'
 import { lireParametres } from '../parametres/service'
 import { dossierSauvegardes, listeSauvegardes, sauvegarder, sauvegardeEnRetard } from './service'
 
+let cheminBase: string | null = null
 let dossier: string | null = null
 let file: Promise<unknown> = Promise.resolve()
 let dernierEchec: string | null = null
 
 /** À appeler une fois au démarrage, avec le chemin de la base ouverte. */
-export function configurerSauvegardes(cheminBase: string): void {
-  dossier = dossierSauvegardes(cheminBase)
+export function configurerSauvegardes(chemin: string): void {
+  cheminBase = chemin
+  dossier = dossierSauvegardes(chemin)
+}
+
+export function cheminBaseCourant(): string {
+  if (!cheminBase) throw new Error('Sauvegardes non configurées')
+  return cheminBase
 }
 
 export function dossierCourant(): string {
