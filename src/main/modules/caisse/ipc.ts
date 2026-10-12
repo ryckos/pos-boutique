@@ -15,6 +15,7 @@ import { enteteDepuis, reglagesDepuis } from '../../materiel/reglages'
 import { mettreEnPageRapport } from '../../materiel/rapport'
 import { mettreEnPageTicket } from '../../materiel/ticket'
 import { lireParametres } from '../parametres/service'
+import { sauvegarderEnFond } from '../sauvegardes/automatique'
 import {
   cloturerSession,
   noterImpressionZ,
@@ -147,7 +148,11 @@ export function enregistrerIpcCaisse(): void {
   })
   gerer('caisse:cloturerSession', (requete) => {
     const u = session.exiger(['caissier', 'gerant'])
-    return cloturerSession(base(), u, requete)
+    const rapport = cloturerSession(base(), u, requete)
+    // Sauvegarde de la base après chaque clôture (Dev B, B16) : APRÈS la transaction, sans
+    // l'attendre ; elle ne lève jamais d'erreur, une clôture n'est jamais bloquée.
+    sauvegarderEnFond('cloture')
+    return rapport
   })
   gerer('caisse:imprimerRapport', ({ sessionId, type }) => {
     const u = session.exiger(['caissier', 'gerant'])

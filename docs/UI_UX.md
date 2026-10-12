@@ -181,6 +181,23 @@ confirmation, « Créer le compte administrateur »).
 - « Supprimer la ligne », Suppr, « − » sur une ligne à 1 et « Vider le ticket » journalisent les lignes
   retirées (règle 6.6), sans rien demander de plus à la caissière.
 
+**Espèces du tiroir (Dev A, A8, 2026-10-12)** — apports et retraits hors vente, règle 6.10 :
+- Bouton « Espèces du tiroir » sous le ticket, **visible seulement pour le gérant** (et l'admin). La
+  caissière ne le voit pas ; ses dépenses payées au tiroir se saisissent dans le menu « Dépenses » (B13).
+- La fenêtre affiche « En caisse d'après le logiciel : 56 200 F » (espèces théoriques du X), la liste des
+  mouvements de la caisse (heure, libellé, saisi par, montant + / −) et, s'il y a plusieurs caisses
+  ouvertes, le choix « Caisse du tiroir » (la sienne proposée d'abord).
+- Trois boutons : « Mettre des espèces (apport) », « Sortir des espèces (retrait) », « Autre mouvement »
+  (le gérant choisit alors entrée ou sortie). Chacun ouvre une `FenetreFormulaire` : montant, motif
+  obligatoire (imprimé sur le X et le Z) ; le bouton dit l'action (« Enregistrer le retrait »).
+- Après l'enregistrement, le tiroir s'ouvre et la fenêtre affiche « Sortie de 20 000 F enregistrée.
+  Prenez les espèces dans le tiroir. » ; s'il ne s'ouvre pas : bandeau ambre « …mais le tiroir ne s'est
+  pas ouvert : ouvrez-le à la clé ». Une sortie plus grande que le tiroir est refusée dans la fenêtre.
+- « Annuler » sur un apport, un retrait ou un « Autre » encore valable : motif obligatoire, bouton rouge
+  « Annuler le mouvement ». La ligne reste, grisée avec la pastille « Annulé », suivie de
+  « Annulation : Apport (erreur de montant) ». Une dépense s'annule depuis l'écran Dépenses.
+- Douchette et raccourcis de la caisse sont coupés tant que la fenêtre est ouverte ; Échap la ferme.
+
 ### 5.3 Paiement (Dev A — A2)
 Une fenêtre centrée s'ouvre au-dessus de la caisse. Elle contient :
 - en haut, le montant à payer ;

@@ -136,14 +136,15 @@ export function enregistrerMouvementCaisse(db: Db, e: EntreeMouvementCaisse): Mo
       action: 'mouvement_caisse',
       entite: 'mouvements_caisse',
       entiteId: id,
+      // Pas de clé en « …Id » : le journal de B14 y lit un identifiant d'utilisateur.
       apres: {
-        sessionId: e.sessionId,
+        session: e.sessionId,
         sens: e.sens,
         motif: e.motif,
         montant: e.montant,
         commentaire,
-        documentType: e.documentType ?? null,
-        documentId: e.documentId ?? null
+        typeDocument: e.documentType ?? null,
+        document: e.documentId ?? null
       }
     })
     return lireMouvement(db, id)
@@ -197,13 +198,13 @@ export function annulerMouvementCaisse(
       entite: 'mouvements_caisse',
       entiteId: m.id,
       avant: {
-        sessionId: m.sessionId,
+        session: m.sessionId,
         sens: m.sens,
         motif: m.motif,
         montant: m.montant,
         commentaire: m.commentaire
       },
-      apres: { contreMouvementId: id, motif }
+      apres: { contreMouvement: id, motif }
     })
     return lireMouvement(db, id)
   })

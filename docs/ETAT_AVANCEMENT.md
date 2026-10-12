@@ -24,7 +24,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 | `caisse:enregistrerVente` (modèle de transaction)         | A         | B (lecture) | fin S5   | ✅     | PR #7 — `service-vente.ts`, modèle de transaction à lire |
 | Stock initial de démarrage                                | B         | A (recette) | fin S7   | ✅     | PR #21 — écran « Stock initial » (gérant), à utiliser sur des produits importés par Excel pour la recette Phase 1 |
 | `stock/allouerFefo(db, produitId, qteBase)`               | B         | A           | fin S10  | ✅     | PR #35 — `allouerFefo` de `modules/stock/fefo.ts` → `{ lotId: number \| null; quantite }[]`, somme = `qteBase`, un mouvement par part ; lots périmés jamais servis ; reste sans lot (REGLES_METIER § 5.1) ; débloque A9 |
-| `caisse/sessionOuverte()`, `enregistrerMouvementCaisse()` | A         | B           | fin S10  | 🔄     | B13 — branche `a/caisse-mouvements` (PR 1) : `sessionOuverte(db)` (seule caisse ouverte, sinon `null`), `enregistrerMouvementCaisse(db, { sessionId, utilisateurId, sens, motif, montant, commentaire, documentType?, documentId? })` et `annulerMouvementCaisse` dans `modules/caisse/service-mouvements.ts`, à appeler dans la transaction du document ; sortie ≤ tiroir ; motif `reglement_fournisseur` ajouté |
+| `caisse/sessionOuverte()`, `enregistrerMouvementCaisse()` | A         | B           | fin S10  | ✅     | PR #55 — débloque B13 (source caisse) et le règlement fournisseur au tiroir : `sessionOuverte(db)` (seule caisse ouverte, sinon `null`), `enregistrerMouvementCaisse(db, { sessionId, utilisateurId, sens, motif, montant, commentaire, documentType?, documentId? })` et `annulerMouvementCaisse` dans `modules/caisse/service-mouvements.ts`, à appeler dans la transaction du document ; sortie ≤ tiroir ; motif `reglement_fournisseur` ajouté |
 | `caisse:ventesPeriode`                                    | A         | B           | fin S16  | ⏳     | B14 |
 | Alertes rupture et péremption (lecture)                   | B         | A           | fin S17  | ⏳     | A15 |
 
@@ -74,7 +74,7 @@ Le socle comprend :
 |-------|-------------------------------------------|-----|--------|--------------------------|
 | A6    | Annulation de ticket                      | A   | ⏳     |   |
 | A7    | Retour client et remboursement            | A   | ⏳     |   |
-| A8    | Mouvements de caisse (+ API pour B)       | A   | 🔄     | `a/caisse-mouvements` — PR 1 (serveur : migration `20261008_1704_mouvements_caisse.sql`, service, canaux, 21 tests) prête ; PR 2 (écran « Entrée / sortie d'espèces ») à faire |
+| A8    | Mouvements de caisse (+ API pour B)       | A   | 🔄     | PR #55 fusionnée (serveur : migration `20261008_1704_mouvements_caisse.sql`, service, canaux, 21 tests) ; PR 2 `a/caisse-mouvements-ecran` (fenêtre « Espèces du tiroir » du gérant, sauvegarde après clôture de B16) en relecture |
 | A9    | FEFO à la vente                           | A   | ⏳     |   |
 | A10   | Facture et proforma                       | A   | ⏳     |   |
 | B7    | Fournisseurs                              | B   | ✅     | PR #24 (fiches, solde dû, désactivation si dette réglée, écran Fournisseurs) et #27 (bouton « Achats » : livraisons d'une période et derniers prix d'achat, canal `fournisseurs:achats`) |
@@ -156,3 +156,4 @@ Le socle comprend :
 | 2026-10-09 | B14   | Partie 3 : journal des opérations (admin), filtres, détail en français ; libellés dans `src/shared/audit.ts` (PR #49) |
 | 2026-10-09 | B15   | Partie 1 : export Excel générique (`exports:excel`, `BoutonExporter`) sur Stock, Dépenses et Rapports de gestion — réutilisable par A (PR #50) |
 | 2026-10-09 | B15   | Partie 2 : export des Produits, Péremptions, Sorties, Réceptions, Commandes, Fournisseurs, inventaires et du Journal (PR #51) |
+| 2026-10-12 | A8    | Partie 1 : mouvements de caisse côté serveur, sortie plafonnée au tiroir, annulation par contre-mouvement, migration `20261008_1704_mouvements_caisse.sql` — contrat `enregistrerMouvementCaisse()` livré à B (PR #55) |

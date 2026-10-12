@@ -97,11 +97,15 @@ describe('Mouvements de caisse — cas de référence', () => {
     })
     const [entree] = journal(db, 'mouvement_caisse')
     expect(entree.entiteId).toBe(m.id)
-    expect(JSON.parse(entree.apres)).toMatchObject({
-      sessionId,
+    // Aucune clé en « …Id » : le journal de B14 les lit comme des identifiants d'utilisateur.
+    expect(JSON.parse(entree.apres)).toEqual({
+      session: sessionId,
       sens: 'sortie',
       motif: 'retrait',
-      montant: 20000
+      montant: 20000,
+      commentaire: 'banque',
+      typeDocument: null,
+      document: null
     })
   })
 
@@ -239,7 +243,7 @@ describe('Mouvements de caisse — annulation par contre-mouvement', () => {
     expect(rapportSession(db, sessionId).especesTheoriques).toBe(56200)
     const [entree] = journal(db, 'annulation_mouvement_caisse')
     expect(entree.entiteId).toBe(apport.id)
-    expect(JSON.parse(entree.apres)).toEqual({ contreMouvementId: contre.id, motif: 'erreur de saisie' })
+    expect(JSON.parse(entree.apres)).toEqual({ contreMouvement: contre.id, motif: 'erreur de saisie' })
   })
 
   it('une seule fois ; jamais une annulation ; motif obligatoire', () => {
