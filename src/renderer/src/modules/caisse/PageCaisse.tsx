@@ -470,6 +470,13 @@ export function PageCaisse(): React.JSX.Element {
                 Prévenez le gérant pour vérifier le stock.
               </p>
             ))}
+            {/* FEFO (A9) : le stock restant connu est périmé, l'article vendu en vient peut-être. */}
+            {derniereVente.alertesPeremption.map((a) => (
+              <p key={`p-${a.produitId}`} className="bandeau">
+                {a.designation} : vérifiez la date de l’article vendu, le stock restant connu est périmé (
+                {a.lots.join(', ')}). Prévenez le gérant.
+              </p>
+            ))}
           </>
         )}
 

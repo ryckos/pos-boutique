@@ -10,6 +10,9 @@
  *
  * Remises (règle 6.6, A5) : montants contrôlés ici, plafond de la caissière relu dans les
  * paramètres, chaque remise journalisée dans la même transaction que la vente.
+ *
+ * FEFO (règle 5.1, A9) : un produit suivi en péremption sort de ses lots, la date la plus proche
+ * d'abord (`allouerFefo` de Dev B), un mouvement par lot ; le reste sort sans lot, jamais bloquant.
  */
 import { randomUUID } from 'node:crypto'
 import type {
@@ -29,6 +32,7 @@ import { journaliser } from '../../core/audit'
 import { ErreurMetier } from '../../core/erreurs'
 import { verifierCodeCompte } from '../auth/service'
 import { lireParametres } from '../parametres/service'
+import { allouerFefo } from '../stock/fefo'
 import { ventilerTva } from './calculs'
 import { sessionOuverte } from './service-session'
 
@@ -45,6 +49,8 @@ interface ConditionnementEnBase {
   tauxTva: number
   /** CUMP par unité de base. */
   cump: number
+  /** 1 = produit suivi par lots avec date de péremption : il sort en FEFO (A9). */
+  suiviPeremption: number
 }
 
 /** Une ligne préparée, prête à être photocopiée dans lignes_vente. */
@@ -63,7 +69,7 @@ function lireConditionnement(db: Db, conditionnementId: number): Conditionnement
     db,
     `SELECT v.conditionnement_id AS conditionnementId, v.produit_id AS produitId, v.designation,
             v.quantite_base AS quantiteBase, v.prix_vente AS prixVente, v.taux_tva AS tauxTva,
-            p.cout_moyen_pondere AS cump
+            p.cout_moyen_pondere AS cump, v.suivi_peremption AS suiviPeremption
      FROM v_catalogue_vente v JOIN produits p ON p.id = v.produit_id
      WHERE v.conditionnement_id = ?`,
     conditionnementId
@@ -234,6 +240,19 @@ function controlerPaiements(
   return { montantRecu, monnaieRendue: montantRecu - especes }
 }
 
+/** Numéros des lots périmés du produit qui ont encore du stock, le plus ancien d'abord. */
+function lotsPerimesEnStock(db: Db, produitId: number): string[] {
+  return toutes<{ numero: string }>(
+    db,
+    `SELECT COALESCE(l.numero_lot, 'sans numéro') AS numero
+     FROM lots l JOIN mouvements_stock m ON m.lot_id = l.id
+     WHERE l.produit_id = ? AND l.date_peremption < date('now','localtime')
+     GROUP BY l.id HAVING SUM(m.quantite) > 0
+     ORDER BY l.date_peremption, l.id`,
+    produitId
+  ).map((l) => l.numero)
+}
+
 export function enregistrerVente(db: Db, utilisateurId: number, requete: RequeteVente): VenteEnregistree {
   const vente = avecTransaction(db, () => {
     const session = sessionOuverte(db, utilisateurId)
@@ -273,16 +292,29 @@ export function enregistrerVente(db: Db, utilisateurId: number, requete: Requete
       monnaieRendue
     ).id
 
+    // Produits suivis dont une part est sortie sans lot : à vérifier contre leurs lots périmés.
+    const sansLot = new Set<number>()
     for (const l of lignes) {
+      // FEFO (A9, règle 5.1) : un mouvement par lot servi, date la plus proche d'abord. Calculé ligne
+      // après ligne dans la transaction : deux lignes du même produit se suivent sans se chevaucher.
+      const parts = l.suiviPeremption
+        ? allouerFefo(db, l.produitId, l.quantiteBaseTotale)
+        : [{ lotId: null, quantite: l.quantiteBaseTotale }]
+      // Une seule colonne lot sur la ligne : renseignée si un seul lot la sert entièrement. Le détail
+      // exact est dans les mouvements de la vente (validé par Dev A, 2026-10-12).
+      const lotUnique = parts.length === 1 ? parts[0].lotId : null
+
       // Photocopie au moment T : l'historique ne bouge plus si le catalogue change.
       executer(
         db,
-        `INSERT INTO lignes_vente (vente_id, produit_id, conditionnement_id, designation, quantite, prix_unitaire,
-                                   remise_ligne, taux_tva, cout_unitaire, quantite_base_totale, total_ligne)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO lignes_vente (vente_id, produit_id, conditionnement_id, lot_id, designation, quantite,
+                                   prix_unitaire, remise_ligne, taux_tva, cout_unitaire, quantite_base_totale,
+                                   total_ligne)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         venteId,
         l.produitId,
         l.conditionnementId,
+        lotUnique,
         l.designation,
         l.quantite,
         l.prixVente,
@@ -292,16 +324,19 @@ export function enregistrerVente(db: Db, utilisateurId: number, requete: Requete
         l.quantiteBaseTotale,
         l.totalLigne
       )
-      // Lot : null jusqu'au FEFO (A9, allouerFefo de Dev B).
-      enregistrerMouvement(db, {
-        produitId: l.produitId,
-        type: 'vente',
-        quantite: -l.quantiteBaseTotale,
-        coutUnitaire: l.cump,
-        documentType: 'vente',
-        documentId: venteId,
-        utilisateurId
-      })
+      for (const part of parts) {
+        if (part.lotId === null && l.suiviPeremption) sansLot.add(l.produitId)
+        enregistrerMouvement(db, {
+          produitId: l.produitId,
+          lotId: part.lotId,
+          type: 'vente',
+          quantite: -part.quantite,
+          coutUnitaire: l.cump,
+          documentType: 'vente',
+          documentId: venteId,
+          utilisateurId
+        })
+      }
     }
 
     for (const p of requete.paiements) {
@@ -341,7 +376,24 @@ export function enregistrerVente(db: Db, utilisateurId: number, requete: Requete
         designation: une<{ nom: string }>(db, 'SELECT nom FROM produits WHERE id = ?', a.produitId)!.nom
       }))
 
-    return { venteId, numeroTicket, totalTtc: totaux.totalTtc, monnaieRendue, alertesStock }
+    // Part sortie sans lot alors qu'il reste du stock dans un lot périmé : la boîte vendue vient peut-être
+    // de ce lot (le FEFO ne sert jamais un périmé). Jamais bloquant ; signalé à la caissière.
+    const alertesPeremption = [...sansLot]
+      .map((produitId) => ({
+        produitId,
+        designation: une<{ nom: string }>(db, 'SELECT nom FROM produits WHERE id = ?', produitId)!.nom,
+        lots: lotsPerimesEnStock(db, produitId)
+      }))
+      .filter((a) => a.lots.length > 0)
+
+    return {
+      venteId,
+      numeroTicket,
+      totalTtc: totaux.totalTtc,
+      monnaieRendue,
+      alertesStock,
+      alertesPeremption
+    }
   })
   // Usage unique : l'accord tombe avec la vente qu'il a permise (pas avant, un refus de paiement le garde).
   if (requete.jetonRemise !== undefined) accords.delete(requete.jetonRemise)

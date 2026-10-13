@@ -67,6 +67,11 @@ export interface VenteEnregistree {
    * attente D-A1) : l'écran affiche une alerte.
    */
   alertesStock: { produitId: number; designation: string; stockApres: number }[]
+  /**
+   * Produits suivis en péremption dont une part est sortie sans lot alors qu'un lot périmé a encore du
+   * stock (A9) : la boîte vendue vient peut-être de ce lot. Jamais bloquant ; l'écran le signale.
+   */
+  alertesPeremption: { produitId: number; designation: string; lots: string[] }[]
 }
 
 /** Une session ouverte, vue par le gérant qui choisit laquelle clôturer. */
