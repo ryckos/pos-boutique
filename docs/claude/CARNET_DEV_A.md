@@ -18,6 +18,107 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-13 — a/caisse-mouvements, a/caisse-fefo, a/caisse-annulation(-ecran) — A8, A9, A6 (et rattrapage A5)
+**Fait** :
+- **Rattrapage A5** (session du 2026-10-01, sans entrée de carnet) : PR #30 fusionnée. Remises sur
+  ligne et sur ticket contrôlées côté serveur, plafond sur le **total** des remises du ticket
+  (non renseigné = gérant obligatoire, D-A3), code du gérant tapé sur la caisse → accord à usage
+  unique (`caisse:gerants`, `caisse:autoriserRemise`), TVA de la remise ticket au prorata des taux,
+  lignes retirées journalisées (`caisse:journaliserAnnulationLigne`). Règles : `REGLES_METIER` § 6.6.
+  Reste la **partie 3** : performance sur le terminal (scan → ligne < 1 s) et recette Phase 1 avec Dev B.
+- **A8 Mouvements de caisse — ✅** (PR #55 serveur, #56 écran). Règles validées par Dev A,
+  `REGLES_METIER` § 6.10 et § 1.4 :
+  - apport / retrait / « Autre » saisis par le **gérant**, motif en clair obligatoire (imprimé sur
+    le X et le Z), journal `mouvement_caisse` ;
+  - une seule caisse ouverte → prise d'office ; plusieurs → le gérant choisit ;
+  - **une sortie ne dépasse jamais les espèces théoriques** du tiroir (vaut aussi pour les dépenses) ;
+  - correction = **contre-mouvement** lié (`mouvement_origine_id`), motif, journal
+    `annulation_mouvement_caisse`, une fois, tant que la session est ouverte ;
+  - tiroir ouvert après la transaction ; en panne, le mouvement reste et l'écran le dit.
+  - Migration `20261008_1704_mouvements_caisse.sql` : table recréée (motif `reglement_fournisseur`
+    ajouté pour Dev B, `mouvement_origine_id`), triggers : ni UPDATE ni DELETE, **aucun INSERT sur une
+    session clôturée** (le garde-fou noté en A4 est fait).
+  - Écran : bouton « Espèces du tiroir » (gérant) dans la caisse → `FenetreTiroir.tsx`.
+  - **Sauvegarde après chaque clôture** branchée (`sauvegarderEnFond('cloture')` dans
+    `caisse/ipc.ts`, demande de Dev B, B16).
+  - Journal : clés sans suffixe « Id » (`session`, `document`, `contreMouvement`), sinon le journal
+    de B14 les affiche comme des noms d'utilisateur.
+- **A9 FEFO à la vente — 🔄, PR ouverte** (`a/caisse-fefo`, commit `243f1e4`, non fusionnée). Règles
+  validées, `REGLES_METIER` § 6.3 : `allouerFefo` (Dev B) ligne après ligne dans la transaction, un
+  mouvement `vente` par lot au CUMP ; `lignes_vente.lot_id` = le lot s'il est unique, sinon NULL (les
+  mouvements font foi) ; si une part sort sans lot alors qu'un lot **périmé** a encore du stock →
+  bandeau à la caisse (`VenteEnregistree.alertesPeremption`). 8 tests ; essai manuel validé par Dev A.
+  Script d'essai hors dépôt pour vieillir un lot : une réception refuse une date passée.
+- **A6 Annulation de ticket — 🔄, deux PR ouvertes** :
+  - PR 1 `a/caisse-annulation` (commit `00827f1`) : `service-annulation.ts`, canaux
+    `caisse:consulterTicket` et `caisse:annulerTicket`. Règles validées, `REGLES_METIER` § 6.7 :
+    **seulement un ticket d'une caisse encore ouverte** (après clôture → retour client A7) ; gérant
+    connecté, ou caissière sur sa caisse avec le **code du gérant** (vérifié HORS transaction : un code
+    faux reste compté) ; statut `annulee` + motif, `contrePasser` de chaque mouvement, un paiement
+    inverse par paiement (somme = 0), journal `annulation_ticket` ; tiroir ouvert s'il y a des espèces
+    à rendre ; réimpression avec « TICKET ANNULÉ » et le motif, jamais de tiroir. 9 tests.
+  - PR 2 `a/caisse-annulation-ecran` (commit `f072cda`, **empilée sur la PR 1**) : bouton
+    « Annuler un ticket » → `FenetreAnnulation.tsx`, logique pure `annulation.ts`, 4 tests. Essai
+    manuel validé par Dev A (code faux puis bon code, X à 0 ticket et 10 000 F, stock revenu, caisse
+    clôturée refusée, journal).
+- Sur `a/caisse-annulation-ecran` : **600 tests verts**, typecheck OK.
+
+**En cours** : trois PR attendent la relecture de Dev B, **à fusionner dans cet ordre** :
+1. `a/caisse-fefo` → `test` (A9).
+2. `a/caisse-annulation` → `test` (A6 partie 1).
+3. `a/caisse-annulation-ecran` (ouverte avec pour base `a/caisse-annulation`).
+Plus cette PR de carnet `a/docs-carnet`, indépendante, à fusionner quand on veut.
+
+**Prochaine étape** :
+1. `git fetch` et regarder ce qui est fusionné.
+   - Après la fusion de la PR 1 d'A6 (squash), rebaser la PR 2 :
+     `git switch a/caisse-annulation-ecran; git rebase --onto origin/test 00827f1; npm run verifier; git push --force-with-lease`,
+     puis changer sa base pour `test` sur GitHub.
+   - Si A9 est fusionnée avant A6, un conflit est possible dans `ETAT_AVANCEMENT.md` (lignes A6 / A9
+     voisines) : garder les deux côtés.
+2. Après chaque fusion : la ligne au journal des fusions de `ETAT_AVANCEMENT.md`, A9 → ✅, A6 → ✅
+   (après la PR 2), supprimer les branches (local et GitHub).
+3. Puis **A7 — Retour client et remboursement** (`/tache A7`, branche `a/caisse-retour` depuis `test`
+   à jour, **après** la fusion d'A6 et d'A9, dont il réutilise la contre-passation et les lots).
+   Relire `REGLES_METIER` § 6.8, `UI_UX` § 5.10, `SCENARIO_REFERENCE` (jus d'ananas du T-2026-000158).
+   Points à trancher avec Dev A avant le plan :
+   - sur quelle caisse le remboursement : celle du jour (une session doit être ouverte) ;
+   - « avoir en boutique » : il n'y a pas de table d'avoirs client avant A11 → reporter, ou noter
+     seulement ;
+   - lot de la boîte retournée : le relire dans les mouvements de la vente d'origine (A9) ;
+   - qui valide : gérant, ou caissière avec le code du gérant comme A6 ;
+   - le X et le Z : comment afficher les retours (ligne « Remboursements »).
+4. A10 (facture A4 et proforma), puis Phase 3 (A11 crédit).
+
+**Questions ouvertes** :
+- **Essai sur le terminal** toujours à faire (Dev A n'a pas encore l'imprimante) : Xprinter (A3, A4,
+  page de codes **D-A2**), tiroir réel (A8, A6), fenêtre de paiement sur le 15,6″, douchette réelle.
+  A3 et A4 restent 🔄 jusque-là.
+- D-A1 (stock négatif) et D-A3 (montant du plafond de remise) : en attente de la cliente, sans
+  blocage (code du gérant en attendant).
+- Le X et le Z n'affichent pas les tickets annulés de la session (ils n'en tiennent simplement pas
+  compte) : à proposer à la cliente si elle veut une ligne de contrôle « Tickets annulés : 1 (8 500 F) ».
+- Sur ce poste : tag local `sauvegarde-avant-rebase-a3` toujours présent (`git tag -d sauvegarde-avant-rebase-a3`).
+
+**Contrats** :
+- **Livré à Dev B (rendez-vous fin S10, PR #55)** dans `src/main/modules/caisse/service-mouvements.ts` :
+  `enregistrerMouvementCaisse(db, { sessionId, utilisateurId, sens, motif, montant, commentaire,
+  documentType?, documentId? })` et `annulerMouvementCaisse(db, { mouvementId, utilisateurId, motif })`,
+  à appeler **dans la transaction** de la dépense ; ils ne relisent pas le rôle. `sessionOuverte(db)`
+  sans utilisateur = la seule caisse ouverte, sinon `null` (choisir dans `sessionsOuvertes(db)`) ;
+  avec un utilisateur, rien ne change. **Débloque B13 (source caisse) et le règlement fournisseur au tiroir.**
+- **Décisions de Dev A pour Dev B** : la caissière saisit ses dépenses « caisse » dans le **menu
+  Dépenses restreint** (source caisse, sa session) ; rien n'est ajouté dans l'écran Caisse. La sauvegarde
+  après clôture est faite côté caisse.
+- **Demandé à Dev B** : dans `src/shared/audit.ts`, ajouter les libellés de `mouvement_caisse` et
+  `annulation_mouvement_caisse`, et traduire les valeurs de `sens` (entrée / sortie) et de `motif`
+  (`LIBELLES_MOTIF_CAISSE` de `src/shared/caisse.ts` est réutilisable) ; sinon le journal les affiche en
+  code brut.
+- **Pour Dev B (rapports B14, A14)** : un ticket annulé a `statut = 'annulee'` et des paiements dont la
+  somme fait 0 ; filtrer sur `statut = 'terminee'`. Contrat ajouté : `VenteEnregistree.alertesPeremption`
+  (A9), sans impact.
+- Consommé : `allouerFefo` (Dev B, B9) dans `enregistrerVente` (A9).
+
 ## 2026-10-01 — a/caisse-cloture — A4 Sessions de caisse, rapports X et Z
 **Fait** :
 - **Partie 1 (serveur, commit `238a185`, travail du 2026-09-25)** : `modules/caisse/service-cloture.ts`
