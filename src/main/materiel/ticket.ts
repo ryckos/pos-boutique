@@ -43,6 +43,8 @@ export interface TicketAImprimer {
   paiements: PaiementTicket[]
   montantRecu: number
   monnaieRendue: number
+  /** Ticket annulé (A6) : il se réimprime avec « TICKET ANNULÉ » et le motif. */
+  annulation?: { motif: string } | null
 }
 
 export interface EnteteTicket {
@@ -129,6 +131,10 @@ export function lignesTicket(
   l.push({ texte: entete.nom.slice(0, LARGEUR_DOUBLE), centre: true, gras: true, double: true })
   for (const a of entete.adresse) for (const t of couper(a)) l.push({ texte: t, centre: true })
   if (options.duplicata) l.push({ texte: 'DUPLICATA', centre: true, gras: true, double: true })
+  if (ticket.annulation) {
+    l.push({ texte: 'TICKET ANNULÉ', centre: true, gras: true, double: true })
+    for (const t of couper(`Motif : ${ticket.annulation.motif}`)) l.push({ texte: t, centre: true })
+  }
   l.push(SEPARATEUR)
   l.push({ texte: `Ticket ${ticket.numeroTicket}` })
   l.push({ texte: `Date   ${dateTicket(ticket.horodatage)}` })
@@ -176,6 +182,8 @@ export function lignesTicket(
     l.push({ texte: colonnes('Espèces reçues', montantTicket(ticket.montantRecu)) })
     l.push({ texte: colonnes('Monnaie rendue', montantTicket(ticket.monnaieRendue)) })
   }
+
+  if (ticket.annulation) l.push({ texte: 'Ticket annulé : remboursé au client.', centre: true, gras: true })
 
   l.push({ texte: '' })
   for (const t of couper(entete.pied)) l.push({ texte: t, centre: true })

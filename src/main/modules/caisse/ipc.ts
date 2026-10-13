@@ -2,7 +2,7 @@
  * Propriétaire : Dev A.
  * Canaux caisse:* — minces : droits, puis appel du service. Organisation du module :
  *   service-session.ts · service-vente.ts · service-ticket.ts · service-cloture.ts ·
- *   service-mouvements.ts · calculs.ts (TVA, totaux — testés) · ipc.ts
+ *   service-mouvements.ts · service-annulation.ts · calculs.ts (TVA, totaux — testés) · ipc.ts
  */
 import type { MouvementCaisse, MouvementEnregistre } from '@shared/ipc/caisse'
 import type { UtilisateurConnecte } from '@shared/types'
@@ -26,6 +26,7 @@ import {
   verifierAccesSession,
   verifierTypeRapport
 } from './service-cloture'
+import { annulerTicket, consulterTicket } from './service-annulation'
 import {
   annulerMouvementAuTiroir,
   mouvementsSession,
@@ -66,18 +67,22 @@ async function imprimer(u: UtilisateurConnecte, venteId: number): Promise<{ dupl
 }
 
 /**
- * Ouvre le tiroir après un mouvement de caisse, HORS transaction. Le mouvement est déjà enregistré :
- * une imprimante en panne ne l'annule pas, l'écran dit seulement d'ouvrir le tiroir à la clé.
- * Pas de journal `ouverture_tiroir_hors_vente` : le mouvement lui-même est journalisé.
+ * Ouvre le tiroir après un mouvement de caisse ou une annulation, HORS transaction. L'opération est
+ * déjà enregistrée : une imprimante en panne ne l'annule pas, l'écran dit seulement d'ouvrir le tiroir
+ * à la clé. Pas de journal `ouverture_tiroir_hors_vente` : l'opération elle-même est journalisée.
  */
-async function ouvrirTiroirApresMouvement(mouvement: MouvementCaisse): Promise<MouvementEnregistre> {
+async function ouvrirTiroir(): Promise<boolean> {
   try {
     const reglages = reglagesDepuis(lireParametres(base()))
     await envoyerBrut(reglages.methode, reglages.cible, buildDrawerPulse())
-    return { mouvement, tiroirOuvert: true }
+    return true
   } catch {
-    return { mouvement, tiroirOuvert: false }
+    return false
   }
+}
+
+async function ouvrirTiroirApresMouvement(mouvement: MouvementCaisse): Promise<MouvementEnregistre> {
+  return { mouvement, tiroirOuvert: await ouvrirTiroir() }
 }
 
 /** Rapport X ou Z, toujours APRÈS la clôture : une imprimante en panne ne l'annule jamais. */
@@ -166,6 +171,16 @@ export function enregistrerIpcCaisse(): void {
   gerer('caisse:enregistrerMouvement', (requete) => {
     const u = session.exiger(['gerant'])
     return ouvrirTiroirApresMouvement(saisirMouvementAuTiroir(base(), u, requete))
+  })
+  gerer('caisse:consulterTicket', ({ numeroTicket }) => {
+    const u = session.exiger(['caissier', 'gerant'])
+    return consulterTicket(base(), u, numeroTicket)
+  })
+  gerer('caisse:annulerTicket', async (demande) => {
+    const u = session.exiger(['caissier', 'gerant'])
+    const resultat = annulerTicket(base(), u, demande)
+    // Espèces à rendre : le tiroir s'ouvre APRÈS la transaction ; jamais pour du mobile money seul.
+    return resultat.especesARendre > 0 ? { ...resultat, tiroirOuvert: await ouvrirTiroir() } : resultat
   })
   gerer('caisse:annulerMouvement', (annulation) => {
     const u = session.exiger(['gerant'])

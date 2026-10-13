@@ -31,6 +31,8 @@ interface VenteEnBase {
   remiseGlobale: number
   montantRecu: number
   monnaieRendue: number
+  statut: string
+  motifAnnulation: string | null
 }
 
 function lireVente(db: Db, venteId: number): VenteEnBase {
@@ -38,7 +40,8 @@ function lireVente(db: Db, venteId: number): VenteEnBase {
     db,
     `SELECT v.id, v.numero_ticket AS numeroTicket, v.session_caisse_id AS sessionCaisseId,
             v.horodatage, u.nom AS caissier, v.total_ttc AS totalTtc,
-            v.remise_globale AS remiseGlobale, v.montant_recu AS montantRecu, v.monnaie_rendue AS monnaieRendue
+            v.remise_globale AS remiseGlobale, v.montant_recu AS montantRecu, v.monnaie_rendue AS monnaieRendue,
+            v.statut, v.motif_annulation AS motifAnnulation
      FROM ventes v JOIN utilisateurs u ON u.id = v.utilisateur_id
      WHERE v.id = ?`,
     venteId
@@ -64,9 +67,11 @@ export function lireTicket(db: Db, venteId: number): TicketAImprimer {
      FROM lignes_vente WHERE vente_id = ? ORDER BY id`,
     venteId
   )
+  // Paiements d'origine seulement : ceux d'une annulation (négatifs) n'apparaissent pas sur le ticket,
+  // qui porte à la place la mention TICKET ANNULÉ (A6).
   const paiements = toutes<{ mode: string; montant: number; reference: string | null }>(
     db,
-    'SELECT mode, montant, reference FROM paiements WHERE vente_id = ? ORDER BY id',
+    'SELECT mode, montant, reference FROM paiements WHERE vente_id = ? AND montant > 0 ORDER BY id',
     venteId
   )
   return {
@@ -88,7 +93,8 @@ export function lireTicket(db: Db, venteId: number): TicketAImprimer {
     ).parTaux,
     paiements,
     montantRecu: v.montantRecu,
-    monnaieRendue: v.monnaieRendue
+    monnaieRendue: v.monnaieRendue,
+    annulation: v.statut === 'annulee' ? { motif: v.motifAnnulation ?? '' } : null
   }
 }
 
@@ -128,7 +134,12 @@ export function noterImpression(db: Db, utilisateurId: number, venteId: number, 
   })
 }
 
-/** Le tiroir s'ouvre à l'impression de l'original d'une vente payée (en partie) en espèces. */
+/**
+ * Le tiroir s'ouvre à l'impression de l'original d'une vente payée (en partie) en espèces ; jamais
+ * pour un ticket annulé (son remboursement a déjà ouvert le tiroir).
+ */
 export function ouvrirTiroirPour(ticket: TicketAImprimer, duplicata: boolean): boolean {
-  return !duplicata && ticket.paiements.some((p) => p.mode === 'especes' && p.montant > 0)
+  return (
+    !duplicata && !ticket.annulation && ticket.paiements.some((p) => p.mode === 'especes' && p.montant > 0)
+  )
 }

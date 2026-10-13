@@ -47,7 +47,7 @@ Actions à journaliser avec `journaliser()` :
 | `annulation_stock_initial`    | quantité ; motif, stock après (§ 9.1) |
 | `remise`                      | montant, ticket    |
 | `annulation_ligne`            |                    |
-| `annulation_ticket`           |                    |
+| `annulation_ticket`           | numéro, montant, motif, gérant qui a autorisé (§ 6.7) |
 | `impression_ticket`           | duplicata ou non |
 | `ouverture_tiroir_hors_vente` |                    |
 | `ouverture_session_caisse`    | fond de caisse |
@@ -568,6 +568,24 @@ cliente (D-A3) :
 - Le ticket passe au statut `annulee`.
 - Chaque mouvement de stock est contre-passé et un paiement inverse est créé.
 - Le ticket reste visible. Il n'est jamais supprimé.
+
+**Précisions validées par Dev A (2026-10-13, tâche A6)** :
+- **Seulement un ticket d'une caisse encore ouverte** (l'erreur de la journée). Après la clôture, le Z
+  est figé : on passe par le **retour client** (§ 6.8), qui rembourse sur la caisse du jour.
+- **Qui** : le gérant (et l'admin) connecté annule un ticket de n'importe quelle caisse ouverte. La
+  caissière annule un ticket de **sa** caisse si le gérant **tape son code sur la caisse**, sans la
+  déconnecter (même vérification que la connexion, verrouillage après 5 codes faux, comme pour une
+  remise). Le code est vérifié avant l'annulation : un code faux reste compté.
+- **En une transaction** : statut `annulee` et motif ; contre-passation de **chaque** mouvement de
+  stock du ticket (un par lot depuis le FEFO) ; un paiement inverse par paiement d'origine (la somme
+  des paiements du ticket revient à 0) ; journal `annulation_ticket` (numéro, montant, motif, et le
+  gérant qui a autorisé si ce n'est pas lui qui annule).
+- Un ticket annulé ne compte plus dans le X ni dans le Z : les espèces théoriques baissent de sa part
+  en espèces, que l'on **rend au client**. Le tiroir s'ouvre alors, après la transaction ; une panne
+  ne bloque pas l'annulation. Le mobile money se renvoie au client par TMoney ou Flooz (référence
+  d'origine rappelée). Rien ne s'ouvre pour un ticket payé seulement en mobile money.
+- **Réimpression** d'un ticket annulé : mention « TICKET ANNULÉ » et motif, paiements d'origine,
+  jamais d'ouverture du tiroir.
 
 ### 6.8 Retour client
 1. On part du **ticket d'origine**, retrouvé par son numéro, et on sélectionne les lignes
