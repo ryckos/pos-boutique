@@ -72,10 +72,10 @@ Le socle comprend :
 ## Phase 2 — Achats, lots, retours (S9–S12)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
 |-------|-------------------------------------------|-----|--------|--------------------------|
-| A6    | Annulation de ticket                      | A   | 🔄     | `a/caisse-annulation` — PR 1 (serveur : caisse ouverte seulement, code du gérant, contre-passation et paiements inverses, réimpression « TICKET ANNULÉ » ; 9 tests) en relecture ; PR 2 `a/caisse-annulation-ecran` (fenêtre « Annuler un ticket », code du gérant) empilée sur la PR 1 |
+| A6    | Annulation de ticket                      | A   | ✅     | PR #58 (serveur : caisse ouverte seulement, code du gérant, contre-passation et paiements inverses, réimpression « TICKET ANNULÉ » ; 9 tests) et #61 (fenêtre « Annuler un ticket », code du gérant, ce qu'il faut rendre ; remplace #59 fusionnée par erreur hors de `test`) |
 | A7    | Retour client et remboursement            | A   | ⏳     |   |
 | A8    | Mouvements de caisse (+ API pour B)       | A   | ✅     | PR #55 (serveur : migration `20261008_1704_mouvements_caisse.sql`, sortie plafonnée au tiroir, annulation par contre-mouvement, API pour B13) et #56 (fenêtre « Espèces du tiroir » du gérant, sauvegarde après clôture de B16) |
-| A9    | FEFO à la vente                           | A   | 🔄     | `a/caisse-fefo` — `allouerFefo` (B9) branché dans `enregistrerVente` : un mouvement par lot, lot sur la ligne si unique, alerte si le stock restant est périmé ; 8 tests (9 + 3 du scénario) ; PR à ouvrir |
+| A9    | FEFO à la vente                           | A   | ✅     | PR #57 — `allouerFefo` (B9) branché dans `enregistrerVente` : un mouvement par lot, lot sur la ligne si unique, alerte si le stock restant est périmé |
 | A10   | Facture et proforma                       | A   | ⏳     |   |
 | B7    | Fournisseurs                              | B   | ✅     | PR #24 (fiches, solde dû, désactivation si dette réglée, écran Fournisseurs) et #27 (bouton « Achats » : livraisons d'une période et derniers prix d'achat, canal `fournisseurs:achats`) |
 | B8    | Commandes et réceptions (CUMP)            | B   | ✅     | PR #25 (réception côté serveur : lignes, lots, mouvements, CUMP, dette avec échéance, RC), #26 (écran Réceptions), #31 (commandes fournisseur côté serveur, migration `conditionnement_id`, réception liée à une commande) et #33 (écran Commandes, proposer depuis les alertes, aperçu à copier, « Livrer CA-… » sur Réceptions) |
@@ -158,3 +158,6 @@ Le socle comprend :
 | 2026-10-09 | B15   | Partie 2 : export des Produits, Péremptions, Sorties, Réceptions, Commandes, Fournisseurs, inventaires et du Journal (PR #51) |
 | 2026-10-12 | A8    | Partie 1 : mouvements de caisse côté serveur, sortie plafonnée au tiroir, annulation par contre-mouvement, migration `20261008_1704_mouvements_caisse.sql` — contrat `enregistrerMouvementCaisse()` livré à B (PR #55) |
 | 2026-10-12 | A8    | Partie 2 : fenêtre « Espèces du tiroir » (gérant : apport, retrait, autre, annulation), sauvegarde automatique après chaque clôture (B16) (PR #56) |
+| 2026-10-13 | A9    | FEFO à la vente : `allouerFefo` dans la transaction, un mouvement `vente` par lot, alerte si un lot périmé garde du stock (PR #57) |
+| 2026-10-13 | A6    | Partie 1 : annulation d'un ticket côté serveur (caisse ouverte, code du gérant, contre-passation, paiements inverses, « TICKET ANNULÉ ») ; canaux `caisse:consulterTicket`, `caisse:annulerTicket` (PR #58) |
+| 2026-10-13 | A6    | Partie 2 : fenêtre « Annuler un ticket » dans la caisse, ce qu'il faut rendre par mode (PR #61, remplace #59) |
