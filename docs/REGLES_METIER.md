@@ -481,6 +481,18 @@ Tout se fait dans **une seule transaction** :
    `ErreurMetier`.
 6. Si une partie est à crédit, il crée la créance (voir 7).
 
+**FEFO à la vente** (validé par Dev A, 2026-10-12, tâche A9) :
+- Un produit **suivi en péremption** sort de ses lots par `allouerFefo` (§ 5.1), ligne après ligne
+  dans la transaction : un mouvement `vente` par lot servi, avec son `lot_id`, chiffré au CUMP. Deux
+  lignes du même produit sur un ticket se suivent (la seconde voit ce que la première a pris). Un
+  produit non suivi sort en un seul mouvement, sans lot.
+- `lignes_vente.lot_id` est renseigné quand **un seul lot** sert toute la ligne, `NULL` sinon : le
+  détail exact est dans les mouvements de la vente, que le retour client (A7) relira.
+- Une part qu'aucun lot valable ne couvre sort **sans lot** (jamais bloquant). Si, pour ce produit, un
+  **lot périmé a encore du stock**, l'article vendu en vient peut-être : la vente passe et la caisse
+  affiche un bandeau « Lait en poudre : vérifiez la date de l'article vendu, le stock restant connu est
+  périmé (LOT-A12). Prévenez le gérant. » (`alertesPeremption` de la réponse de la vente).
+
 L'impression et l'ouverture du tiroir se font **après** la validation de la transaction. Si
 l'imprimante échoue, la vente reste enregistrée : afficher « Vente enregistrée, ticket non
 imprimé » et proposer la réimpression.

@@ -74,8 +74,8 @@ Le socle comprend :
 |-------|-------------------------------------------|-----|--------|--------------------------|
 | A6    | Annulation de ticket                      | A   | ⏳     |   |
 | A7    | Retour client et remboursement            | A   | ⏳     |   |
-| A8    | Mouvements de caisse (+ API pour B)       | A   | 🔄     | PR #55 fusionnée (serveur : migration `20261008_1704_mouvements_caisse.sql`, service, canaux, 21 tests) ; PR 2 `a/caisse-mouvements-ecran` (fenêtre « Espèces du tiroir » du gérant, sauvegarde après clôture de B16) en relecture |
-| A9    | FEFO à la vente                           | A   | ⏳     |   |
+| A8    | Mouvements de caisse (+ API pour B)       | A   | ✅     | PR #55 (serveur : migration `20261008_1704_mouvements_caisse.sql`, sortie plafonnée au tiroir, annulation par contre-mouvement, API pour B13) et #56 (fenêtre « Espèces du tiroir » du gérant, sauvegarde après clôture de B16) |
+| A9    | FEFO à la vente                           | A   | 🔄     | `a/caisse-fefo` — `allouerFefo` (B9) branché dans `enregistrerVente` : un mouvement par lot, lot sur la ligne si unique, alerte si le stock restant est périmé ; 8 tests (9 + 3 du scénario) ; PR à ouvrir |
 | A10   | Facture et proforma                       | A   | ⏳     |   |
 | B7    | Fournisseurs                              | B   | ✅     | PR #24 (fiches, solde dû, désactivation si dette réglée, écran Fournisseurs) et #27 (bouton « Achats » : livraisons d'une période et derniers prix d'achat, canal `fournisseurs:achats`) |
 | B8    | Commandes et réceptions (CUMP)            | B   | ✅     | PR #25 (réception côté serveur : lignes, lots, mouvements, CUMP, dette avec échéance, RC), #26 (écran Réceptions), #31 (commandes fournisseur côté serveur, migration `conditionnement_id`, réception liée à une commande) et #33 (écran Commandes, proposer depuis les alertes, aperçu à copier, « Livrer CA-… » sur Réceptions) |
@@ -157,3 +157,4 @@ Le socle comprend :
 | 2026-10-09 | B15   | Partie 1 : export Excel générique (`exports:excel`, `BoutonExporter`) sur Stock, Dépenses et Rapports de gestion — réutilisable par A (PR #50) |
 | 2026-10-09 | B15   | Partie 2 : export des Produits, Péremptions, Sorties, Réceptions, Commandes, Fournisseurs, inventaires et du Journal (PR #51) |
 | 2026-10-12 | A8    | Partie 1 : mouvements de caisse côté serveur, sortie plafonnée au tiroir, annulation par contre-mouvement, migration `20261008_1704_mouvements_caisse.sql` — contrat `enregistrerMouvementCaisse()` livré à B (PR #55) |
+| 2026-10-12 | A8    | Partie 2 : fenêtre « Espèces du tiroir » (gérant : apport, retrait, autre, annulation), sauvegarde automatique après chaque clôture (B16) (PR #56) |
