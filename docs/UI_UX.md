@@ -198,6 +198,18 @@ confirmation, « Créer le compte administrateur »).
   « Annulation : Apport (erreur de montant) ». Une dépense s'annule depuis l'écran Dépenses.
 - Douchette et raccourcis de la caisse sont coupés tant que la fenêtre est ouverte ; Échap la ferme.
 
+**Annuler un ticket (Dev A, A6, 2026-10-13)** — règle 6.7 :
+- Bouton « Annuler un ticket » sous le ticket, pour tous. Une `FenetreFormulaire` large propose le numéro
+  du dernier ticket et l'affiche aussitôt ; un autre numéro s'affiche avec « Afficher le ticket ».
+- Le ticket affiché : date, caisse, lignes, total, paiements (avec la référence TMoney / Flooz), puis ce
+  qu'il faudra rendre (« Rendez 3 500 F en espèces. Renvoyez 5 000 F par TMoney (réf. TM-0042). »).
+  Un ticket qui ne peut pas être annulé l'explique dans un bandeau ambre (déjà annulé, caisse clôturée :
+  « faites un retour client », autre caisse : « demandez au gérant »).
+- Motif obligatoire. Pour une caissière, la même fenêtre affiche les noms des gérants et « Code du
+  gérant », comme pour une remise ; un code faux s'affiche dans la fenêtre, la saisie est gardée.
+- Bouton rouge « Annuler le ticket ». Ensuite, dans la caisse : « Ticket T-… annulé. Rendez 3 500 F en
+  espèces. … » ; le tiroir s'est ouvert, sinon « ouvrez-le à la clé ».
+
 ### 5.3 Paiement (Dev A — A2)
 Une fenêtre centrée s'ouvre au-dessus de la caisse. Elle contient :
 - en haut, le montant à payer ;

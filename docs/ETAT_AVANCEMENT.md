@@ -72,7 +72,7 @@ Le socle comprend :
 ## Phase 2 — Achats, lots, retours (S9–S12)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
 |-------|-------------------------------------------|-----|--------|--------------------------|
-| A6    | Annulation de ticket                      | A   | 🔄     | `a/caisse-annulation` — PR 1 (serveur : caisse ouverte seulement, code du gérant, contre-passation et paiements inverses, réimpression « TICKET ANNULÉ » ; 9 tests) ; PR 2 (écran) à faire |
+| A6    | Annulation de ticket                      | A   | 🔄     | `a/caisse-annulation` — PR 1 (serveur : caisse ouverte seulement, code du gérant, contre-passation et paiements inverses, réimpression « TICKET ANNULÉ » ; 9 tests) en relecture ; PR 2 `a/caisse-annulation-ecran` (fenêtre « Annuler un ticket », code du gérant) empilée sur la PR 1 |
 | A7    | Retour client et remboursement            | A   | ⏳     |   |
 | A8    | Mouvements de caisse (+ API pour B)       | A   | ✅     | PR #55 (serveur : migration `20261008_1704_mouvements_caisse.sql`, sortie plafonnée au tiroir, annulation par contre-mouvement, API pour B13) et #56 (fenêtre « Espèces du tiroir » du gérant, sauvegarde après clôture de B16) |
 | A9    | FEFO à la vente                           | A   | 🔄     | `a/caisse-fefo` — `allouerFefo` (B9) branché dans `enregistrerVente` : un mouvement par lot, lot sur la ligne si unique, alerte si le stock restant est périmé ; 8 tests (9 + 3 du scénario) ; PR à ouvrir |
