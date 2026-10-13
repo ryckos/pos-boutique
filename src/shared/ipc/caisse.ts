@@ -150,6 +150,48 @@ export interface MouvementEnregistre {
   tiroirOuvert: boolean
 }
 
+/** Le gérant tape son code sur la caisse de la caissière (annulation d'un ticket, A6). */
+export interface AutorisationGerant {
+  utilisateurId: number
+  code: string
+}
+
+/** Un ticket tel que la fenêtre d'annulation le montre (A6). */
+export interface TicketConsulte {
+  venteId: number
+  numeroTicket: string
+  horodatage: string
+  caissier: string
+  totalTtc: number
+  lignes: { designation: string; quantite: number; totalLigne: number }[]
+  /** Paiements d'origine (sans les paiements inverses d'une annulation). */
+  paiements: { mode: string; montant: number; reference: string | null }[]
+  /** Part payée en espèces : ce qu'on rend au client si on annule. */
+  especesARendre: number
+  statut: 'terminee' | 'annulee'
+  motifAnnulation: string | null
+  /** Pourquoi la personne connectée ne peut pas l'annuler ; null si elle le peut. */
+  raisonRefus: string | null
+}
+
+export interface RequeteAnnulation {
+  numeroTicket: string
+  motif: string
+  /** Caissière : le code du gérant. Absent pour un gérant connecté. */
+  autorisation?: AutorisationGerant
+}
+
+export interface ResultatAnnulation {
+  venteId: number
+  numeroTicket: string
+  /** Espèces à rendre au client (la part payée en espèces). */
+  especesARendre: number
+  /** Mobile money à renvoyer au client, avec la référence d'origine. */
+  autresARendre: { mode: string; montant: number; reference: string | null }[]
+  /** Le tiroir s'est-il ouvert (seulement s'il y a des espèces à rendre) ? */
+  tiroirOuvert: boolean
+}
+
 export interface RequeteCloture {
   /** Absent : la session ouverte de la personne connectée. Le gérant peut clôturer celle d'un autre. */
   sessionId?: number
@@ -207,6 +249,13 @@ export interface ContratCaisse {
    * Gérant : annule un apport, un retrait ou un « Autre » par un contre-mouvement, puis ouvre le
    * tiroir. Les mouvements nés d'un document s'annulent depuis ce document.
    */
+  /** Un ticket par son numéro, et si la personne connectée peut l'annuler (A6). */
+  'caisse:consulterTicket': { requete: { numeroTicket: string }; reponse: TicketConsulte }
+  /**
+   * Annule un ticket d'une caisse ouverte (gérant, ou caissière avec le code du gérant), puis ouvre
+   * le tiroir HORS transaction s'il y a des espèces à rendre.
+   */
+  'caisse:annulerTicket': { requete: RequeteAnnulation; reponse: ResultatAnnulation }
   'caisse:annulerMouvement': {
     requete: { mouvementId: number; motif: string }
     reponse: MouvementEnregistre
