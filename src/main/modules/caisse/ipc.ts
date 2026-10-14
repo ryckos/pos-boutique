@@ -2,7 +2,8 @@
  * Propriétaire : Dev A.
  * Canaux caisse:* — minces : droits, puis appel du service. Organisation du module :
  *   service-session.ts · service-vente.ts · service-ticket.ts · service-cloture.ts ·
- *   service-mouvements.ts · service-annulation.ts · calculs.ts (TVA, totaux — testés) · ipc.ts
+ *   service-mouvements.ts · service-annulation.ts · service-retour.ts · calculs.ts (TVA, totaux —
+ *   testés) · ipc.ts
  */
 import type { MouvementCaisse, MouvementEnregistre } from '@shared/ipc/caisse'
 import type { UtilisateurConnecte } from '@shared/types'
@@ -33,6 +34,7 @@ import {
   saisirMouvementAuTiroir,
   sessionPourMouvement
 } from './service-mouvements'
+import { consulterRetour, enregistrerRetour } from './service-retour'
 import { ouvrirSession, sessionOuverte } from './service-session'
 import { autoriserRemise, enregistrerVente, gerantsActifs } from './service-vente'
 import { journaliserLignesAnnulees } from './service-lignes-annulees'
@@ -185,5 +187,17 @@ export function enregistrerIpcCaisse(): void {
   gerer('caisse:annulerMouvement', (annulation) => {
     const u = session.exiger(['gerant'])
     return ouvrirTiroirApresMouvement(annulerMouvementAuTiroir(base(), u, annulation))
+  })
+  gerer('caisse:consulterRetour', ({ numeroTicket }) => {
+    const u = session.exiger(['caissier', 'gerant'])
+    return consulterRetour(base(), u, numeroTicket)
+  })
+  gerer('caisse:enregistrerRetour', async (demande) => {
+    const u = session.exiger(['caissier', 'gerant'])
+    const retour = enregistrerRetour(base(), u, demande)
+    // Espèces à rendre : le tiroir s'ouvre APRÈS la transaction ; jamais pour du mobile money.
+    return retour.mode === 'especes' && retour.montant > 0
+      ? { ...retour, tiroirOuvert: await ouvrirTiroir() }
+      : retour
   })
 }

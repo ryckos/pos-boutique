@@ -5,6 +5,7 @@
  * mouvements de caisse (A8). Voir docs/DEV_A_COMPTOIR.md.
  */
 import type { MotifMouvementCaisse, MotifSaisiAuTiroir, SensMouvementCaisse } from '../caisse'
+import type { LigneRetournable, ModeRemboursement, MotifRetour, SortRetour } from '../retour'
 
 /** Modes acceptés à la caisse pour l'instant. Le crédit arrive avec la fiche client (A11). */
 export type ModePaiementCaisse = 'especes' | 'tmoney' | 'flooz'
@@ -100,13 +101,15 @@ export interface RapportCaisse {
   dateOuverture: string
   dateFermeture: string | null
   nombreTickets: number
-  /** Ventes par mode de paiement (tickets terminés). Crédit : 0 jusqu'à A11. */
+  /** Ventes par mode de paiement (tickets terminés, sans les retours). Crédit : 0 jusqu'à A11. */
   totauxParMode: { especes: number; tmoney: number; flooz: number; credit: number }
   totalVentes: number
+  /** Retours client remboursés sur cette caisse (A7), montants positifs, par mode. */
+  remboursements: { nombre: number; especes: number; tmoney: number; flooz: number; total: number }
   fondOuverture: number
   ventesEspeces: number
   mouvements: LigneMouvementCaisse[]
-  /** Fond + ventes en espèces + entrées − sorties. */
+  /** Fond + ventes en espèces − remboursements en espèces + entrées − sorties. */
   especesTheoriques: number
   montantCompte: number | null
   /** Compté − théorique (négatif = manque). */
@@ -197,6 +200,58 @@ export interface ResultatAnnulation {
   tiroirOuvert: boolean
 }
 
+/** Une ligne du ticket d'origine, telle que la fenêtre de retour la montre (A7). */
+export interface LigneTicketRetour extends LigneRetournable {
+  /** `lignes_vente.id` de la ligne vendue : c'est ce que la requête de retour renvoie. */
+  ligneId: number
+  designation: string
+  prixUnitaire: number
+  /** Sur un retour complet de la ligne : ce qui reste à rendre (montantPaye − déjà rendu). */
+  totalLigne: number
+}
+
+/** Le ticket d'origine d'un retour (A7). */
+export interface TicketRetour {
+  venteId: number
+  numeroTicket: string
+  horodatage: string
+  caissier: string
+  totalTtc: number
+  lignes: LigneTicketRetour[]
+  /** Paiements d'origine : le mode proposé par défaut pour le remboursement. */
+  paiements: { mode: string; montant: number; reference: string | null }[]
+  /** Retours déjà faits sur ce ticket : numéros R-… */
+  retoursPrecedents: string[]
+  /** Pourquoi on ne peut rien retourner sur ce ticket ; null si on le peut. */
+  raisonRefus: string | null
+}
+
+export interface RequeteRetour {
+  /** Numéro complet, ou « 158 » pour T-<année>-000158. */
+  numeroTicket: string
+  /** Lignes rendues, en nombre de conditionnements de la ligne vendue. */
+  lignes: { ligneId: number; quantite: number }[]
+  motif: MotifRetour
+  /** Obligatoire pour « Autre ». */
+  precision?: string
+  sort: SortRetour
+  remboursement: { mode: ModeRemboursement; reference?: string }
+  /** Caissière : le code du gérant. Absent pour un gérant connecté. */
+  autorisation?: AutorisationGerant
+}
+
+export interface RetourEnregistre {
+  venteId: number
+  /** R-AAAA-NNNNNN */
+  numeroRetour: string
+  numeroTicketOrigine: string
+  /** Montant rendu au client, positif. */
+  montant: number
+  mode: ModeRemboursement
+  /** Le tiroir s'est-il ouvert (seulement pour un remboursement en espèces) ? */
+  tiroirOuvert: boolean
+}
+
 export interface RequeteCloture {
   /** Absent : la session ouverte de la personne connectée. Le gérant peut clôturer celle d'un autre. */
   sessionId?: number
@@ -265,4 +320,12 @@ export interface ContratCaisse {
     requete: { mouvementId: number; motif: string }
     reponse: MouvementEnregistre
   }
+  /** Le ticket d'origine d'un retour, ce qui reste retournable ligne par ligne (A7). */
+  'caisse:consulterRetour': { requete: { numeroTicket: string }; reponse: TicketRetour }
+  /**
+   * Retour client sur la caisse ouverte de la personne connectée (gérant, ou caissière avec le code
+   * du gérant), puis ouverture du tiroir HORS transaction si le remboursement est en espèces. Le
+   * ticket de retour s'imprime ensuite par `caisse:imprimerTicket`.
+   */
+  'caisse:enregistrerRetour': { requete: RequeteRetour; reponse: RetourEnregistre }
 }

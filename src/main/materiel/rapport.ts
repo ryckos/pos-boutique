@@ -20,6 +20,22 @@ import {
 
 export type TypeRapport = 'X' | 'Z'
 
+/** Retours client remboursés sur la caisse (A7), par mode ; rien s'il n'y en a pas eu. */
+function lignesRetours(r: RapportCaisse['remboursements']): LigneImprimee[] {
+  if (r.nombre === 0) return []
+  const modes: [string, number][] = [
+    ['Rendu en espèces', r.especes],
+    ['Rendu par TMoney', r.tmoney],
+    ['Rendu par Flooz', r.flooz]
+  ]
+  return [
+    { texte: `RETOURS CLIENT (${r.nombre})`, gras: true },
+    ...modes.filter(([, m]) => m > 0).map(([g, m]) => ({ texte: colonnes(g, montantTicket(m)) })),
+    { texte: colonnes('Total remboursé', montantTicket(r.total)), gras: true },
+    SEPARATEUR
+  ]
+}
+
 export function lignesRapport(
   r: RapportCaisse,
   entete: EnteteTicket,
@@ -50,10 +66,13 @@ export function lignesRapport(
   ligne('Total des ventes', r.totalVentes, true)
   l.push(SEPARATEUR)
 
+  l.push(...lignesRetours(r.remboursements))
+
   // Tiret ordinaire pour les sorties : le signe moins typographique n'existe dans aucune page.
   l.push({ texte: 'ESPÈCES', gras: true })
   ligne('Fond d’ouverture', r.fondOuverture)
   ligne('+ Ventes en espèces', r.ventesEspeces)
+  if (r.remboursements.especes) ligne('- Remboursements (retours)', r.remboursements.especes)
   for (const m of r.mouvements) ligne(`${m.sens === 'entree' ? '+' : '-'} ${m.libelle}`, m.montant)
   ligne('= Espèces théoriques', r.especesTheoriques, true)
 

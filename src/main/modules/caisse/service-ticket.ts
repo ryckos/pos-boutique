@@ -12,6 +12,7 @@
  * Aucune impression ici : ce module lit et journalise ; l'envoi à l'imprimante se fait dans ipc.ts,
  * hors de toute transaction.
  */
+import { LIBELLES_SORT_RETOUR, type SortRetour } from '@shared/retour'
 import type { UtilisateurConnecte } from '@shared/types'
 import type { Db } from '../../db/connexion'
 import { toutes, une } from '../../db/requetes'
@@ -33,6 +34,10 @@ interface VenteEnBase {
   monnaieRendue: number
   statut: string
   motifAnnulation: string | null
+  type: string
+  motifRetour: string | null
+  sortRetour: SortRetour | null
+  ticketOrigine: string | null
 }
 
 function lireVente(db: Db, venteId: number): VenteEnBase {
@@ -41,8 +46,10 @@ function lireVente(db: Db, venteId: number): VenteEnBase {
     `SELECT v.id, v.numero_ticket AS numeroTicket, v.session_caisse_id AS sessionCaisseId,
             v.horodatage, u.nom AS caissier, v.total_ttc AS totalTtc,
             v.remise_globale AS remiseGlobale, v.montant_recu AS montantRecu, v.monnaie_rendue AS monnaieRendue,
-            v.statut, v.motif_annulation AS motifAnnulation
+            v.statut, v.motif_annulation AS motifAnnulation, v.type, v.motif_retour AS motifRetour,
+            v.sort_retour AS sortRetour, o.numero_ticket AS ticketOrigine
      FROM ventes v JOIN utilisateurs u ON u.id = v.utilisateur_id
+     LEFT JOIN ventes o ON o.id = v.vente_origine_id
      WHERE v.id = ?`,
     venteId
   )
@@ -67,13 +74,21 @@ export function lireTicket(db: Db, venteId: number): TicketAImprimer {
      FROM lignes_vente WHERE vente_id = ? ORDER BY id`,
     venteId
   )
+  const estRetour = v.type === 'retour'
   // Paiements d'origine seulement : ceux d'une annulation (négatifs) n'apparaissent pas sur le ticket,
-  // qui porte à la place la mention TICKET ANNULÉ (A6).
+  // qui porte à la place la mention TICKET ANNULÉ (A6). Un retour (A7) n'a que des paiements négatifs.
   const paiements = toutes<{ mode: string; montant: number; reference: string | null }>(
     db,
-    'SELECT mode, montant, reference FROM paiements WHERE vente_id = ? AND montant > 0 ORDER BY id',
+    `SELECT mode, montant, reference FROM paiements WHERE vente_id = ? AND montant ${estRetour ? '<' : '>'} 0
+     ORDER BY id`,
     venteId
   )
+  // TVA d'un retour : ventilée sur les montants rendus (positifs) comme à la vente, puis mise en négatif.
+  const signe = estRetour ? -1 : 1
+  const parTaux = ventilerTva(
+    lignes.map((l) => ({ totalTtc: signe * l.totalLigne, tauxTva: l.tauxTva })),
+    v.remiseGlobale
+  ).parTaux.map((t) => ({ taux: t.taux, ttc: signe * t.ttc, ht: signe * t.ht, tva: signe * t.tva }))
   return {
     numeroTicket: v.numeroTicket,
     horodatage: v.horodatage,
@@ -87,14 +102,18 @@ export function lireTicket(db: Db, venteId: number): TicketAImprimer {
     })),
     remiseGlobale: v.remiseGlobale,
     totalTtc: v.totalTtc,
-    parTaux: ventilerTva(
-      lignes.map((l) => ({ totalTtc: l.totalLigne, tauxTva: l.tauxTva })),
-      v.remiseGlobale
-    ).parTaux,
+    parTaux,
     paiements,
     montantRecu: v.montantRecu,
     monnaieRendue: v.monnaieRendue,
-    annulation: v.statut === 'annulee' ? { motif: v.motifAnnulation ?? '' } : null
+    annulation: v.statut === 'annulee' ? { motif: v.motifAnnulation ?? '' } : null,
+    retour: estRetour
+      ? {
+          ticketOrigine: v.ticketOrigine ?? '',
+          motif: v.motifRetour ?? '',
+          sort: v.sortRetour ? LIBELLES_SORT_RETOUR[v.sortRetour] : ''
+        }
+      : null
   }
 }
 

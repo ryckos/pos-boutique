@@ -73,7 +73,7 @@ Le socle comprend :
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
 |-------|-------------------------------------------|-----|--------|--------------------------|
 | A6    | Annulation de ticket                      | A   | ✅     | PR #58 (serveur : caisse ouverte seulement, code du gérant, contre-passation et paiements inverses, réimpression « TICKET ANNULÉ » ; 9 tests) et #61 (fenêtre « Annuler un ticket », code du gérant, ce qu'il faut rendre ; remplace #59 fusionnée par erreur hors de `test`) |
-| A7    | Retour client et remboursement            | A   | ⏳     |   |
+| A7    | Retour client et remboursement            | A   | 🔄     | `a/caisse-retour` — PR 1 (serveur : migration `20261013_1400_retours_client.sql`, numéro R, montants négatifs, rendu au prorata du payé, lots repris, X/Z « Retours client », ticket imprimé ; 18 tests) ; PR 2 (fenêtre « Retour client ») à faire |
 | A8    | Mouvements de caisse (+ API pour B)       | A   | ✅     | PR #55 (serveur : migration `20261008_1704_mouvements_caisse.sql`, sortie plafonnée au tiroir, annulation par contre-mouvement, API pour B13) et #56 (fenêtre « Espèces du tiroir » du gérant, sauvegarde après clôture de B16) |
 | A9    | FEFO à la vente                           | A   | ✅     | PR #57 — `allouerFefo` (B9) branché dans `enregistrerVente` : un mouvement par lot, lot sur la ligne si unique, alerte si le stock restant est périmé |
 | A10   | Facture et proforma                       | A   | ⏳     |   |
