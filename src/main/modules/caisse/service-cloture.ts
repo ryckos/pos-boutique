@@ -99,15 +99,32 @@ export function rapportSession(db: Db, sessionId: number): RapportCaisse {
   const s = lireSession(db, sessionId)
 
   // Tickets terminés seulement : un ticket annulé ne compte ni dans les ventes ni dans le tiroir.
-  const parMode = toutes<{ mode: string; total: number }>(
+  // Les retours (A7) sont à part : leurs paiements négatifs sont les remboursements.
+  const parTypeEtMode = toutes<{ type: string; mode: string; total: number }>(
     db,
-    `SELECT p.mode, SUM(p.montant) AS total
+    `SELECT v.type, p.mode, SUM(p.montant) AS total
      FROM paiements p JOIN ventes v ON v.id = p.vente_id
      WHERE v.session_caisse_id = ? AND v.statut = 'terminee'
-     GROUP BY p.mode`,
+     GROUP BY v.type, p.mode`,
     sessionId
   )
-  const total = (mode: string): number => parMode.find((p) => p.mode === mode)?.total ?? 0
+  const parMode = parTypeEtMode.filter((p) => p.type !== 'retour')
+  const retours = parTypeEtMode.filter((p) => p.type === 'retour')
+  const total = (mode: string): number =>
+    parMode.filter((p) => p.mode === mode).reduce((somme, p) => somme + p.total, 0)
+  // « 0 − » et non « − » : un mode sans remboursement vaut 0, pas −0.
+  const rendu = (mode: string): number => 0 - (retours.find((p) => p.mode === mode)?.total ?? 0)
+  const remboursements = {
+    nombre: une<{ n: number }>(
+      db,
+      "SELECT COUNT(*) AS n FROM ventes WHERE session_caisse_id = ? AND statut = 'terminee' AND type = 'retour'",
+      sessionId
+    )!.n,
+    especes: rendu('especes'),
+    tmoney: rendu('tmoney'),
+    flooz: rendu('flooz'),
+    total: 0 - retours.reduce((somme, p) => somme + p.total, 0)
+  }
   const totauxParMode = {
     especes: total('especes'),
     tmoney: total('tmoney'),
@@ -144,7 +161,8 @@ export function rapportSession(db: Db, sessionId: number): RapportCaisse {
   const especesTheoriques =
     s.montantTheorique ??
     s.fondOuverture +
-      ventesEspeces +
+      ventesEspeces -
+      remboursements.especes +
       mouvements.reduce((somme, m) => somme + (m.sens === 'entree' ? m.montant : -m.montant), 0)
 
   return {
@@ -157,6 +175,7 @@ export function rapportSession(db: Db, sessionId: number): RapportCaisse {
     nombreTickets: nombre,
     totauxParMode,
     totalVentes: parMode.reduce((somme, p) => somme + p.total, 0),
+    remboursements,
     fondOuverture: s.fondOuverture,
     ventesEspeces,
     mouvements,

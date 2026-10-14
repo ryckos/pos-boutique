@@ -45,6 +45,11 @@ export interface TicketAImprimer {
   monnaieRendue: number
   /** Ticket annulé (A6) : il se réimprime avec « TICKET ANNULÉ » et le motif. */
   annulation?: { motif: string } | null
+  /**
+   * Retour client (A7) : montants négatifs (lignes, total, TVA, paiements = ce qui est rendu), ticket
+   * d'origine, motif et sort du produit.
+   */
+  retour?: { ticketOrigine: string; motif: string; sort: string } | null
 }
 
 export interface EnteteTicket {
@@ -120,6 +125,15 @@ export function couper(texte: string, largeur = LARGEUR): string[] {
 
 export const SEPARATEUR: LigneImprimee = { texte: '-'.repeat(LARGEUR) }
 
+/** En-tête d'un retour client (A7) : le ticket d'origine, le motif et le sort du produit. */
+function lignesRetour(r: NonNullable<TicketAImprimer['retour']>): LigneImprimee[] {
+  return [
+    { texte: `Sur le ticket ${r.ticketOrigine}` },
+    ...couper(`Motif : ${r.motif}`).map((texte) => ({ texte })),
+    { texte: `Produit : ${r.sort}` }
+  ]
+}
+
 /** Le ticket en lignes de texte, sans aucun octet de commande. */
 export function lignesTicket(
   ticket: TicketAImprimer,
@@ -135,13 +149,23 @@ export function lignesTicket(
     l.push({ texte: 'TICKET ANNULÉ', centre: true, gras: true, double: true })
     for (const t of couper(`Motif : ${ticket.annulation.motif}`)) l.push({ texte: t, centre: true })
   }
+  if (ticket.retour) l.push({ texte: 'RETOUR CLIENT', centre: true, gras: true, double: true })
   l.push(SEPARATEUR)
-  l.push({ texte: `Ticket ${ticket.numeroTicket}` })
+  l.push({ texte: `${ticket.retour ? 'Retour' : 'Ticket'} ${ticket.numeroTicket}` })
   l.push({ texte: `Date   ${dateTicket(ticket.horodatage)}` })
   l.push({ texte: `Caisse ${ticket.caissier}` })
+  if (ticket.retour) l.push(...lignesRetour(ticket.retour))
   l.push(SEPARATEUR)
 
   for (const v of ticket.lignes) {
+    if (ticket.retour) {
+      // Retour : le montant rendu seulement (net des remises d'origine), en négatif.
+      for (const t of couper(v.designation)) l.push({ texte: t })
+      l.push({
+        texte: colonnes(`  ${v.quantite} x ${montantTicket(v.prixUnitaire)}`, montantTicket(v.totalLigne))
+      })
+      continue
+    }
     // Avec une remise, la ligne montre le prix brut puis la remise : le client voit ce qu'il gagne.
     const brut = montantTicket(v.totalLigne + v.remise)
     if (v.quantite === 1 && v.designation.length + 1 + brut.length <= LARGEUR) {
@@ -173,7 +197,8 @@ export function lignesTicket(
   l.push(SEPARATEUR)
 
   for (const p of ticket.paiements) {
-    const libelle = LIBELLES_MODES[p.mode] ?? p.mode
+    const mode = LIBELLES_MODES[p.mode] ?? p.mode
+    const libelle = ticket.retour ? `Rendu : ${mode}` : mode
     l.push({
       texte: colonnes(p.reference ? `${libelle} (réf. ${p.reference})` : libelle, montantTicket(p.montant))
     })

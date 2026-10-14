@@ -35,8 +35,8 @@ document à jour.
 | Table               | Rôle                                                                 |
 |---------------------|----------------------------------------------------------------------|
 | `sessions_caisse`   | Session d'un caissier : fond, ouverture et clôture, théorique, compté, `ecart`, `statut` |
-| `ventes`            | Ticket, facture, proforma ou retour : `numero_ticket`, totaux HT/TVA/TTC, `statut`, `vente_origine_id`, `est_credit`. **Suppression interdite** |
-| `lignes_vente`      | Photocopie au moment T : `conditionnement_id`, `designation`, `quantite`, `prix_unitaire`, `cout_unitaire` (d'un conditionnement), `quantite_base_totale`, `taux_tva`, `lot_id`. **Suppression interdite** |
+| `ventes`            | Ticket, facture, proforma ou retour : `numero_ticket`, totaux HT/TVA/TTC, `statut`, `vente_origine_id`, `est_credit`. **Suppression interdite**. Un retour client (A7) : `type = 'retour'`, numéro `R-…`, totaux **négatifs**, `motif_retour`, `sort_retour` |
+| `lignes_vente`      | Photocopie au moment T : `conditionnement_id`, `designation`, `quantite`, `prix_unitaire`, `cout_unitaire` (d'un conditionnement), `quantite_base_totale`, `taux_tva`, `lot_id`. **Suppression interdite**. Sur un retour : quantités positives, `total_ligne` négatif (le rendu), `ligne_origine_id` |
 | `paiements`         | Un ou plusieurs par vente : `mode`, `montant` (négatif pour un remboursement), `reference` |
 | `mouvements_caisse` | Entrées et sorties d'espèces hors vente, rattachées à une session **ouverte** : `sens`, `motif` (apport, retrait, dépense, encaissement de créance, remboursement, règlement fournisseur, autre), `montant` > 0, document d'origine, `mouvement_origine_id` sur un contre-mouvement d'annulation (un seul par mouvement). **Ni modification ni suppression** |
 | `promotions`        | Remises programmées (Phase 4)                                        |
@@ -107,6 +107,7 @@ document à jour.
 | `20261007_0900_inventaires.sql` | `inventaires.categorie_id`, `motif_annulation` ; `lignes_inventaire.compte_le`, `commentaire`, une ligne par produit (index unique) ; triggers : pas de suppression, inventaire figé une fois validé ou annulé |
 | `20261008_0900_depenses.sql` | `depenses.numero` (index unique), `reference`, `annule_le`, `annule_par`, `motif_annulation` ; `categories_depense.actif`, `desactive_le` ; 9 catégories de départ ; triggers : pas de suppression (dépense, catégorie), dépense annulée figée |
 | `20261008_1704_mouvements_caisse.sql` | `mouvements_caisse` recréée (lignes recopiées) : motif `reglement_fournisseur`, `mouvement_origine_id` (index unique) ; triggers : ni modification ni suppression, rien sur une session clôturée |
+| `20261013_1400_retours_client.sql` | `ventes.motif_retour`, `sort_retour` ; `lignes_vente.ligne_origine_id` (la ligne vendue qu'un retour rend) ; index sur `vente_origine_id` et `ligne_origine_id` (A7) |
 
 Ajouter ici chaque nouvelle migration (nom et contenu en une ligne).
 

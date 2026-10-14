@@ -598,6 +598,38 @@ cliente (D-A3) :
 5. L'application crée une vente de type `retour`, liée à l'originale (`vente_origine_id`), avec un
    paiement négatif.
 
+**Précisions validées par Dev A (2026-10-13, tâche A7)** :
+- **Ticket d'origine** retrouvé par son numéro complet, ou « 158 » pour `T-<année en cours>-000158`.
+  Refus : ticket annulé, document qui n'est pas un ticket de vente (un retour ne se retourne pas),
+  ticket entièrement retourné. **Aucun délai limite** pour l'instant (à proposer à la cliente).
+- **Qui** : le gérant (et l'admin), ou la caissière si le gérant **tape son code sur la caisse**, comme
+  pour l'annulation (§ 6.7), vérifié hors transaction, un code faux reste compté.
+- **Sur quelle caisse** : la caisse **ouverte de celui qui fait le retour**, quel que soit le jour du
+  ticket. Sans caisse ouverte : « Ouvrez votre caisse avant de faire un retour ».
+- **Quantité** : en conditionnements de la ligne vendue (on ne rend pas 1 boîte d'un carton), pas plus
+  que vendu moins les retours précédents, **ligne par ligne** (`lignes_vente.ligne_origine_id`).
+- **Montant rendu** : ce que le client a réellement payé pour la ligne, net de sa remise et de sa part
+  de la remise du ticket (répartie entre les lignes au prorata, comme au § 6.6), au prorata de la
+  quantité rendue, partie entière. Le retour qui rend les **derniers** conditionnements d'une ligne
+  prend le reste : une ligne rendue en plusieurs fois rend exactement le payé. Exemple : 3 unités
+  remisées de 100 F (950 F payés) rendues une à une → 316, 316, 318 F.
+- **Remboursement** : espèces, TMoney ou Flooz, au choix (le mode d'origine est proposé). Référence du
+  transfert obligatoire en mobile money. En espèces, **pas plus que les espèces théoriques du tiroir**
+  (comme toute sortie, § 6.10). L'**avoir en boutique** attend la fiche client (A11).
+- **Le retour** : numéro **`R-AAAA-NNNNNN`**, `type = 'retour'`, montants **négatifs** (lignes,
+  HT/TVA/TTC ventilés comme à la vente, paiement), motif en clair (`motif_retour`) et sort
+  (`sort_retour`). Le ticket d'origine n'est jamais modifié. Rien n'est écrit dans `mouvements_caisse` :
+  le X et le Z lisent les remboursements dans les paiements des retours (§ 6.9).
+- **Stock** : un `retour_client` (+) sur les **lots servis à la vente**, le dernier servi d'abord, sans
+  dépasser ce que chaque lot a vendu moins les retours précédents, au coût de la sortie d'origine ;
+  « Détruire » ajoute aussitôt un `casse` (−) sur le même lot (la perte apparaît dans les rapports de
+  pertes). Le CUMP ne change pas.
+- **Tiroir** : il s'ouvre après la transaction pour un remboursement en espèces ; une panne ne bloque
+  pas le retour. Le ticket de retour imprimé porte « RETOUR CLIENT », le ticket d'origine, le motif,
+  le sort et « Rendu : … » ; son impression n'ouvre jamais le tiroir.
+- **Journal** : `retour_client` (numéros, montant, mode, motif, sort, gérant qui a autorisé).
+- Un retour ne s'annule pas (A6 refuse tout ce qui n'est pas un ticket de vente).
+
 ### 6.9 Rapport X et clôture (rapport Z)
 ```
 espèces théoriques = fond d'ouverture
@@ -623,6 +655,10 @@ espèces théoriques = fond d'ouverture
   clôturée ; gérant : tous. Une imprimante en panne n'annule jamais la clôture. Le **X** (session
   ouverte) porte « Provisoire » et n'est pas journalisé.
 - Une session clôturée est figée par le service (aucune vente ni seconde clôture), sans trigger.
+- **Retours client (A7, 2026-10-13)** : les « remboursements » de la formule sont les paiements des
+  retours (`type = 'retour'`) de la session. Les ventes par mode et le nombre de tickets restent ceux
+  des tickets de vente ; le X et le Z ajoutent un bloc « Retours client » (nombre, rendu par mode) et
+  la ligne « − Remboursements (retours) » dans les espèces.
 
 Exemple de référence :
 
@@ -669,6 +705,7 @@ Exemple de référence :
 | Préfixe | Document                 | Module | Développeur |
 |---------|--------------------------|--------|-------------|
 | `T`     | Ticket                   | caisse | Dev A       |
+| `R`     | Retour client            | caisse | Dev A       |
 | `F`     | Facture                  | caisse | Dev A       |
 | `RC`    | Réception                | achats | Dev B       |
 | `CA`    | Commande d'achat         | achats | Dev B       |

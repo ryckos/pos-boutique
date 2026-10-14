@@ -111,19 +111,24 @@ const estGerant = (role: Role | undefined): boolean => role === 'gerant' || role
 
 /**
  * Qui autorise : le gérant connecté lui-même, ou le gérant qui tape son code sur la caisse de la
- * caissière. Vérifié HORS de la transaction d'annulation : un code faux doit rester compté.
+ * caissière. Vérifié HORS de la transaction : un code faux doit rester compté. Sert aussi au retour
+ * client (A7). `quoi` : « L’annulation d’un ticket », « Un retour client »…
  */
-function autorisePar(db: Db, u: UtilisateurConnecte, autorisation: AutorisationGerant | undefined): number {
+export function autoriseParGerant(
+  db: Db,
+  u: UtilisateurConnecte,
+  autorisation: AutorisationGerant | undefined,
+  quoi = 'L’annulation d’un ticket'
+): number {
   if (estGerant(u.role)) return u.id
-  if (!autorisation)
-    throw new ErreurMetier('L’annulation d’un ticket demande l’accord du gérant : faites-lui taper son code.')
+  if (!autorisation) throw new ErreurMetier(`${quoi} demande l’accord du gérant : faites-lui taper son code.`)
   const role = une<{ role: Role }>(
     db,
     'SELECT role FROM utilisateurs WHERE id = ? AND actif = 1',
     autorisation.utilisateurId
   )?.role
   if (!estGerant(role)) {
-    throw new ErreurMetier('Seul un gérant peut autoriser l’annulation : choisissez un compte de gérant.')
+    throw new ErreurMetier('Seul un gérant peut donner cet accord : choisissez un compte de gérant.')
   }
   return verifierCodeCompte(db, autorisation.utilisateurId, String(autorisation.code ?? '')).id
 }
@@ -139,7 +144,7 @@ export function annulerTicket(
   // Refus visibles avant de demander le code : inutile de faire taper le gérant pour rien.
   const refus = raisonRefus(db, u, lireVente(db, venteId))
   if (refus) throw new ErreurMetier(refus)
-  const gerantId = autorisePar(db, u, demande.autorisation)
+  const gerantId = autoriseParGerant(db, u, demande.autorisation)
 
   return avecTransaction(db, () => {
     // Relu dans la transaction : une clôture ou une autre annulation a pu passer entre-temps.

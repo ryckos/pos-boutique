@@ -243,6 +243,13 @@ export function PageClotureCaisse(): React.JSX.Element {
           <dd className="montant">{formaterFCFA(r.fondOuverture)}</dd>
           <dt>+ Ventes en espèces</dt>
           <dd className="montant">{formaterFCFA(r.ventesEspeces)}</dd>
+          {r.remboursements.especes > 0 && (
+            <MouvementLigne
+              signe="−"
+              libelle="Remboursements en espèces (retours client)"
+              montant={r.remboursements.especes}
+            />
+          )}
           {r.mouvements.map((m, i) => (
             <MouvementLigne
               key={i}
