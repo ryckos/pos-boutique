@@ -7,7 +7,7 @@
  * ouverte, seul « Ouvrir la caisse » s'affiche.
  * La clôture, les rapports X et Z sont dans PageClotureCaisse (A4). Remises et journal des lignes
  * retirées : A5 (règle 6.6). Apports et retraits du gérant : FenetreTiroir (A8, règle 6.10).
- * Annulation d'un ticket : FenetreAnnulation (A6, règle 6.7).
+ * Annulation d'un ticket : FenetreAnnulation (A6, règle 6.7). Retour client : FenetreRetour (A7, règle 6.8).
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -41,6 +41,8 @@ import { FenetreRemise } from './FenetreRemise'
 import { FenetreTiroir } from './FenetreTiroir'
 import { FenetreAnnulation } from './FenetreAnnulation'
 import { messageAnnulation } from './annulation'
+import { FenetreRetour } from './FenetreRetour'
+import { messageRetour } from './retour'
 import { OuvertureCaisse } from './OuvertureCaisse'
 
 /** Durée du surlignage d'une ligne ajoutée : un retour visuel, pas une animation décorative. */
@@ -74,6 +76,8 @@ export function PageCaisse(): React.JSX.Element {
   const [annulationOuverte, setAnnulationOuverte] = useState(false)
   /** Confirmation d'une annulation (« Rendez 3 500 F en espèces »), effacée au scan suivant. */
   const [annulationFaite, setAnnulationFaite] = useState<string | null>(null)
+  /** Fenêtre « Retour client » (A7). */
+  const [retourOuvert, setRetourOuvert] = useState(false)
   /** Remise en cours de saisie : sur une ligne (son conditionnementId) ou sur le ticket ; null = fermée. */
   const [remiseOuverte, setRemiseOuverte] = useState<{ ligne: number | null } | null>(null)
   /** Plafond de remise de la caissière (paramètres de B5) ; null = non fixé (D-A3). */
@@ -168,6 +172,7 @@ export function PageCaisse(): React.JSX.Element {
         !reimpressionOuverte &&
         !tiroirOuvert &&
         !annulationOuverte &&
+        !retourOuvert &&
         remiseOuverte === null
     }
   )
@@ -212,6 +217,7 @@ export function PageCaisse(): React.JSX.Element {
     reimpressionOuverte ||
     tiroirOuvert ||
     annulationOuverte ||
+    retourOuvert ||
     remiseOuverte !== null
   useEffect(() => {
     if (fenetreOuverte || !caisseOuverte) return
@@ -505,8 +511,10 @@ export function PageCaisse(): React.JSX.Element {
         {impression?.etat === 'echec' && (
           <div className="bandeau caisse-impression-echec" role="alert">
             <p>
-              Vente {impression.numeroTicket} enregistrée, ticket non imprimé. Vérifiez le papier puis touchez
-              Réimprimer.
+              {impression.numeroTicket.startsWith('R-')
+                ? `Retour ${impression.numeroTicket} enregistré`
+                : `Vente ${impression.numeroTicket} enregistrée`}
+              , ticket non imprimé. Vérifiez le papier puis touchez Réimprimer.
               <span className="caisse-impression-detail">{impression.detail}</span>
             </p>
             <div className="caisse-impression-actions">
@@ -595,6 +603,9 @@ export function PageCaisse(): React.JSX.Element {
           <button className="btn btn-discret" onClick={() => setAnnulationOuverte(true)}>
             Annuler un ticket
           </button>
+          <button className="btn btn-discret" onClick={() => setRetourOuvert(true)}>
+            Retour client
+          </button>
           {/* Apports et retraits : gérant seulement (règle 6.10). */}
           {utilisateur.role !== 'caissier' && (
             <button className="btn btn-discret" onClick={() => setTiroirOuvert(true)}>
@@ -645,6 +656,23 @@ export function PageCaisse(): React.JSX.Element {
             setAnnulationFaite(messageAnnulation(r))
           }}
           onFermer={() => setAnnulationOuverte(false)}
+        />
+      )}
+
+      {retourOuvert && (
+        <FenetreRetour
+          estCaissiere={utilisateur.role === 'caissier'}
+          onRetour={(r) => {
+            setRetourOuvert(false)
+            setMessage(null)
+            setReimprime(null)
+            setDerniereVente(null)
+            // La confirmation réutilise la ligne de l'annulation : une seule à la fois.
+            setAnnulationFaite(messageRetour(r))
+            // Ticket de retour imprimé APRÈS l'enregistrement, comme une vente ; une panne ne l'annule pas.
+            void imprimer(r.venteId, r.numeroRetour)
+          }}
+          onFermer={() => setRetourOuvert(false)}
         />
       )}
 

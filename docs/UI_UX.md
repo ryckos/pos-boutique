@@ -395,6 +395,25 @@ L'en-tête « Retour client » indique le ticket d'origine et sa date. L'écran 
 
 Le bouton s'appelle **« Valider le retour »**.
 
+**Précisions (A7, 2026-10-13)** : bouton « Retour client » dans les actions de la caisse, pour tous ;
+fenêtre `FenetreRetour.tsx` (douchette et raccourcis coupés).
+- Numéro du ticket d'origine : complet ou court (« 158 »), Entrée ou « Afficher le ticket ». Les
+  retours déjà faits sur ce ticket sont rappelés ; un refus (ticket annulé, tout retourné, caisse
+  fermée) s'affiche en bandeau.
+- Tableau : case à cocher par ligne (cochée = tout ce qui reste rendu), colonnes Vendu (déjà rendu
+  entre parenthèses), Rendu (− / + quand il reste plus d'un conditionnement), Remboursé. Une ligne non
+  cochée est grisée ; une ligne déjà rendue ne se coche pas.
+- Motif, sort et remboursement en boutons à choix unique ; aucun motif ni sort n'est choisi d'office.
+  Précision facultative (obligatoire pour « Autre »). Le mode proposé est celui qui a payé le plus sur
+  le ticket ; « Avoir en boutique » est grisé jusqu'à la fiche client (A11). Mobile money : référence
+  du transfert déjà fait au client.
+- « À rembourser » en grand, la note « Crée un ticket de type retour lié au T-… », et une phrase qui
+  dit ce qui manque tant que le bouton est grisé. Caissière : choix du gérant et son code, comme
+  pour l'annulation.
+- Après validation : « Retour R-… enregistré (ticket T-…). Rendez 600 F en espèces. » (ou « ouvrez-le à
+  la clé » si le tiroir ne s'est pas ouvert), puis le ticket de retour s'imprime ; une panne affiche
+  le bandeau « Retour R-… enregistré, ticket non imprimé » avec « Réimprimer ».
+
 ### 5.11 Inventaire (Dev B — B12)
 Menu « Inventaires » (gérant). Sans inventaire en cours : bouton **« Ouvrir un inventaire »**
 (fenêtre : « Tout le magasin », un rayon avec ses sous-rayons, ou un sous-rayon) et tableau des
