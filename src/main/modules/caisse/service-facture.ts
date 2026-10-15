@@ -142,9 +142,12 @@ export function trouverFacture(db: Db, numero: string): FactureCreee | null {
 }
 
 /** Tout ce qui s'imprime, relu en base : la facture ne garde que le lien et le client. */
-/** Une demande de sortie venue de l'écran : identifiant entier et sorte connue, sinon refus clair. */
-export function verifierEdition(factureId: unknown, sortie: unknown): void {
-  if (!Number.isInteger(factureId)) throw new ErreurMetier('Facture introuvable : rouvrez-la par son numéro.')
+/**
+ * Une demande de sortie venue de l'écran : identifiant entier et sorte connue, sinon refus clair.
+ * Sert aussi à la proforma (`document` = 'Proforma').
+ */
+export function verifierEdition(id: unknown, sortie: unknown, document = 'Facture'): void {
+  if (!Number.isInteger(id)) throw new ErreurMetier(`${document} introuvable : rouvrez-la par son numéro.`)
   if (sortie !== 'enregistrer' && sortie !== 'imprimer') {
     throw new ErreurMetier('Choisissez « Enregistrer le PDF » ou « Imprimer ».')
   }
