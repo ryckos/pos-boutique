@@ -633,6 +633,22 @@ select {
   flex-wrap: wrap;
   gap: 8px;
 }
+/* Retour client (A7) : quantité rendue d'une ligne, et montant à rembourser en grand. */
+.retour-quantite {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.retour-total {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 18px;
+  font-weight: 600;
+}
+.retour-total .montant {
+  font-size: 32px;
+}
 .ticket-ligne-selectionnee {
   background: var(--vert-pale);
   box-shadow: inset 4px 0 0 var(--vert);
