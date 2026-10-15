@@ -54,7 +54,7 @@ interface ConditionnementEnBase {
 }
 
 /** Une ligne préparée, prête à être photocopiée dans lignes_vente. */
-interface LignePreparee extends ConditionnementEnBase {
+export interface LignePreparee extends ConditionnementEnBase {
   quantite: number
   remise: number
   /** Quantité × prix − remise. */
@@ -82,7 +82,8 @@ function lireConditionnement(db: Db, conditionnementId: number): Conditionnement
   return c
 }
 
-function preparerLignes(db: Db, lignes: RequeteVente['lignes']): LignePreparee[] {
+/** Lignes relues en base et contrôlées (quantités, remises) : sert aussi à la proforma (A10). */
+export function preparerLignes(db: Db, lignes: RequeteVente['lignes']): LignePreparee[] {
   if (!Array.isArray(lignes) || lignes.length === 0) {
     throw new ErreurMetier('Le ticket est vide : scannez un article avant d’encaisser.')
   }
@@ -113,7 +114,7 @@ function preparerLignes(db: Db, lignes: RequeteVente['lignes']): LignePreparee[]
 }
 
 /** Remise sur le ticket : entière, au plus le total des lignes (règle 6.6). */
-function controlerRemiseGlobale(remiseGlobale: unknown, totalLignes: number): number {
+export function controlerRemiseGlobale(remiseGlobale: unknown, totalLignes: number): number {
   if (remiseGlobale === undefined) return 0
   if (!estMontant(remiseGlobale)) {
     throw new ErreurMetier('Remise sur le ticket invalide : saisissez un montant en francs, sans virgule.')
@@ -173,9 +174,9 @@ export function autoriserRemise(db: Db, caissierId: number, demande: RequeteAcco
 /**
  * Plafond de la caissière (règle 6.6) : il porte sur le total des remises du ticket. Non renseigné
  * (D-A3 en attente) = aucune remise sans gérant. Renvoie le gérant qui a autorisé, quand il en a
- * fallu un.
+ * fallu un. Sert aussi à la proforma (A10), qui ne consomme pas l'accord.
  */
-function controlerPlafond(
+export function controlerPlafond(
   db: Db,
   utilisateurId: number,
   totalRemises: number,

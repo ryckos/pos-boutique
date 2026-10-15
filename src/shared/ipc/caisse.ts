@@ -6,6 +6,7 @@
  */
 import type { MotifMouvementCaisse, MotifSaisiAuTiroir, SensMouvementCaisse } from '../caisse'
 import type { LigneRetournable, ModeRemboursement, MotifRetour, SortRetour } from '../retour'
+import type { ArticleCatalogue } from '../types'
 
 /** Modes acceptés à la caisse pour l'instant. Le crédit arrive avec la fiche client (A11). */
 export type ModePaiementCaisse = 'especes' | 'tmoney' | 'flooz'
@@ -252,6 +253,70 @@ export interface RetourEnregistre {
   tiroirOuvert: boolean
 }
 
+/** Coordonnées du client recopiées sur une facture ou une proforma (A10). Le nom seul est obligatoire. */
+export interface ClientDocument {
+  nom: string
+  telephone?: string
+  adresse?: string
+  nif?: string
+}
+
+/** Une facture (A10) : numéro F-AAAA-NNNNNN et ticket dont elle est faite. */
+export interface FactureCreee {
+  factureId: number
+  numero: string
+  numeroTicket: string
+}
+
+/** Sortie d'un document A4 : PDF enregistré où l'on veut, ou fenêtre d'impression de Windows. */
+export type SortieDocument = 'enregistrer' | 'imprimer'
+
+/** Proforma depuis le panier (A10) : les mêmes données qu'une vente, sans paiement. */
+export interface RequeteProforma {
+  lignes: RequeteVente['lignes']
+  remiseGlobale?: number
+  /** Remises au-delà du plafond de la caissière : jeton de `caisse:autoriserRemise` (non consommé). */
+  jetonRemise?: string
+  /** Facultatif : une proforma peut être faite pour « client de passage ». */
+  client?: ClientDocument
+}
+
+export interface ProformaCreee {
+  proformaId: number
+  /** PF-AAAA-NNNNNN */
+  numero: string
+  totalTtc: number
+  /** AAAA-MM-JJ */
+  valideJusquAu: string
+}
+
+/** Une ligne de proforma à recharger dans le panier, avec l'article tel qu'il se vend aujourd'hui. */
+export interface LigneProformaReprise {
+  conditionnementId: number
+  designation: string
+  quantite: number
+  remise: number
+  /** Prix du conditionnement sur la proforma. */
+  prixProforma: number
+  /** L'article d'aujourd'hui ; null s'il n'est plus en vente (désactivé). */
+  article: ArticleCatalogue | null
+  /** Le prix du jour diffère de celui de la proforma. */
+  prixChange: boolean
+}
+
+export interface ProformaReprise {
+  proformaId: number
+  numero: string
+  horodatage: string
+  valideJusquAu: string
+  /** La date de validité est dépassée (la reprise reste possible, aux prix du jour). */
+  expiree: boolean
+  client: ClientDocument | null
+  remiseGlobale: number
+  totalTtc: number
+  lignes: LigneProformaReprise[]
+}
+
 export interface RequeteCloture {
   /** Absent : la session ouverte de la personne connectée. Le gérant peut clôturer celle d'un autre. */
   sessionId?: number
@@ -328,4 +393,31 @@ export interface ContratCaisse {
    * ticket de retour s'imprime ensuite par `caisse:imprimerTicket`.
    */
   'caisse:enregistrerRetour': { requete: RequeteRetour; reponse: RetourEnregistre }
+  /**
+   * Facture A4 d'un ticket encaissé (A10), une par ticket : ni vente, ni stock, ni caisse. Refus si le
+   * ticket est annulé, entièrement retourné ou déjà facturé.
+   */
+  'caisse:facturer': { requete: { numeroTicket: string; client: ClientDocument }; reponse: FactureCreee }
+  /** La facture d'un ticket (numéro complet ou court), ou par son propre numéro F-… ; null s'il n'y en a pas. */
+  'caisse:trouverFacture': { requete: { numero: string }; reponse: FactureCreee | null }
+  /**
+   * PDF de la facture, enregistré ou imprimé, HORS transaction. La première sortie réussie de chaque
+   * sorte est l'original ; les suivantes portent « COPIE ». `fait` = false si l'utilisateur a annulé.
+   */
+  'caisse:editerFacture': {
+    requete: { factureId: number; sortie: SortieDocument }
+    reponse: { fait: boolean; copie: boolean }
+  }
+  /**
+   * Proforma (devis) depuis le panier : prix et TVA relus en base, ni vente, ni stock, ni paiement, pas
+   * besoin de caisse ouverte. Valable 30 jours.
+   */
+  'caisse:creerProforma': { requete: RequeteProforma; reponse: ProformaCreee }
+  /** Une proforma par son numéro (complet, ou « 12 » pour PF-<année>-000012), à reprendre dans la caisse. */
+  'caisse:lireProforma': { requete: { numero: string }; reponse: ProformaReprise }
+  /** PDF de la proforma, enregistré ou imprimé, HORS transaction. `fait` = false si annulé. */
+  'caisse:editerProforma': {
+    requete: { proformaId: number; sortie: SortieDocument }
+    reponse: { fait: boolean }
+  }
 }

@@ -1,7 +1,7 @@
 /**
  * Numéros de documents séquentiels et sans trou : T-2026-000001, RC-2026-000001…
  * ZONE PARTAGÉE. Préfixes réservés :
- *   T (ticket, Dev A) · R (retour client, Dev A) · F (facture, Dev A) · RC (réception, Dev B) · CA (commande achat, Dev B)
+ *   T (ticket, Dev A) · R (retour client, Dev A) · F (facture, Dev A) · PF (proforma, Dev A) · RC (réception, Dev B) · CA (commande achat, Dev B)
  *   INV (inventaire, Dev B) · DEP (dépense, Dev B)
  */
 import type { Db } from '../db/connexion'
