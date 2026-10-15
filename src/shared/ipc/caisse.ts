@@ -6,6 +6,7 @@
  */
 import type { MotifMouvementCaisse, MotifSaisiAuTiroir, SensMouvementCaisse } from '../caisse'
 import type { LigneRetournable, ModeRemboursement, MotifRetour, SortRetour } from '../retour'
+import type { ArticleCatalogue } from '../types'
 
 /** Modes acceptés à la caisse pour l'instant. Le crédit arrive avec la fiche client (A11). */
 export type ModePaiementCaisse = 'especes' | 'tmoney' | 'flooz'
@@ -270,6 +271,52 @@ export interface FactureCreee {
 /** Sortie d'un document A4 : PDF enregistré où l'on veut, ou fenêtre d'impression de Windows. */
 export type SortieDocument = 'enregistrer' | 'imprimer'
 
+/** Proforma depuis le panier (A10) : les mêmes données qu'une vente, sans paiement. */
+export interface RequeteProforma {
+  lignes: RequeteVente['lignes']
+  remiseGlobale?: number
+  /** Remises au-delà du plafond de la caissière : jeton de `caisse:autoriserRemise` (non consommé). */
+  jetonRemise?: string
+  /** Facultatif : une proforma peut être faite pour « client de passage ». */
+  client?: ClientDocument
+}
+
+export interface ProformaCreee {
+  proformaId: number
+  /** PF-AAAA-NNNNNN */
+  numero: string
+  totalTtc: number
+  /** AAAA-MM-JJ */
+  valideJusquAu: string
+}
+
+/** Une ligne de proforma à recharger dans le panier, avec l'article tel qu'il se vend aujourd'hui. */
+export interface LigneProformaReprise {
+  conditionnementId: number
+  designation: string
+  quantite: number
+  remise: number
+  /** Prix du conditionnement sur la proforma. */
+  prixProforma: number
+  /** L'article d'aujourd'hui ; null s'il n'est plus en vente (désactivé). */
+  article: ArticleCatalogue | null
+  /** Le prix du jour diffère de celui de la proforma. */
+  prixChange: boolean
+}
+
+export interface ProformaReprise {
+  proformaId: number
+  numero: string
+  horodatage: string
+  valideJusquAu: string
+  /** La date de validité est dépassée (la reprise reste possible, aux prix du jour). */
+  expiree: boolean
+  client: ClientDocument | null
+  remiseGlobale: number
+  totalTtc: number
+  lignes: LigneProformaReprise[]
+}
+
 export interface RequeteCloture {
   /** Absent : la session ouverte de la personne connectée. Le gérant peut clôturer celle d'un autre. */
   sessionId?: number
@@ -360,5 +407,17 @@ export interface ContratCaisse {
   'caisse:editerFacture': {
     requete: { factureId: number; sortie: SortieDocument }
     reponse: { fait: boolean; copie: boolean }
+  }
+  /**
+   * Proforma (devis) depuis le panier : prix et TVA relus en base, ni vente, ni stock, ni paiement, pas
+   * besoin de caisse ouverte. Valable 30 jours.
+   */
+  'caisse:creerProforma': { requete: RequeteProforma; reponse: ProformaCreee }
+  /** Une proforma par son numéro (complet, ou « 12 » pour PF-<année>-000012), à reprendre dans la caisse. */
+  'caisse:lireProforma': { requete: { numero: string }; reponse: ProformaReprise }
+  /** PDF de la proforma, enregistré ou imprimé, HORS transaction. `fait` = false si annulé. */
+  'caisse:editerProforma': {
+    requete: { proformaId: number; sortie: SortieDocument }
+    reponse: { fait: boolean }
   }
 }

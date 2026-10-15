@@ -751,6 +751,11 @@ repart à 1 chaque année.
   prix du jour** (le service relit toujours les prix) ; si un prix a changé, la caisse le signale. La
   proforma ne garantit donc pas le prix.
 - Même sortie PDF / impression que la facture. Journal : `proforma`.
+- Précisions de réalisation (PR 2) : les remises suivent le **plafond de la caissière** (§ 6.6) ; l'accord
+  du gérant n'est **pas consommé** par la proforma (il servira à la vente). Proforma retrouvée par son
+  numéro complet ou court (« 12 » = `PF-<année>-000012`). Une proforma **périmée** est signalée, sa
+  reprise reste possible (aux prix du jour, comme toujours). Un article retiré de la vente est signalé
+  et ne revient pas au panier. Le PDF d'une proforma ne porte ni original ni « COPIE » : c'est un devis.
 
 ---
 
