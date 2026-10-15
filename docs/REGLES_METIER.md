@@ -707,6 +707,7 @@ Exemple de référence :
 | `T`     | Ticket                   | caisse | Dev A       |
 | `R`     | Retour client            | caisse | Dev A       |
 | `F`     | Facture                  | caisse | Dev A       |
+| `PF`    | Proforma                 | caisse | Dev A       |
 | `RC`    | Réception                | achats | Dev B       |
 | `CA`    | Commande d'achat         | achats | Dev B       |
 | `INV`   | Inventaire               | inventaires | Dev B  |
@@ -714,6 +715,42 @@ Exemple de référence :
 
 Les numéros ont la forme `PREFIXE-AAAA-NNNNNN`. Ils sont séquentiels, sans trou, et le compteur
 repart à 1 chaque année.
+
+### 6.12 Facture (validé par Dev A, 2026-10-15, tâche A10)
+- Une facture se fait à partir d'un **ticket déjà encaissé** : le client paie à la caisse, puis demande
+  sa facture. Elle ne crée **ni vente, ni mouvement de stock, ni paiement**, et ne demande pas de
+  caisse ouverte. **Une seule facture par ticket**, numéro **`F-AAAA-NNNNNN`** (table `factures`).
+- Ticket retrouvé par son numéro complet ou court (« 158 »). Refus : ticket annulé, document qui n'est
+  pas un ticket de vente (retour), ticket entièrement retourné, ticket déjà facturé (« rééditez-la »).
+- **Client** : nom (ou raison sociale) obligatoire ; téléphone, adresse et NIF facultatifs ; recopiés
+  sur la facture au moment T. La fiche client (A11) permettra ensuite d'en choisir un.
+- **Contenu** (A4) : nom, adresse et NIF de la boutique (`boutique_nif`) ; numéro et date de la
+  facture ; ticket d'origine, sa date et la caisse ; le client ; les lignes (désignation, quantité,
+  prix unitaire TTC, remise, taux de TVA, total TTC) ; remise sur le ticket ; HT et TVA **par taux**
+  (§ 6.4, mêmes chiffres que le ticket), total HT, TVA, TTC ; mention **« Payée »** avec les modes de
+  paiement et leurs références ; si le ticket a eu des **retours**, une section « Retours » (numéro R,
+  date, lignes rendues) et le **net payé** ; « Arrêtée la présente facture à la somme de … francs CFA »
+  (**net payé en toutes lettres**). Autres mentions légales (RCCM, régime fiscal) : à confirmer avec la
+  cliente ; NIF seulement d'ici là.
+- **Sortie** : PDF enregistré où l'on veut (clé USB, envoi par WhatsApp), ou fenêtre d'impression de
+  Windows (imprimante A4 s'il y en a une), toujours hors transaction. La **première sortie réussie de
+  chaque sorte** (un PDF enregistré, une impression) est l'original ; les suivantes portent **« COPIE »**.
+  Une sortie annulée par l'utilisateur ne compte pas.
+- **Qui** : caissière et gérant, n'importe quel ticket. Journal : `facture` (création),
+  `edition_facture` (chaque sortie réussie, avec original ou copie).
+
+### 6.13 Proforma (validé par Dev A, 2026-10-15, tâche A10)
+- Un **devis** fait depuis le panier de la caisse (bouton « Proforma ») : **pas de vente, pas de
+  stock, pas de paiement, pas besoin de caisse ouverte**. Numéro **`PF-AAAA-NNNNNN`** (tables
+  `proformas`, `lignes_proforma`).
+- Prix, remises, désignations et TVA **relus en base** et recopiés, comme à la vente (§ 6.3, 6.6) ;
+  client facultatif (mêmes champs que la facture).
+- **Validité imprimée : 30 jours** (« Valable jusqu'au … ») ; durée à proposer à la cliente comme
+  paramètre.
+- **Reprise dans la caisse** : la proforma recharge ses lignes dans le panier ; la vente se fait **aux
+  prix du jour** (le service relit toujours les prix) ; si un prix a changé, la caisse le signale. La
+  proforma ne garantit donc pas le prix.
+- Même sortie PDF / impression que la facture. Journal : `proforma`.
 
 ---
 

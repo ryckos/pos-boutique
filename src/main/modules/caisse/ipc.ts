@@ -2,8 +2,8 @@
  * Propriétaire : Dev A.
  * Canaux caisse:* — minces : droits, puis appel du service. Organisation du module :
  *   service-session.ts · service-vente.ts · service-ticket.ts · service-cloture.ts ·
- *   service-mouvements.ts · service-annulation.ts · service-retour.ts · calculs.ts (TVA, totaux —
- *   testés) · ipc.ts
+ *   service-mouvements.ts · service-annulation.ts · service-retour.ts · service-facture.ts ·
+ *   calculs.ts (TVA, totaux — testés) · ipc.ts. Documents A4 (facture, proforma) : ../../documents/.
  */
 import type { MouvementCaisse, MouvementEnregistre } from '@shared/ipc/caisse'
 import type { UtilisateurConnecte } from '@shared/types'
@@ -35,6 +35,16 @@ import {
   sessionPourMouvement
 } from './service-mouvements'
 import { consulterRetour, enregistrerRetour } from './service-retour'
+import {
+  dejaEditee,
+  facturer,
+  lireFacture,
+  noterEdition,
+  trouverFacture,
+  verifierEdition
+} from './service-facture'
+import { htmlFacture } from '../../documents/facture'
+import { sortirDocument } from '../../documents/pdf'
 import { ouvrirSession, sessionOuverte } from './service-session'
 import { autoriserRemise, enregistrerVente, gerantsActifs } from './service-vente'
 import { journaliserLignesAnnulees } from './service-lignes-annulees'
@@ -199,5 +209,28 @@ export function enregistrerIpcCaisse(): void {
     return retour.mode === 'especes' && retour.montant > 0
       ? { ...retour, tiroirOuvert: await ouvrirTiroir() }
       : retour
+  })
+  gerer('caisse:facturer', (demande) => {
+    const u = session.exiger(['caissier', 'gerant'])
+    return facturer(base(), u, demande)
+  })
+  gerer('caisse:trouverFacture', ({ numero }) => {
+    session.exiger(['caissier', 'gerant'])
+    return trouverFacture(base(), numero)
+  })
+  gerer('caisse:editerFacture', async ({ factureId, sortie }) => {
+    const u = session.exiger(['caissier', 'gerant'])
+    const db = base()
+    verifierEdition(factureId, sortie)
+    const facture = lireFacture(db, factureId, lireParametres(db))
+    const copie = dejaEditee(db, factureId, sortie)
+    // PDF ou impression APRÈS la création de la facture, hors de toute transaction.
+    const fait = await sortirDocument(
+      htmlFacture(facture, { copie }),
+      `Facture ${facture.numero}.pdf`,
+      sortie
+    )
+    if (fait) noterEdition(db, u.id, factureId, sortie, copie)
+    return { fait, copie }
   })
 }

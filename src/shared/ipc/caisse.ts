@@ -252,6 +252,24 @@ export interface RetourEnregistre {
   tiroirOuvert: boolean
 }
 
+/** Coordonnées du client recopiées sur une facture ou une proforma (A10). Le nom seul est obligatoire. */
+export interface ClientDocument {
+  nom: string
+  telephone?: string
+  adresse?: string
+  nif?: string
+}
+
+/** Une facture (A10) : numéro F-AAAA-NNNNNN et ticket dont elle est faite. */
+export interface FactureCreee {
+  factureId: number
+  numero: string
+  numeroTicket: string
+}
+
+/** Sortie d'un document A4 : PDF enregistré où l'on veut, ou fenêtre d'impression de Windows. */
+export type SortieDocument = 'enregistrer' | 'imprimer'
+
 export interface RequeteCloture {
   /** Absent : la session ouverte de la personne connectée. Le gérant peut clôturer celle d'un autre. */
   sessionId?: number
@@ -328,4 +346,19 @@ export interface ContratCaisse {
    * ticket de retour s'imprime ensuite par `caisse:imprimerTicket`.
    */
   'caisse:enregistrerRetour': { requete: RequeteRetour; reponse: RetourEnregistre }
+  /**
+   * Facture A4 d'un ticket encaissé (A10), une par ticket : ni vente, ni stock, ni caisse. Refus si le
+   * ticket est annulé, entièrement retourné ou déjà facturé.
+   */
+  'caisse:facturer': { requete: { numeroTicket: string; client: ClientDocument }; reponse: FactureCreee }
+  /** La facture d'un ticket (numéro complet ou court), ou par son propre numéro F-… ; null s'il n'y en a pas. */
+  'caisse:trouverFacture': { requete: { numero: string }; reponse: FactureCreee | null }
+  /**
+   * PDF de la facture, enregistré ou imprimé, HORS transaction. La première sortie réussie de chaque
+   * sorte est l'original ; les suivantes portent « COPIE ». `fait` = false si l'utilisateur a annulé.
+   */
+  'caisse:editerFacture': {
+    requete: { factureId: number; sortie: SortieDocument }
+    reponse: { fait: boolean; copie: boolean }
+  }
 }
