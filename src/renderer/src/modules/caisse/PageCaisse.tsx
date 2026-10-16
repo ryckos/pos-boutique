@@ -8,6 +8,7 @@
  * La clôture, les rapports X et Z sont dans PageClotureCaisse (A4). Remises et journal des lignes
  * retirées : A5 (règle 6.6). Apports et retraits du gérant : FenetreTiroir (A8, règle 6.10).
  * Annulation d'un ticket : FenetreAnnulation (A6, règle 6.7). Retour client : FenetreRetour (A7, règle 6.8).
+ * Facture d'un ticket encaissé : FenetreFacture (A10, règle 6.12).
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -42,6 +43,7 @@ import { FenetreTiroir } from './FenetreTiroir'
 import { FenetreAnnulation } from './FenetreAnnulation'
 import { messageAnnulation } from './annulation'
 import { FenetreRetour } from './FenetreRetour'
+import { FenetreFacture } from './FenetreFacture'
 import { messageRetour } from './retour'
 import { OuvertureCaisse } from './OuvertureCaisse'
 
@@ -78,6 +80,8 @@ export function PageCaisse(): React.JSX.Element {
   const [annulationFaite, setAnnulationFaite] = useState<string | null>(null)
   /** Fenêtre « Retour client » (A7). */
   const [retourOuvert, setRetourOuvert] = useState(false)
+  /** Fenêtre « Faire une facture » (A10). */
+  const [factureOuverte, setFactureOuverte] = useState(false)
   /** Remise en cours de saisie : sur une ligne (son conditionnementId) ou sur le ticket ; null = fermée. */
   const [remiseOuverte, setRemiseOuverte] = useState<{ ligne: number | null } | null>(null)
   /** Plafond de remise de la caissière (paramètres de B5) ; null = non fixé (D-A3). */
@@ -173,6 +177,7 @@ export function PageCaisse(): React.JSX.Element {
         !tiroirOuvert &&
         !annulationOuverte &&
         !retourOuvert &&
+        !factureOuverte &&
         remiseOuverte === null
     }
   )
@@ -218,6 +223,7 @@ export function PageCaisse(): React.JSX.Element {
     tiroirOuvert ||
     annulationOuverte ||
     retourOuvert ||
+    factureOuverte ||
     remiseOuverte !== null
   useEffect(() => {
     if (fenetreOuverte || !caisseOuverte) return
@@ -606,6 +612,9 @@ export function PageCaisse(): React.JSX.Element {
           <button className="btn btn-discret" onClick={() => setRetourOuvert(true)}>
             Retour client
           </button>
+          <button className="btn btn-discret" onClick={() => setFactureOuverte(true)}>
+            Faire une facture
+          </button>
           {/* Apports et retraits : gérant seulement (règle 6.10). */}
           {utilisateur.role !== 'caissier' && (
             <button className="btn btn-discret" onClick={() => setTiroirOuvert(true)}>
@@ -676,6 +685,12 @@ export function PageCaisse(): React.JSX.Element {
         />
       )}
 
+      {factureOuverte && (
+        <FenetreFacture
+          numeroInitial={derniereVente?.numeroTicket ?? impression?.numeroTicket ?? ''}
+          onFermer={() => setFactureOuverte(false)}
+        />
+      )}
       {tiroirOuvert && <FenetreTiroir sessionInitiale={session.id} onFermer={() => setTiroirOuvert(false)} />}
 
       {rechercheOuverte && (
