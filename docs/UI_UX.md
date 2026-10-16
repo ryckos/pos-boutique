@@ -624,6 +624,18 @@ ligne. La restauration s'ouvre en fenêtre (bouton rouge) : ce qui disparaîtra,
 sauvegardée d'abord, le redémarrage ; case « J'ai compris » obligatoire. Puis « l'application
 redémarre… » (`REGLES_METIER.md` § 14).
 
+### 5.23 Facture et proforma (Dev A — A10)
+Boutons dans les actions de la caisse ouverte, pour tous (`REGLES_METIER.md` § 6.12 et 6.13) ;
+douchette et raccourcis coupés pendant les fenêtres.
+- **« Faire une facture »** (`FenetreFacture.tsx`) : numéro du ticket (le dernier ticket est proposé et
+  cherché à l'ouverture ; numéro court ou numéro de facture `F-…` acceptés, Entrée ou « Chercher le
+  ticket »). Ticket sans facture : champs Nom ou raison sociale (obligatoire), Téléphone, Adresse, NIF,
+  puis **« Faire la facture »** ; tant que le nom manque, le bouton est grisé et la phrase le dit.
+  Ticket déjà facturé : « Le ticket T-… a déjà la facture F-… : rééditez-la », sans formulaire. Une
+  fois la facture prête : **« Enregistrer le PDF »** et **« Imprimer la facture »**, puis « PDF
+  enregistré (original) » ou « (copie) » ; une boîte de dialogue annulée n'affiche rien. Les refus du
+  service (ticket annulé, retour, tout retourné, inconnu) s'affichent dans la fenêtre.
+
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
 - Les messages d'erreur portent `role="alert"`.
