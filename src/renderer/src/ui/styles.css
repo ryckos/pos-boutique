@@ -718,6 +718,15 @@ select {
   display: flex;
   gap: 8px;
 }
+/* Reprise d’une proforma (Dev A, A10) : une alerte par ligne, puis « Compris ». */
+.caisse-alertes-proforma {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.caisse-alerte-proforma {
+  display: block;
+}
 /* Espèces du tiroir (Dev A, A8) : ce que contient le tiroir, bien visible pour le gérant. */
 .tiroir-en-caisse {
   color: var(--encre-douce);

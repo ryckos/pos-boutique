@@ -635,6 +635,19 @@ douchette et raccourcis coupés pendant les fenêtres.
   fois la facture prête : **« Enregistrer le PDF »** et **« Imprimer la facture »**, puis « PDF
   enregistré (original) » ou « (copie) » ; une boîte de dialogue annulée n'affiche rien. Les refus du
   service (ticket annulé, retour, tout retourné, inconnu) s'affichent dans la fenêtre.
+- **« Proforma »** (`FenetreProforma.tsx`), grisé si le ticket est vide : total du ticket en pastille,
+  client facultatif (mêmes champs ; s'il est donné, le nom est obligatoire), puis **« Faire la
+  proforma »** ; « Proforma PF-… faite : 15 000 F, valable jusqu'au … », puis « Enregistrer le PDF » et
+  « Imprimer la proforma » (ni original ni COPIE). **Le ticket reste en caisse** : la caissière le vide
+  si le client ne prend rien. Un refus du service (remise au-delà du plafond sans accord) s'affiche dans
+  la fenêtre.
+- **« Reprendre une proforma »** (`FenetreRepriseProforma.tsx`) : numéro complet ou court (« 12 »),
+  Entrée ou « Afficher la proforma ». Aperçu : date, client, validité, tableau Article / Quantité / Prix
+  sur la proforma / Prix du jour (en gras s'il a changé, « Plus en vente » sinon), total de la proforma,
+  alertes en bandeau ambre, et « Le ticket en cours sera mis en attente » s'il y a lieu. **« Mettre au
+  ticket »** charge les lignes, leurs remises et la remise sur le ticket (jamais l'accord du gérant). Les
+  alertes restent dans la caisse (prix changé, article retiré, proforma périmée, remises au-delà du
+  plafond de la caissière) jusqu'à « Compris » ou l'encaissement.
 
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
