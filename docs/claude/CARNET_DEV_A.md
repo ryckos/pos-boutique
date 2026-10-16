@@ -18,6 +18,97 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-16 — a/caisse-retour(-ecran), a/caisse-facture, a/caisse-proforma — A7 terminée, A10 parties 1 et 2
+**Fait** (session du 13 au 16/10) :
+- **Fusions de début de session** : A9 (#57), A6 (#58 puis #61). La PR #59 (écran d'A6) avait été
+  fusionnée par erreur dans `a/caisse-annulation` au lieu de `test` (base non changée après #58) :
+  refaite en #61. État mis à jour (#62). Branches fusionnées supprimées (local et GitHub).
+- **A7 Retour client — ✅** (#63 serveur, #64 écran). Règles validées par Dev A, `REGLES_METIER` § 6.8
+  (précisions du 13/10) et § 6.9 :
+  - gérant, ou caissière avec le **code du gérant** (même fonction qu'A6, `autoriseParGerant` exportée
+    de `service-annulation.ts`) ; remboursement sur la caisse **ouverte de celui qui fait le retour** ;
+  - retour = vente `type = 'retour'`, numéro **`R-AAAA-NNNNNN`**, `vente_origine_id`, montants
+    **négatifs**, paiement négatif ; **rien dans `mouvements_caisse`** ;
+  - pas plus que vendu, **ligne par ligne** (`lignes_vente.ligne_origine_id`), en conditionnements ;
+  - montant rendu = payé (remises comprises) au prorata, le dernier retour prend le reste
+    (`montantRetourLigne` dans `src/shared/retour.ts` ; 950 F → 316 + 316 + 318) ;
+  - espèces (pas plus que le tiroir), TMoney, Flooz (référence obligatoire) ; **avoir en boutique
+    reporté à A11** (bouton grisé) ;
+  - stock : `retour_client` sur les lots servis à la vente (dernier servi d'abord), `casse` si détruit ;
+  - X / Z / écran de clôture : bloc « Retours client », espèces théoriques **moins les remboursements
+    en espèces** (un remboursement TMoney ne touche pas le tiroir ; expliqué à Dev A) ; les ventes par
+    mode ne comptent que les tickets de vente ;
+  - ticket de retour imprimé « RETOUR CLIENT » ; écran `FenetreRetour.tsx` (bouton « Retour client »).
+  - Migration `20261013_1400_retours_client.sql` (`motif_retour`, `sort_retour`, `ligne_origine_id`).
+- **A10 Facture et proforma — 🔄, parties 1 et 2 fusionnées** (#65 facture, #66 proforma). Règles
+  validées (10 points), `REGLES_METIER` § 6.12 et § 6.13 :
+  - **facture** = document d'un **ticket déjà encaissé** (ni vente, ni stock, ni caisse), une par ticket,
+    numéro **`F-…`**, table `factures`, client saisi et recopié (nom obligatoire, tél., adresse, NIF) ;
+    refus : annulé, retour, entièrement retourné, déjà facturée ; section « Retours » et net payé ;
+    montant en toutes lettres (`documents/lettres.ts`, 30 cas testés) ; NIF de la boutique ;
+    première sortie réussie **de chaque sorte** (PDF / impression) = original, ensuite « COPIE » ;
+  - **proforma** = devis depuis le panier, **sans caisse ouverte**, numéro **`PF-…`**, tables
+    `proformas` / `lignes_proforma`, prix relus et contrôlés comme à la vente (`preparerLignes`,
+    `controlerRemiseGlobale`, `controlerPlafond` exportées de `service-vente.ts`, accord du gérant non
+    consommé), **30 jours** (`VALIDITE_PROFORMA_JOURS`), reprise **aux prix du jour** avec `prixChange`,
+    article retiré = `null`, `expiree` signalée ; pas de COPIE ;
+  - sortie A4 : HTML (`documents/page.ts`, `facture.ts`, `proforma.ts`) → fenêtre cachée sans JS →
+    `printToPDF` + dialogue d'enregistrement, ou `webContents.print` (`documents/pdf.ts`), hors
+    transaction ;
+  - migration `20261015_1000_factures_proformas.sql` (3 tables, ni UPDATE ni DELETE).
+  - Canaux : `caisse:facturer`, `trouverFacture`, `editerFacture`, `creerProforma`, `lireProforma`,
+    `editerProforma`. PDF de la facture et de la proforma **vérifiés à la main par Dev A** (depuis la
+    console : `window.pos.invoke` renvoie `{ ok, donnees }`, et attention aux lignes qui commencent
+    par « ( » sans point-virgule avant).
+- `test` à `9302a33` : **679 tests verts**, typecheck OK (vérifié en fin de session).
+
+**En cours** : rien de non fusionné. Cette entrée et l'état sont sur `a/docs-carnet-a7-a10` (PR à ouvrir).
+
+**Prochaine étape** :
+1. `git switch test && git pull`, puis `git switch -c a/caisse-facture-ecran`.
+2. **A10 partie 3 — écrans** (règles déjà validées, pas de nouveau point à trancher sauf la mise en page) :
+   - dans `PageCaisse`, actions « Faire une facture » et « Proforma » ;
+   - `FenetreFacture.tsx` : numéro du ticket (dernier ticket proposé, numéro court accepté),
+     `caisse:trouverFacture` d'abord (si une facture existe : « Rééditer », sinon formulaire client) ;
+     après `caisse:facturer`, boutons « Enregistrer le PDF » et « Imprimer » (`caisse:editerFacture`),
+     message « COPIE » quand `copie: true` ; refus du service affiché dans la fenêtre ;
+   - « Proforma » : actif quand le panier n'est pas vide ; fenêtre client facultatif → `caisse:creerProforma`
+     avec `versLignesVente(panier)`, `remiseGlobale`, `jetonRemise` du panier ; puis PDF ; **le panier
+     reste** (la caissière choisit de le vider) ;
+   - « Reprendre une proforma » : `caisse:lireProforma`, puis charger les lignes au panier avec
+     `article` (ignorer `null` avec un message), remises de ligne et remise globale ; bandeau « Prix
+     changé depuis la proforma : … » pour les lignes `prixChange`, et « Proforma périmée » si `expiree`.
+     Regarder dans `panier.ts` / `attente.ts` comment poser une remise sur une ligne (A5) ; ajouter une
+     action de réducteur `chargerProforma` si besoin, testée ;
+   - logique pure dans `modules/caisse/documents.ts` (ou proche), tests ; `UI_UX` : nouvelle § pour
+     les deux fenêtres ; puis A10 → ✅.
+3. Ensuite **Phase 3 : A11 Clients et vente à crédit** (`/tache A11`) : y brancher l'avoir en boutique
+   d'A7 et le choix d'un client existant sur la facture / proforma (`client_id` prévu dans les tables).
+
+**Questions ouvertes** :
+- **Pour la cliente** : délai limite d'un retour (aucun aujourd'hui) ; mentions légales de la facture
+  (RCCM, régime fiscal ? NIF seul d'ici là) ; validité de la proforma (30 jours, à passer en paramètre ?) ;
+  ligne « tickets annulés » sur le X et le Z ; D-A1 (stock négatif), D-A3 (plafond de remise).
+- Proposé à Dev A, non demandé : une carte « Retours » ou un net par mode sur l'écran de clôture.
+- **Essai sur le terminal** toujours à faire (Xprinter, D-A2, tiroir réel, 15,6″, douchette) : A3 et
+  A4 restent 🔄 ; ajouter au programme le ticket de retour imprimé.
+- Sur ce poste : tag local `sauvegarde-avant-rebase-a3` (`git tag -d sauvegarde-avant-rebase-a3`) ; une
+  autorisation ponctuelle ajoutée dans `.claude/settings.json` (non commitée, à jeter :
+  `git checkout .claude/settings.json`).
+
+**Contrats** :
+- Ajoutés (Dev A) : `caisse:consulterRetour`, `caisse:enregistrerRetour` ; `RapportCaisse.remboursements` ;
+  `caisse:facturer`, `trouverFacture`, `editerFacture`, `creerProforma`, `lireProforma`, `editerProforma`.
+- **Pour Dev B (rapports B14, A14)** : un retour est une vente **terminée** de `type = 'retour'` en
+  **négatif** (lignes, totaux, paiement) — le soustraire pour la marge, ou filtrer `type = 'ticket'` pour
+  les ventes brutes ; une destruction apparaît en `casse`. Une facture et une proforma **ne créent aucune
+  vente**.
+- **Demandé à Dev B** (`src/shared/audit.ts`, toujours pas fait) : libellés de `mouvement_caisse`,
+  `annulation_mouvement_caisse` (A8), `retour_client` (clés `numeroRetour`, `ticketOrigine`, `montant`,
+  `mode`, `motif`, `sort`, `autoriseeParId`), `facture` (`numero`, `numeroTicket`, `client`, `montant`),
+  `edition_facture` (`sortie`, `copie`), `proforma` (`numero`, `montant`, `client`).
+- Attendu de Dev B : rien.
+
 ## 2026-10-13 — a/caisse-mouvements, a/caisse-fefo, a/caisse-annulation(-ecran) — A8, A9, A6 (et rattrapage A5)
 **Fait** :
 - **Rattrapage A5** (session du 2026-10-01, sans entrée de carnet) : PR #30 fusionnée. Remises sur
