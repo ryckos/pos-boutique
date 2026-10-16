@@ -48,6 +48,16 @@ export function reprendre(etat: EtatCaisse, numero: number, maintenant: number):
   return { ...libere, courant: ticket.panier }
 }
 
+/**
+ * Met un panier tout prêt au ticket (reprise d'une proforma, A10). Le ticket en cours, s'il n'est pas
+ * vide, part en attente comme pour une reprise : rien n'est perdu (choix validé par Dev A, 2026-10-16).
+ * Un panier vide ne change rien.
+ */
+export function chargerPanier(etat: EtatCaisse, panier: Panier, maintenant: number): EtatCaisse {
+  if (panier.lignes.length === 0) return etat
+  return { ...mettreEnAttente(etat, maintenant), courant: panier }
+}
+
 export interface ResumeAttente {
   nbArticles: number
   total: number
@@ -68,6 +78,7 @@ export type ActionCaisse =
   | { type: 'panier'; action: ActionPanier }
   | { type: 'mettreEnAttente'; maintenant: number }
   | { type: 'reprendre'; numero: number; maintenant: number }
+  | { type: 'chargerPanier'; panier: Panier; maintenant: number }
 
 export function reducteurCaisse(etat: EtatCaisse, action: ActionCaisse): EtatCaisse {
   switch (action.type) {
@@ -77,5 +88,7 @@ export function reducteurCaisse(etat: EtatCaisse, action: ActionCaisse): EtatCai
       return mettreEnAttente(etat, action.maintenant)
     case 'reprendre':
       return reprendre(etat, action.numero, action.maintenant)
+    case 'chargerPanier':
+      return chargerPanier(etat, action.panier, action.maintenant)
   }
 }

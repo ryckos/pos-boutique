@@ -8,7 +8,8 @@
  * La clôture, les rapports X et Z sont dans PageClotureCaisse (A4). Remises et journal des lignes
  * retirées : A5 (règle 6.6). Apports et retraits du gérant : FenetreTiroir (A8, règle 6.10).
  * Annulation d'un ticket : FenetreAnnulation (A6, règle 6.7). Retour client : FenetreRetour (A7, règle 6.8).
- * Facture d'un ticket encaissé : FenetreFacture (A10, règle 6.12).
+ * Facture d'un ticket encaissé : FenetreFacture (A10, règle 6.12). Proforma et reprise : FenetreProforma,
+ * FenetreRepriseProforma (A10, règle 6.13).
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -44,6 +45,9 @@ import { FenetreAnnulation } from './FenetreAnnulation'
 import { messageAnnulation } from './annulation'
 import { FenetreRetour } from './FenetreRetour'
 import { FenetreFacture } from './FenetreFacture'
+import { FenetreProforma } from './FenetreProforma'
+import { FenetreRepriseProforma } from './FenetreRepriseProforma'
+import { alerteRemisesHorsPlafond, panierDeProforma } from './documents'
 import { messageRetour } from './retour'
 import { OuvertureCaisse } from './OuvertureCaisse'
 
@@ -82,6 +86,11 @@ export function PageCaisse(): React.JSX.Element {
   const [retourOuvert, setRetourOuvert] = useState(false)
   /** Fenêtre « Faire une facture » (A10). */
   const [factureOuverte, setFactureOuverte] = useState(false)
+  /** Fenêtres « Proforma » et « Reprendre une proforma » (A10). */
+  const [proformaOuverte, setProformaOuverte] = useState(false)
+  const [repriseOuverte, setRepriseOuverte] = useState(false)
+  /** Ce qui diffère de la proforma reprise (prix, articles retirés, remises) ; effacé à l'encaissement. */
+  const [alertesProforma, setAlertesProforma] = useState<string[]>([])
   /** Remise en cours de saisie : sur une ligne (son conditionnementId) ou sur le ticket ; null = fermée. */
   const [remiseOuverte, setRemiseOuverte] = useState<{ ligne: number | null } | null>(null)
   /** Plafond de remise de la caissière (paramètres de B5) ; null = non fixé (D-A3). */
@@ -178,6 +187,8 @@ export function PageCaisse(): React.JSX.Element {
         !annulationOuverte &&
         !retourOuvert &&
         !factureOuverte &&
+        !proformaOuverte &&
+        !repriseOuverte &&
         remiseOuverte === null
     }
   )
@@ -224,6 +235,8 @@ export function PageCaisse(): React.JSX.Element {
     annulationOuverte ||
     retourOuvert ||
     factureOuverte ||
+    proformaOuverte ||
+    repriseOuverte ||
     remiseOuverte !== null
   useEffect(() => {
     if (fenetreOuverte || !caisseOuverte) return
@@ -273,6 +286,7 @@ export function PageCaisse(): React.JSX.Element {
     agir({ type: 'vider' })
     setPaiement(null)
     setMessage(null)
+    setAlertesProforma([])
     setDerniereVente(vente)
     // Impression et tiroir APRÈS l'enregistrement, sans l'attendre : la caisse est déjà libre.
     void imprimer(vente.venteId, vente.numeroTicket)
@@ -502,6 +516,23 @@ export function PageCaisse(): React.JSX.Element {
           </>
         )}
 
+        {alertesProforma.length > 0 && (
+          <div className="bandeau caisse-alertes-proforma" role="status">
+            <p>
+              {alertesProforma.map((a) => (
+                <span key={a} className="caisse-alerte-proforma">
+                  {a}
+                </span>
+              ))}
+            </p>
+            <div className="caisse-impression-actions">
+              <button className="btn btn-discret" onClick={() => setAlertesProforma([])}>
+                Compris
+              </button>
+            </div>
+          </div>
+        )}
+
         {reimprime && (
           <p className="succes" role="status">
             {reimprime}
@@ -615,6 +646,16 @@ export function PageCaisse(): React.JSX.Element {
           <button className="btn btn-discret" onClick={() => setFactureOuverte(true)}>
             Faire une facture
           </button>
+          <button
+            className="btn btn-discret"
+            disabled={panier.lignes.length === 0}
+            onClick={() => setProformaOuverte(true)}
+          >
+            Proforma
+          </button>
+          <button className="btn btn-discret" onClick={() => setRepriseOuverte(true)}>
+            Reprendre une proforma
+          </button>
           {/* Apports et retraits : gérant seulement (règle 6.10). */}
           {utilisateur.role !== 'caissier' && (
             <button className="btn btn-discret" onClick={() => setTiroirOuvert(true)}>
@@ -689,6 +730,24 @@ export function PageCaisse(): React.JSX.Element {
         <FenetreFacture
           numeroInitial={derniereVente?.numeroTicket ?? impression?.numeroTicket ?? ''}
           onFermer={() => setFactureOuverte(false)}
+        />
+      )}
+      {proformaOuverte && <FenetreProforma panier={panier} onFermer={() => setProformaOuverte(false)} />}
+      {repriseOuverte && (
+        <FenetreRepriseProforma
+          ticketEnCours={panier.lignes.length > 0}
+          onReprise={(reprise) => {
+            const { panier: repris, alertes } = panierDeProforma(reprise)
+            const remises = alerteRemisesHorsPlafond(repris, plafondRemise, utilisateur.role === 'caissier')
+            dispatch({ type: 'chargerPanier', panier: repris, maintenant: Date.now() })
+            setRepriseOuverte(false)
+            setMessage(null)
+            setDerniereVente(null)
+            setReimprime(null)
+            setAnnulationFaite(null)
+            setAlertesProforma(remises ? [...alertes, remises] : alertes)
+          }}
+          onFermer={() => setRepriseOuverte(false)}
         />
       )}
       {tiroirOuvert && <FenetreTiroir sessionInitiale={session.id} onFermer={() => setTiroirOuvert(false)} />}
