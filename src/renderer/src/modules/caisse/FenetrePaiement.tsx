@@ -33,6 +33,7 @@ import {
   retirerMode,
   type EtatPaiement
 } from './paiement'
+import { Icone } from '@renderer/ui/Icone'
 
 /**
  * Toucher un champ de montant sélectionne tout son contenu : la frappe REMPLACE le montant au lieu
@@ -251,6 +252,7 @@ export function FenetrePaiement({ total, modeInitial, onEncaisser, onFermer }: P
               autoFocus={modeInitial === 'especes'}
               disabled={probleme !== null || envoi}
             >
+              <Icone nom="payer" />
               Encaisser
             </button>
             <button type="button" className="btn btn-secondaire" onClick={onFermer} disabled={envoi}>

@@ -6,8 +6,26 @@ import { PageStock } from './PageStock'
 import { PageStockInitial } from './PageStockInitial'
 
 export const routesStock: DefinitionRoute[] = [
-  { chemin: '/stock', libelle: 'Stock', element: <PageStock />, roles: ['gerant'] },
-  { chemin: '/peremptions', libelle: 'Péremptions', element: <PagePeremptions />, roles: ['gerant'] },
-  { chemin: '/sorties', libelle: 'Sorties de stock', element: <PageSorties />, roles: ['gerant'] },
-  { chemin: '/stock-initial', libelle: 'Stock initial', element: <PageStockInitial />, roles: ['gerant'] }
+  { chemin: '/stock', icone: 'stock', libelle: 'Stock', element: <PageStock />, roles: ['gerant'] },
+  {
+    chemin: '/peremptions',
+    icone: 'peremptions',
+    libelle: 'Péremptions',
+    element: <PagePeremptions />,
+    roles: ['gerant']
+  },
+  {
+    chemin: '/sorties',
+    icone: 'sorties',
+    libelle: 'Sorties de stock',
+    element: <PageSorties />,
+    roles: ['gerant']
+  },
+  {
+    chemin: '/stock-initial',
+    icone: 'inventaires',
+    libelle: 'Stock initial',
+    element: <PageStockInitial />,
+    roles: ['gerant']
+  }
 ]

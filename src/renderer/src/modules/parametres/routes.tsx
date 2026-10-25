@@ -4,5 +4,11 @@ import { PageParametres } from './PageParametres'
 
 export const routesParametres: DefinitionRoute[] = [
   // Admin seulement (l'admin voit toutes les routes).
-  { chemin: '/parametres', libelle: 'Paramètres', element: <PageParametres />, roles: [] }
+  {
+    chemin: '/parametres',
+    icone: 'parametres',
+    libelle: 'Paramètres',
+    element: <PageParametres />,
+    roles: []
+  }
 ]

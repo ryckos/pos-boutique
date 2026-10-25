@@ -26,6 +26,8 @@ import {
   versRequeteMouvement,
   type SaisieMouvement
 } from './tiroir'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Icone } from '@renderer/ui/Icone'
 
 interface Props {
   /** La caisse de la personne connectée, proposée d'abord. */
@@ -145,7 +147,9 @@ export function FenetreTiroir({ sessionInitiale, onFermer }: Props): React.JSX.E
                   <th>Mouvement</th>
                   <th>Saisi par</th>
                   <th className="nombre">Montant</th>
-                  <th />
+                  <th className="colonne-actions">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -161,18 +165,18 @@ export function FenetreTiroir({ sessionInitiale, onFermer }: Props): React.JSX.E
                       {montantSigne(m) > 0 ? '+' : '−'}
                       {formaterFCFA(m.montant)}
                     </td>
-                    <td className="tableau-actions">
+                    <td className="colonne-actions">
                       {annulableAuTiroir(m) && (
-                        <button
-                          className="btn btn-discret"
+                        <BoutonIcone
+                          icone="annuler"
+                          variante="attention"
+                          libelle={`Annuler le mouvement « ${m.libelle} »`}
                           onClick={() => {
                             setResultat(null)
                             setMotifAnnulation('')
                             setAAnnuler(m)
                           }}
-                        >
-                          Annuler
-                        </button>
+                        />
                       )}
                     </td>
                   </tr>
@@ -184,9 +188,11 @@ export function FenetreTiroir({ sessionInitiale, onFermer }: Props): React.JSX.E
 
         <div className="formulaire-actions tiroir-actions">
           <button className="btn" onClick={() => ouvrirSaisie('apport')}>
+            <Icone nom="ajouter" />
             Mettre des espèces (apport)
           </button>
           <button className="btn" onClick={() => ouvrirSaisie('retrait')}>
+            <Icone nom="retirer" />
             Sortir des espèces (retrait)
           </button>
           <button className="btn btn-discret" onClick={() => ouvrirSaisie('autre')}>

@@ -13,6 +13,7 @@ import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { dateHeure } from './cloture'
 import { aRendre, libelleMode, peutAnnuler } from './annulation'
+import { Icone } from '@renderer/ui/Icone'
 
 interface Props {
   numeroInitial: string
@@ -91,6 +92,7 @@ export function FenetreAnnulation({
         />
       </label>
       <button type="button" className="btn btn-discret" onClick={() => void afficher(numero)}>
+        <Icone nom="afficher" />
         Afficher le ticket
       </button>
 

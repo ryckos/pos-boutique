@@ -11,6 +11,7 @@ import { formaterFCFA } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { lireMontant } from './paiement'
+import { Icone } from '@renderer/ui/Icone'
 
 interface Props {
   nomCaissier: string
@@ -28,6 +29,7 @@ export function OuvertureCaisse({ nomCaissier, onOuverte }: Props): React.JSX.El
         {nomCaissier}, comptez les espèces du tiroir puis ouvrez la caisse pour commencer à vendre.
       </p>
       <button className="btn caisse-ouvrir" onClick={() => setFenetreOuverte(true)}>
+        <Icone nom="ouvrir" />
         Ouvrir la caisse
       </button>
 

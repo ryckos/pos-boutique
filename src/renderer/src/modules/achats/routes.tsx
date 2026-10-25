@@ -4,6 +4,18 @@ import { PageCommandes } from './PageCommandes'
 import { PageReceptions } from './PageReceptions'
 
 export const routesAchats: DefinitionRoute[] = [
-  { chemin: '/commandes', libelle: 'Commandes', element: <PageCommandes />, roles: ['gerant'] },
-  { chemin: '/receptions', libelle: 'Réceptions', element: <PageReceptions />, roles: ['gerant'] }
+  {
+    chemin: '/commandes',
+    icone: 'commandes',
+    libelle: 'Commandes',
+    element: <PageCommandes />,
+    roles: ['gerant']
+  },
+  {
+    chemin: '/receptions',
+    icone: 'livrer',
+    libelle: 'Réceptions',
+    element: <PageReceptions />,
+    roles: ['gerant']
+  }
 ]

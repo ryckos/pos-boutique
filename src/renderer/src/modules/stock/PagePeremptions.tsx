@@ -14,6 +14,10 @@ import { BoutonExporter } from '@renderer/ui/BoutonExporter'
 import { jourLocal } from '@renderer/lib/exportExcel'
 import type { DemandeExport } from '@shared/ipc/exports'
 import { lireNombre } from '../achats/saisieReception'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 /** « Périmé depuis 2 j », « Périme aujourd'hui », « Dans 8 j ». */
 export function texteEcheance(jours: number): string {
@@ -65,6 +69,8 @@ export function PagePeremptions(): React.JSX.Element {
   const [message, setMessage] = useState<string | null>(null)
   const [aRetirer, setARetirer] = useState<LotPerimable | null>(null)
 
+  const pages = usePagination(tableau?.lots ?? [])
+
   const charger = useCallback(() => {
     appel('stock:peremptions')
       .then(setTableau)
@@ -83,9 +89,19 @@ export function PagePeremptions(): React.JSX.Element {
     <div className="page">
       <header className="page-entete">
         <h1>Péremptions — sous {tableau?.horizonJours ?? 15} jours</h1>
+        <AideIcones
+          entrees={[
+            'exporter',
+            ['promotion', 'Promotion −20 % (disponible avec les promotions programmées)'],
+            ['retirer', 'Retirer le lot du stock, enregistré en perte']
+          ]}
+          pagination
+        />
         {tableau && (
-          <div className="tableau-actions">
-            <span className="montant">Valeur en jeu : {formaterFCFA(tableau.valeurTotale)}</span>
+          <div className="page-entete-actions">
+            <span className="chiffre-cle">
+              Valeur en jeu : <span className="montant">{formaterFCFA(tableau.valeurTotale)}</span>
+            </span>
             <BoutonExporter
               demande={() => exportPeremptions(tableau)}
               desactive={tableau.lots.length === 0}
@@ -114,13 +130,15 @@ export function PagePeremptions(): React.JSX.Element {
                 <th>Périme le</th>
                 <th className="nombre">Restant</th>
                 <th className="nombre">Valeur</th>
-                <th>Actions</th>
+                <th className="colonne-actions">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {tableau.lots.map((l) => (
+              {pages.elements.map((l) => (
                 <tr key={l.lotId} className={l.urgent ? 'ligne-urgente' : 'ligne-proche'}>
-                  <td>
+                  <td className="cellule-titre">
                     {l.produit}
                     <span className="detail">{l.numeroLot ? `Lot ${l.numeroLot}` : 'Lot sans numéro'}</span>
                   </td>
@@ -130,26 +148,22 @@ export function PagePeremptions(): React.JSX.Element {
                   </td>
                   <td className="nombre">{formaterQuantite(l.restant)}</td>
                   <td className="nombre montant">{formaterFCFA(l.valeur)}</td>
-                  <td>
+                  <td className="colonne-actions">
                     <div className="tableau-actions">
-                      <button
-                        type="button"
-                        className="btn btn-secondaire"
+                      <BoutonIcone
+                        icone="promotion"
+                        libelle="Promotion −20 % : disponible avec les promotions programmées"
                         disabled
-                        title="Disponible avec les promotions"
-                      >
-                        Promo −20 %
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-secondaire"
+                      />
+                      <BoutonIcone
+                        icone="retirer"
+                        variante="attention"
+                        libelle={`Retirer du stock (« ${l.produit} », périmé ou abîmé)`}
                         onClick={() => {
                           setMessage(null)
                           setARetirer(l)
                         }}
-                      >
-                        Retirer
-                      </button>
+                      />
                     </div>
                   </td>
                 </tr>
@@ -158,8 +172,9 @@ export function PagePeremptions(): React.JSX.Element {
           </table>
         </div>
       )}
+      <Pagination pages={pages} />
 
-      <p className="vide page-message">
+      <p className="vide note-bas">
         Le FEFO vend d’abord ces lots automatiquement. Les lots périmés ne sont plus vendus : retirez-les du
         rayon. Les promotions arriveront avec les promotions programmées.
       </p>

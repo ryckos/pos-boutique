@@ -31,6 +31,7 @@ import {
   type Selection,
   versRequete
 } from './retour'
+import { Icone } from '@renderer/ui/Icone'
 
 interface Props {
   estCaissiere: boolean
@@ -157,6 +158,7 @@ export function FenetreRetour({ estCaissiere, onRetour, onFermer }: Props): Reac
         />
       </label>
       <button type="button" className="btn btn-discret" onClick={() => void afficher()}>
+        <Icone nom="afficher" />
         Afficher le ticket
       </button>
 

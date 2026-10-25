@@ -7,6 +7,9 @@ import { useState } from 'react'
 import type { EtatLigneImport, RapportImport } from '@shared/ipc/catalogue'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { Icone } from '@renderer/ui/Icone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
 
 const ETATS: Record<EtatLigneImport, { texte: string; classe: string }> = {
   a_creer: { texte: 'À créer', classe: 'pastille-ok' },
@@ -54,6 +57,14 @@ export function FenetreImport(props: {
     props.onImporte(await appel('catalogue:importerCatalogue'))
   }
 
+  // Erreurs d'abord : ce sont elles qu'il faut corriger. Le vrai catalogue compte des centaines de lignes.
+  const lignes = rapport
+    ? [...rapport.lignes].sort(
+        (a, b) => Number(b.etat === 'erreur') - Number(a.etat === 'erreur') || a.ligne - b.ligne
+      )
+    : []
+  const pages = usePagination(lignes)
+
   const pret = rapport !== null && rapport.nbErreurs === 0 && rapport.nbCrees > 0 && !occupe
 
   return (
@@ -75,9 +86,11 @@ export function FenetreImport(props: {
         </p>
         <div className="tableau-actions">
           <button type="button" className="btn btn-secondaire" onClick={telechargerModele} disabled={occupe}>
+            <Icone nom="exporter" />
             Télécharger le modèle
           </button>
           <button type="button" className="btn" onClick={verifier} disabled={occupe}>
+            <Icone nom="dossier" />
             {rapport ? 'Vérifier un autre fichier' : 'Vérifier le fichier'}
           </button>
         </div>
@@ -132,24 +145,20 @@ export function FenetreImport(props: {
                 </tr>
               </thead>
               <tbody>
-                {/* Erreurs d'abord : ce sont elles qu'il faut corriger. */}
-                {[...rapport.lignes]
-                  .sort(
-                    (a, b) => Number(b.etat === 'erreur') - Number(a.etat === 'erreur') || a.ligne - b.ligne
-                  )
-                  .map((l) => (
-                    <tr key={l.ligne}>
-                      <td className="nombre">{l.ligne}</td>
-                      <td>{l.nom || '—'}</td>
-                      <td>
-                        <span className={`pastille ${ETATS[l.etat].classe}`}>{ETATS[l.etat].texte}</span>
-                      </td>
-                      <td>{l.motif ?? ''}</td>
-                    </tr>
-                  ))}
+                {pages.elements.map((l) => (
+                  <tr key={l.ligne}>
+                    <td className="nombre">{l.ligne}</td>
+                    <td>{l.nom || '—'}</td>
+                    <td>
+                      <span className={`pastille ${ETATS[l.etat].classe}`}>{ETATS[l.etat].texte}</span>
+                    </td>
+                    <td>{l.motif ?? ''}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
+          <Pagination pages={pages} />
         </div>
       )}
     </FenetreFormulaire>

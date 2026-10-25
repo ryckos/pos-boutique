@@ -11,6 +11,7 @@ import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { panierDeProforma } from './documents'
+import { Icone } from '@renderer/ui/Icone'
 
 interface Props {
   /** Le ticket en cours a des lignes : il partira en attente. */
@@ -68,6 +69,7 @@ export function FenetreRepriseProforma({ ticketEnCours, onReprise, onFermer }: P
       </label>
       {!reprise && (
         <button type="button" className="btn btn-discret" onClick={() => void afficher(numero)}>
+          <Icone nom="afficher" />
           Afficher la proforma
         </button>
       )}

@@ -135,7 +135,7 @@ cliente ou entre les deux développeurs.
 - **Décision** :
   - police Segoe UI, native et hors ligne ;
   - jetons de couleurs uniques dans `styles.css` ;
-  - vert `#0f6e56`, dans la continuité des documents remis à la cliente ;
+  - vert `#0f6e56`, dans la continuité des documents remis à la cliente (**remplacé par D-19**, palette bleu commerce, le 2026-10-19) ;
   - cibles tactiles larges ;
   - le total comme élément fort de la caisse.
 - **Référence** : `docs/UI_UX.md`.
@@ -157,3 +157,20 @@ cliente ou entre les deux développeurs.
   (CVE-2023-30533, CVE-2024-22363) ; les versions corrigées ne sont publiées que par SheetJS. Un
   `npm install` doit donc pouvoir joindre `cdn.sheetjs.com` (poste de développement et CI).
 - **Validée par** : Dev B, le 2026-09-25 (tâche B3).
+
+### D-19 — Refonte ergonomique : palette bleu commerce, icônes, pagination · 2026-10-19
+- **Décision** :
+  - palette « bleu commerce » (bleu `#1f5fbf` pour l'action, marine `#13294b` pour le menu, orange
+    `#e8790f` en accent rare) ; le vert reste celui du positif (`--succes`). Remplace le vert de D-16 ;
+  - icônes SVG dessinées dans le code (`ui/Icone.tsx`), **sans dépendance** ;
+  - boutons « mixtes » : icône seule + infobulle pour les actions de ligne des tableaux, icône +
+    texte pour les actions principales, les validations et la caisse (`UI_UX.md` § 4.1) ;
+  - infobulle au survol, au focus clavier et à l'appui long (écran tactile) ;
+  - pagination de l'affichage des listes de gestion, 20 lignes par défaut (`UI_UX.md` § 5.12) ;
+  - menu avec icônes, replié sous 1180 px ;
+  - actions d'une ligne de tableau sur une seule ligne, et aide contextuelle « ? » en tête de chaque
+    page et des fenêtres à icônes : légende des icônes et de leur fonction (`UI_UX.md` § 4.2).
+- **Raison** : demande de modernisation pour la cliente (interface plus attractive et plus lisible).
+  Le mixte garde la règle « un bouton dit ce qu'il fait » là où l'on agit vite au doigt : au
+  toucher il n'y a pas de survol, une icône seule y serait une devinette.
+- **Validée par** : Dev B, le 2026-10-19, avec l'accord de Dev A pour les écrans de la caisse.

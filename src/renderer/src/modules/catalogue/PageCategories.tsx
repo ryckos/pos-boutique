@@ -7,6 +7,11 @@ import { useCallback, useEffect, useState } from 'react'
 import type { Categorie } from '@shared/ipc/catalogue'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Icone } from '@renderer/ui/Icone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 type Action =
   | { type: 'creer'; parentId: number | null }
@@ -44,18 +49,29 @@ export function PageCategories(): React.JSX.Element {
 
   const rayonsActifs = categories.filter((c) => c.actif && c.parentId === null)
   const nomRayon = (id: number | null): string => categories.find((c) => c.id === id)?.nom ?? ''
+  // 50 par page : un rayon reste le plus souvent sur la même page que ses sous-rayons.
+  const pages = usePagination(categories, 50)
 
   return (
     <div className="page">
       <header className="page-entete">
         <h1>Catégories</h1>
+        <AideIcones
+          entrees={[
+            ['ajouter', 'Créer une catégorie, ou ajouter un sous-rayon à un rayon'],
+            'renommer',
+            ['desactiver', 'Désactiver une catégorie vide']
+          ]}
+          pagination
+        />
         <button className="btn" onClick={() => ouvrir({ type: 'creer', parentId: null })}>
+          <Icone nom="ajouter" />
           Créer une catégorie
         </button>
       </header>
 
       {succes && (
-        <p className="succes" role="status" style={{ marginBottom: 16 }}>
+        <p className="succes page-message" role="status">
           {succes}
         </p>
       )}
@@ -111,7 +127,7 @@ export function PageCategories(): React.JSX.Element {
       )}
 
       {erreur && (
-        <p className="alerte" role="alert" style={{ marginBottom: 16 }}>
+        <p className="alerte page-message" role="alert">
           {erreur}
         </p>
       )}
@@ -127,13 +143,15 @@ export function PageCategories(): React.JSX.Element {
                 <th>Place</th>
                 <th className="nombre">Produits</th>
                 <th>État</th>
-                <th />
+                <th className="colonne-actions">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {categories.map((c) => (
+              {pages.elements.map((c) => (
                 <tr key={c.id} className={c.actif ? undefined : 'inactif'}>
-                  <td className={c.parentId === null ? undefined : 'retrait'}>{c.nom}</td>
+                  <td className={c.parentId === null ? 'cellule-titre' : 'retrait'}>{c.nom}</td>
                   <td>{c.parentId === null ? 'Rayon' : `Sous-rayon de ${nomRayon(c.parentId)}`}</td>
                   <td className="nombre">{c.nbProduits}</td>
                   <td>
@@ -141,29 +159,27 @@ export function PageCategories(): React.JSX.Element {
                       {c.actif ? 'Active' : 'Désactivée'}
                     </span>
                   </td>
-                  <td>
+                  <td className="colonne-actions">
                     {c.actif && (
                       <div className="tableau-actions">
                         {c.parentId === null && (
-                          <button
-                            className="btn btn-secondaire"
+                          <BoutonIcone
+                            icone="ajouter"
+                            libelle={`Ajouter un sous-rayon à « ${c.nom} »`}
                             onClick={() => ouvrir({ type: 'creer', parentId: c.id })}
-                          >
-                            Ajouter un sous-rayon
-                          </button>
+                          />
                         )}
-                        <button
-                          className="btn btn-secondaire"
+                        <BoutonIcone
+                          icone="renommer"
+                          libelle={`Renommer « ${c.nom} »`}
                           onClick={() => ouvrir({ type: 'renommer', categorie: c })}
-                        >
-                          Renommer
-                        </button>
-                        <button
-                          className="btn btn-attention"
+                        />
+                        <BoutonIcone
+                          icone="desactiver"
+                          variante="attention"
+                          libelle={`Désactiver « ${c.nom} »`}
                           onClick={() => ouvrir({ type: 'desactiver', categorie: c })}
-                        >
-                          Désactiver
-                        </button>
+                        />
                       </div>
                     )}
                   </td>
@@ -173,7 +189,8 @@ export function PageCategories(): React.JSX.Element {
           </table>
         </div>
       )}
-      <p className="vide" style={{ marginTop: 12 }}>
+      <Pagination pages={pages} />
+      <p className="vide note-bas">
         Les rayons donnent les onglets de la caisse. Un sous-rayon ne peut pas contenir d’autres catégories.
       </p>
     </div>

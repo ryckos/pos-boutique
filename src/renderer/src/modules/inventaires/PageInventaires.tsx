@@ -29,6 +29,11 @@ import {
   versSaisie,
   type FiltreInventaire
 } from './saisieInventaire'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Icone } from '@renderer/ui/Icone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 type Action =
   | { type: 'ouvrir' }
@@ -134,6 +139,8 @@ export function PageInventaires(): React.JSX.Element {
   const precedents = liste.filter((i) => i.statut !== 'en_cours')
   const est = enCours ? estimation(enCours.produits) : null
   const visibles = enCours ? filtrer(enCours.produits, filtre, recherche) : []
+  const pagesProduits = usePagination(visibles)
+  const pagesPrecedents = usePagination(precedents)
 
   return (
     <div className="page">
@@ -142,11 +149,24 @@ export function PageInventaires(): React.JSX.Element {
           Inventaires
           {enCours && ` — ${enCours.numero}`}
         </h1>
+        <AideIcones
+          entrees={[
+            ['ajouter', 'Ouvrir un inventaire'],
+            ['inventaires', 'Compter le produit'],
+            ['restaurer', 'Recompter le produit (le comptage est remplacé)'],
+            ['valider', 'Valider l’inventaire : le stock est ajusté'],
+            ['annuler', 'Annuler l’inventaire en cours, avec un motif'],
+            ['afficher', 'Voir un inventaire précédent'],
+            'exporter'
+          ]}
+          pagination
+        />
         {enCours ? (
-          <div className="tableau-actions">
+          <div className="page-entete-actions">
             <span className="pastille pastille-alerte">En cours</span>
             <span className="pastille">{enCours.rayon ?? 'Tout le magasin'}</span>
             <button className="btn btn-attention" onClick={() => setAction({ type: 'annuler' })}>
+              <Icone nom="annuler" />
               Annuler l’inventaire
             </button>
             <button
@@ -157,6 +177,7 @@ export function PageInventaires(): React.JSX.Element {
                 setAction({ type: 'valider' })
               }}
             >
+              <Icone nom="valider" />
               Valider l’inventaire
             </button>
           </div>
@@ -169,6 +190,7 @@ export function PageInventaires(): React.JSX.Element {
                 setAction({ type: 'ouvrir' })
               }}
             >
+              <Icone nom="ajouter" />
               Ouvrir un inventaire
             </button>
           )
@@ -293,13 +315,15 @@ export function PageInventaires(): React.JSX.Element {
                     <th className="nombre">Théorique</th>
                     <th className="nombre">Compté</th>
                     <th>Écart</th>
-                    <th />
+                    <th className="colonne-actions">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {visibles.map((p) => (
+                  {pagesProduits.elements.map((p) => (
                     <tr key={p.produitId}>
-                      <td>
+                      <td className="cellule-titre">
                         {p.nom}
                         {p.ligne && p.ligne.detail.length > 0 && (
                           <span className="detail">
@@ -320,13 +344,13 @@ export function PageInventaires(): React.JSX.Element {
                           <span className="detail">{LIBELLES_MOTIF_ECART[p.ligne.motif]}</span>
                         )}
                       </td>
-                      <td>
-                        <button
-                          className={p.ligne ? 'btn btn-secondaire' : 'btn'}
+                      <td className="colonne-actions">
+                        <BoutonIcone
+                          icone={p.ligne ? 'restaurer' : 'inventaires'}
+                          variante={p.ligne ? 'secondaire' : 'principal'}
+                          libelle={p.ligne ? `Recompter « ${p.nom} »` : `Compter « ${p.nom} »`}
                           onClick={() => ouvrirComptage(p.produitId)}
-                        >
-                          {p.ligne ? 'Recompter' : 'Compter'}
-                        </button>
+                        />
                       </td>
                     </tr>
                   ))}
@@ -334,6 +358,7 @@ export function PageInventaires(): React.JSX.Element {
               </table>
             </div>
           )}
+          <Pagination pages={pagesProduits} />
         </>
       )}
 
@@ -345,7 +370,7 @@ export function PageInventaires(): React.JSX.Element {
 
       {precedents.length > 0 && (
         <>
-          <h2>Inventaires précédents</h2>
+          <h2 className="section-titre">Inventaires précédents</h2>
           <div className="tableau-cadre">
             <table className="tableau">
               <thead>
@@ -357,13 +382,15 @@ export function PageInventaires(): React.JSX.Element {
                   <th>Validé le</th>
                   <th className="nombre">Comptés</th>
                   <th className="nombre">Démarque</th>
-                  <th />
+                  <th className="colonne-actions">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {precedents.map((i) => (
+                {pagesPrecedents.elements.map((i) => (
                   <tr key={i.id} className={i.statut === 'annule' ? 'inactif' : undefined}>
-                    <td>{i.numero}</td>
+                    <td className="cellule-titre">{i.numero}</td>
                     <td>{i.rayon ?? 'Tout le magasin'}</td>
                     <td>
                       <span className={`pastille ${CLASSES_STATUT[i.statut]}`}>
@@ -381,16 +408,19 @@ export function PageInventaires(): React.JSX.Element {
                     </td>
                     <td className="nombre">{i.nbComptes}</td>
                     <td className="nombre montant">{i.demarque !== null ? formaterFCFA(i.demarque) : ''}</td>
-                    <td>
-                      <button className="btn btn-secondaire" onClick={() => voirDetail(i.id)}>
-                        Voir
-                      </button>
+                    <td className="colonne-actions">
+                      <BoutonIcone
+                        icone="afficher"
+                        libelle={`Voir l’inventaire ${i.numero}`}
+                        onClick={() => voirDetail(i.id)}
+                      />
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <Pagination pages={pagesPrecedents} />
         </>
       )}
     </div>
@@ -648,6 +678,7 @@ function FenetreLecture(props: {
 
 function TableauDemarque(props: { rapport: RapportDemarque }): React.JSX.Element {
   const r = props.rapport
+  const pages = usePagination(r.lignes)
   return (
     <>
       <p className="montant">
@@ -669,7 +700,7 @@ function TableauDemarque(props: { rapport: RapportDemarque }): React.JSX.Element
               </tr>
             </thead>
             <tbody>
-              {r.lignes.map((l) => (
+              {pages.elements.map((l) => (
                 <tr key={l.produitId}>
                   <td>{l.produit}</td>
                   <td className="nombre">{texteEcart(l.ecart, l.unite)}</td>
@@ -685,6 +716,7 @@ function TableauDemarque(props: { rapport: RapportDemarque }): React.JSX.Element
           </table>
         </div>
       )}
+      <Pagination pages={pages} />
     </>
   )
 }
@@ -703,6 +735,7 @@ function FenetreRapport(props: {
 
 function FenetreDetail(props: { inventaire: InventaireDetail; onFermer: () => void }): React.JSX.Element {
   const inv = props.inventaire
+  const pages = usePagination(inv.produits.filter((p) => p.ligne))
   return (
     <FenetreLecture
       titre={`Inventaire ${inv.numero}`}
@@ -732,7 +765,7 @@ function FenetreDetail(props: { inventaire: InventaireDetail; onFermer: () => vo
             </tr>
           </thead>
           <tbody>
-            {inv.produits.map((p) =>
+            {pages.elements.map((p) =>
               p.ligne ? (
                 <tr key={p.produitId}>
                   <td>
@@ -756,6 +789,7 @@ function FenetreDetail(props: { inventaire: InventaireDetail; onFermer: () => vo
           </tbody>
         </table>
       </div>
+      <Pagination pages={pages} />
     </FenetreLecture>
   )
 }

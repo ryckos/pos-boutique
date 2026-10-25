@@ -24,6 +24,9 @@ import {
   resteAPayer,
   texteEcheance
 } from './saisieReglement'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
 
 interface Props {
   fournisseurId: number
@@ -72,6 +75,11 @@ export function FenetreDettes(props: Props): React.JSX.Element | null {
     await charger()
     setVue({ type: 'dettes' })
   }
+  // Dans la fenêtre, des pages de 10 : les trois tableaux restent visibles d'un coup d'œil.
+  const pagesEcheances = usePagination(dettes?.echeances ?? [], 10)
+  const pagesReglements = usePagination(dettes?.reglements ?? [], 10)
+  const pagesAvoirs = usePagination(dettes?.avoirs ?? [], 10)
+
   const retour = (): void => (depuisPayer && vue.type === 'payer' ? onFermer() : setVue({ type: 'dettes' }))
 
   if (!dettes) {
@@ -146,6 +154,12 @@ export function FenetreDettes(props: Props): React.JSX.Element | null {
   return (
     <FenetreFormulaire
       titre={`Dettes — ${nom}`}
+      aide={[
+        ['annuler', 'Annuler un règlement, avec un motif'],
+        ['valider', 'Avoir reçu du fournisseur : déduit de la dette'],
+        ['fermer', 'Avoir refusé par le fournisseur'],
+        ['suivant', 'Sous un tableau : changer de page']
+      ]}
       pastille={
         dettes.soldeDu < 0 ? (
           <span className="pastille pastille-ok">Avoir à valoir : {formaterFCFA(-dettes.soldeDu)}</span>
@@ -184,7 +198,7 @@ export function FenetreDettes(props: Props): React.JSX.Element | null {
                 </tr>
               </thead>
               <tbody>
-                {dettes.echeances.map((e) => (
+                {pagesEcheances.elements.map((e) => (
                   <tr key={e.receptionId} className={e.etat === 'en_retard' ? 'ligne-urgente' : undefined}>
                     <td>
                       {e.numero}
@@ -212,6 +226,7 @@ export function FenetreDettes(props: Props): React.JSX.Element | null {
             </table>
           </div>
         )}
+        <Pagination pages={pagesEcheances} />
 
         <h3>Règlements</h3>
         {dettes.reglements.length === 0 ? (
@@ -226,11 +241,13 @@ export function FenetreDettes(props: Props): React.JSX.Element | null {
                   <th>Mode</th>
                   <th>Pour</th>
                   <th>Par</th>
-                  <th />
+                  <th className="colonne-actions">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {dettes.reglements.map((r) => (
+                {pagesReglements.elements.map((r) => (
                   <tr key={r.id} className={r.annuleLe ? 'inactif' : undefined}>
                     <td>{formaterDate(r.date)}</td>
                     <td className="nombre montant">{formaterFCFA(r.montant)}</td>
@@ -240,7 +257,7 @@ export function FenetreDettes(props: Props): React.JSX.Element | null {
                     </td>
                     <td>{r.reception ?? 'Solde global'}</td>
                     <td>{r.utilisateur}</td>
-                    <td>
+                    <td className={r.annuleLe ? undefined : 'colonne-actions'}>
                       {r.annuleLe ? (
                         <>
                           <span className="pastille pastille-inactif">Annulé</span>
@@ -249,13 +266,12 @@ export function FenetreDettes(props: Props): React.JSX.Element | null {
                           </span>
                         </>
                       ) : (
-                        <button
-                          type="button"
-                          className="btn btn-attention"
+                        <BoutonIcone
+                          icone="annuler"
+                          variante="attention"
+                          libelle={`Annuler le règlement de ${formaterFCFA(r.montant)}`}
                           onClick={() => setVue({ type: 'annuler', reglement: r })}
-                        >
-                          Annuler
-                        </button>
+                        />
                       )}
                     </td>
                   </tr>
@@ -264,6 +280,7 @@ export function FenetreDettes(props: Props): React.JSX.Element | null {
             </table>
           </div>
         )}
+        <Pagination pages={pagesReglements} />
 
         <h3>Avoirs des retours</h3>
         {dettes.avoirs.length === 0 ? (
@@ -277,11 +294,13 @@ export function FenetreDettes(props: Props): React.JSX.Element | null {
                   <th>Produit</th>
                   <th className="nombre">Attendu</th>
                   <th>État</th>
-                  <th />
+                  <th className="colonne-actions">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {dettes.avoirs.map((a) => (
+                {pagesAvoirs.elements.map((a) => (
                   <tr key={a.id} className={a.statut === 'annule' ? 'inactif' : undefined}>
                     <td>
                       {formaterDate(a.dateRetour)}
@@ -298,23 +317,21 @@ export function FenetreDettes(props: Props): React.JSX.Element | null {
                       </span>
                       <span className="detail">{detailAvoir(a)}</span>
                     </td>
-                    <td>
+                    <td className="colonne-actions">
                       {a.statut === 'attendu' && dettes.actif && (
                         <div className="tableau-actions">
-                          <button
-                            type="button"
-                            className="btn"
+                          <BoutonIcone
+                            icone="valider"
+                            variante="principal"
+                            libelle="Avoir reçu du fournisseur"
                             onClick={() => setVue({ type: 'avoirRecu', avoir: a })}
-                          >
-                            Avoir reçu
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-attention"
+                          />
+                          <BoutonIcone
+                            icone="fermer"
+                            variante="attention"
+                            libelle="Avoir refusé par le fournisseur"
                             onClick={() => setVue({ type: 'refuserAvoir', avoir: a })}
-                          >
-                            Refusé
-                          </button>
+                          />
                         </div>
                       )}
                     </td>
@@ -324,6 +341,7 @@ export function FenetreDettes(props: Props): React.JSX.Element | null {
             </table>
           </div>
         )}
+        <Pagination pages={pagesAvoirs} />
       </div>
     </FenetreFormulaire>
   )

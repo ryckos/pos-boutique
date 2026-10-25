@@ -108,6 +108,11 @@ Le socle comprend :
 | A-P5  | Tests terrain caisse, guide caissier, formation     | A   | ⏳     |   |
 | B-P5  | Installateur, kiosque, mises à jour, guide gérant   | B   | ⏳     |   |
 
+## Transverse
+| Tâche | Intitulé                                            | Dev | Statut | Notes (branche, blocage) |
+|-------|-----------------------------------------------------|-----|--------|--------------------------|
+| UX1   | Refonte ergonomique : palette, icônes, pagination (D-19) | B (+ écrans de A, avec son accord) | 🔄 | `feature/sk/ergonomie` : jetons, `Icone`, `BoutonIcone` (infobulle), `Pagination`, menu à icônes, aide « ? » avec légende des icônes (`AideIcones`) ; tous les écrans de gestion et ceux de la caisse ; `UI_UX.md` § 2, 4.1, 4.2, 5.12, 6. **À tester à la main** avant PR, avec `docs/SCENARIOS_TEST.md` (scénarios de bout en bout par utilisateur) |
+
 ## Journal des fusions notables
 <!-- Une ligne par PR importante : date · tâche · résumé · contrat ajouté/modifié -->
 | Date       | Tâche | Résumé                                        |

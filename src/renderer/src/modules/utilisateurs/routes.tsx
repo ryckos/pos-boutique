@@ -5,7 +5,19 @@ import { PageUtilisateurs } from './PageUtilisateurs'
 
 export const routesUtilisateurs: DefinitionRoute[] = [
   // Gérer les comptes : admin seulement (matrice des droits). L'admin voit toutes les routes.
-  { chemin: '/comptes', libelle: 'Comptes utilisateurs', element: <PageUtilisateurs />, roles: [] },
+  {
+    chemin: '/comptes',
+    icone: 'comptes',
+    libelle: 'Comptes utilisateurs',
+    element: <PageUtilisateurs />,
+    roles: []
+  },
   // Chacun change son propre code.
-  { chemin: '/mon-code', libelle: 'Mon code', element: <PageMonCode />, roles: ['caissier', 'gerant'] }
+  {
+    chemin: '/mon-code',
+    icone: 'cle',
+    libelle: 'Mon code',
+    element: <PageMonCode />,
+    roles: ['caissier', 'gerant']
+  }
 ]

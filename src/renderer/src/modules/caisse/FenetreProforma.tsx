@@ -13,6 +13,7 @@ import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { manqueClient, nettoyerClient, saisieClientVide, type SaisieClient } from './documents'
 import { totalPanier, versLignesVente, type Panier } from './panier'
 import { ChampsClient } from './ChampsClient'
+import { Icone } from '@renderer/ui/Icone'
 
 interface Props {
   panier: Panier
@@ -84,6 +85,7 @@ export function FenetreProforma({ panier, onFermer }: Props): React.JSX.Element 
             disabled={impressionEnCours}
             onClick={() => imprimer(proforma.proformaId)}
           >
+            <Icone nom="imprimer" />
             Imprimer la proforma
           </button>
         </div>

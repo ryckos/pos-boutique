@@ -4,6 +4,18 @@ import { PageCategories } from './PageCategories'
 import { PageProduits } from './PageProduits'
 
 export const routesCatalogue: DefinitionRoute[] = [
-  { chemin: '/produits', libelle: 'Produits', element: <PageProduits />, roles: ['gerant'] },
-  { chemin: '/categories', libelle: 'Catégories', element: <PageCategories />, roles: ['gerant'] }
+  {
+    chemin: '/produits',
+    icone: 'produits',
+    libelle: 'Produits',
+    element: <PageProduits />,
+    roles: ['gerant']
+  },
+  {
+    chemin: '/categories',
+    icone: 'categories',
+    libelle: 'Catégories',
+    element: <PageCategories />,
+    roles: ['gerant']
+  }
 ]

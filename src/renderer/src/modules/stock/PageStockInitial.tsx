@@ -11,6 +11,10 @@ import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { champsDepuisFiche, coutSaisi, manque, totalComptage, versSaisie } from './saisieStockInitial'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 type Filtre = 'a_faire' | 'fait' | 'tous'
 
@@ -93,17 +97,27 @@ export function PageStockInitial(): React.JSX.Element {
       (cle === '' || normaliserRecherche(l.nom).includes(cle))
   )
   const nbConcernes = etat ? etat.nbFaits + etat.nbAFaire : 0
+  const pages = usePagination(visibles)
 
   return (
     <div className="page">
       <header className="page-entete">
         <h1>Stock initial</h1>
+        <AideIcones
+          entrees={[
+            ['inventaires', 'Compter le produit'],
+            ['annuler', 'Annuler le stock initial du produit, pour le recompter']
+          ]}
+          pagination
+        />
         {etat && (
-          <div className="tableau-actions">
+          <div className="page-entete-actions">
             <span className="pastille pastille-ok">
               {etat.nbFaits} / {nbConcernes} produits comptés
             </span>
-            <span className="montant">Valeur : {formaterFCFA(etat.valeurTotale)}</span>
+            <span className="chiffre-cle">
+              Valeur : <span className="montant">{formaterFCFA(etat.valeurTotale)}</span>
+            </span>
           </div>
         )}
       </header>
@@ -196,13 +210,15 @@ export function PageStockInitial(): React.JSX.Element {
                 <th className="nombre">Compté</th>
                 <th className="nombre">Coût unitaire</th>
                 <th className="nombre">Valeur</th>
-                <th />
+                <th className="colonne-actions">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {visibles.map((l) => (
+              {pages.elements.map((l) => (
                 <tr key={l.produitId} className={l.etat === 'non_concerne' ? 'inactif' : undefined}>
-                  <td>{l.nom}</td>
+                  <td className="cellule-titre">{l.nom}</td>
                   <td>{l.rayon ?? 'Non classé'}</td>
                   <td>
                     <span className={`pastille ${ETATS[l.etat].classe}`}>{ETATS[l.etat].texte}</span>
@@ -216,23 +232,26 @@ export function PageStockInitial(): React.JSX.Element {
                       ? formaterFCFA(l.quantite * l.coutUnitaire)
                       : ''}
                   </td>
-                  <td>
+                  <td className="colonne-actions">
                     {l.etat === 'a_faire' && (
-                      <button className="btn" onClick={() => ouvrirComptage(l.produitId)}>
-                        Compter
-                      </button>
+                      <BoutonIcone
+                        icone="inventaires"
+                        variante="principal"
+                        libelle={`Compter « ${l.nom} »`}
+                        onClick={() => ouvrirComptage(l.produitId)}
+                      />
                     )}
                     {l.etat === 'fait' && (
-                      <button
-                        className="btn btn-attention"
+                      <BoutonIcone
+                        icone="annuler"
+                        variante="attention"
+                        libelle={`Annuler le stock initial de « ${l.nom} »`}
                         onClick={() => {
                           setErreur(null)
                           setSucces(null)
                           setAction({ type: 'annuler', ligne: l })
                         }}
-                      >
-                        Annuler
-                      </button>
+                      />
                     )}
                   </td>
                 </tr>
@@ -241,6 +260,7 @@ export function PageStockInitial(): React.JSX.Element {
           </table>
         </div>
       )}
+      <Pagination pages={pages} />
     </div>
   )
 }

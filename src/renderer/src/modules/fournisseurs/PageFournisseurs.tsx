@@ -14,6 +14,11 @@ import { jourLocal } from '@renderer/lib/exportExcel'
 import type { DemandeExport } from '@shared/ipc/exports'
 import { FenetreAchats } from './FenetreAchats'
 import { FenetreDettes } from './FenetreDettes'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Icone } from '@renderer/ui/Icone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 type Action =
   | { type: 'creer' }
@@ -93,13 +98,26 @@ export function PageFournisseurs(): React.JSX.Element {
   // Un avoir à valoir (solde négatif) ne réduit pas ce que l'on doit aux autres fournisseurs.
   const totalDu = fournisseurs.reduce((s, f) => s + (f.actif ? Math.max(0, f.soldeDu) : 0), 0)
   const totalRetard = fournisseurs.reduce((s, f) => s + (f.actif ? (f.enRetard ?? 0) : 0), 0)
+  const pages = usePagination(fournisseurs)
 
   return (
     <div className="page">
       <header className="page-entete">
         <h1>Fournisseurs</h1>
-        <div className="tableau-actions">
-          <span>
+        <AideIcones
+          entrees={[
+            ['ajouter', 'Créer un fournisseur'],
+            'exporter',
+            ['payer', 'Payer le fournisseur'],
+            'achats',
+            'dettes',
+            ['modifier', 'Modifier la fiche'],
+            ['desactiver', 'Désactiver le fournisseur (solde à zéro)']
+          ]}
+          pagination
+        />
+        <div className="page-entete-actions">
+          <span className="chiffre-cle">
             Total dû : <span className="montant">{formaterFCFA(totalDu)}</span>
           </span>
           {totalRetard > 0 && (
@@ -110,13 +128,14 @@ export function PageFournisseurs(): React.JSX.Element {
             desactive={fournisseurs.length === 0}
           />
           <button className="btn" onClick={() => ouvrir({ type: 'creer' })}>
+            <Icone nom="ajouter" />
             Créer un fournisseur
           </button>
         </div>
       </header>
 
       {succes && (
-        <p className="succes" role="status" style={{ marginBottom: 16 }}>
+        <p className="succes page-message" role="status">
           {succes}
         </p>
       )}
@@ -180,7 +199,7 @@ export function PageFournisseurs(): React.JSX.Element {
       )}
 
       {erreur && (
-        <p className="alerte" role="alert" style={{ marginBottom: 16 }}>
+        <p className="alerte page-message" role="alert">
           {erreur}
         </p>
       )}
@@ -198,13 +217,15 @@ export function PageFournisseurs(): React.JSX.Element {
                 <th>Dernière livraison</th>
                 <th className="nombre">Solde dû</th>
                 <th>État</th>
-                <th />
+                <th className="colonne-actions">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {fournisseurs.map((f) => (
+              {pages.elements.map((f) => (
                 <tr key={f.id} className={f.actif ? undefined : 'inactif'}>
-                  <td>
+                  <td className="cellule-titre">
                     {f.nom}
                     {(f.contact || f.adresse) && (
                       <div className="detail">{[f.contact, f.adresse].filter(Boolean).join(' · ')}</div>
@@ -243,39 +264,39 @@ export function PageFournisseurs(): React.JSX.Element {
                       {f.actif ? 'Actif' : 'Désactivé'}
                     </span>
                   </td>
-                  <td>
+                  <td className="colonne-actions">
                     <div className="tableau-actions">
-                      <button
-                        className="btn btn-secondaire"
-                        onClick={() => ouvrir({ type: 'achats', fournisseur: f })}
-                      >
-                        Achats
-                      </button>
-                      <button
-                        className="btn btn-secondaire"
-                        onClick={() => ouvrir({ type: 'dettes', fournisseur: f })}
-                      >
-                        Dettes
-                      </button>
                       {f.actif && f.soldeDu > 0 && (
-                        <button className="btn" onClick={() => ouvrir({ type: 'payer', fournisseur: f })}>
-                          Payer
-                        </button>
+                        <BoutonIcone
+                          icone="payer"
+                          variante="principal"
+                          libelle={`Payer « ${f.nom} »`}
+                          onClick={() => ouvrir({ type: 'payer', fournisseur: f })}
+                        />
                       )}
+                      <BoutonIcone
+                        icone="achats"
+                        libelle={`Achats et prix de « ${f.nom} »`}
+                        onClick={() => ouvrir({ type: 'achats', fournisseur: f })}
+                      />
+                      <BoutonIcone
+                        icone="dettes"
+                        libelle={`Dettes et règlements de « ${f.nom} »`}
+                        onClick={() => ouvrir({ type: 'dettes', fournisseur: f })}
+                      />
                       {f.actif && (
                         <>
-                          <button
-                            className="btn btn-secondaire"
+                          <BoutonIcone
+                            icone="modifier"
+                            libelle={`Modifier la fiche de « ${f.nom} »`}
                             onClick={() => ouvrir({ type: 'modifier', fournisseur: f })}
-                          >
-                            Modifier
-                          </button>
-                          <button
-                            className="btn btn-attention"
+                          />
+                          <BoutonIcone
+                            icone="desactiver"
+                            variante="attention"
+                            libelle={`Désactiver « ${f.nom} »`}
                             onClick={() => ouvrir({ type: 'desactiver', fournisseur: f })}
-                          >
-                            Désactiver
-                          </button>
+                          />
                         </>
                       )}
                     </div>
@@ -286,7 +307,8 @@ export function PageFournisseurs(): React.JSX.Element {
           </table>
         </div>
       )}
-      <p className="vide" style={{ marginTop: 12 }}>
+      <Pagination pages={pages} />
+      <p className="vide note-bas">
         Le délai de paiement fixe l’échéance de la dette créée par chaque réception.
       </p>
     </div>

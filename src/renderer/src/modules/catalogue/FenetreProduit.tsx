@@ -10,6 +10,8 @@ import type { Categorie, UniteBase } from '@shared/ipc/catalogue'
 import { formaterFCFA } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Icone } from '@renderer/ui/Icone'
 import {
   champsDepuisCodeScanne,
   champsDepuisFiche,
@@ -139,6 +141,13 @@ export function FenetreProduit(props: PropsFenetreProduit): React.JSX.Element {
   return (
     <FenetreFormulaire
       key="fiche"
+      aide={[
+        ['ajouter', 'Ajouter un conditionnement'],
+        'generer',
+        ['supprimer', 'Enlever un conditionnement pas encore enregistré'],
+        ['retirer', 'Retirer un conditionnement de la vente'],
+        ['restaurer', 'Remettre un conditionnement en vente']
+      ]}
       titre={creation ? 'Nouveau produit' : `Modifier « ${champs.nom} »`}
       pastille={
         creation &&
@@ -292,25 +301,23 @@ export function FenetreProduit(props: PropsFenetreProduit): React.JSX.Element {
                     />
                     <td>
                       {l.id === undefined ? (
-                        <button
-                          type="button"
-                          className="btn btn-secondaire"
+                        <BoutonIcone
+                          icone="supprimer"
+                          variante="attention"
+                          libelle="Enlever ce conditionnement (pas encore enregistré)"
                           onClick={() =>
                             modifier({
                               conditionnements: champs.conditionnements.filter((x) => x.cle !== l.cle)
                             })
                           }
-                        >
-                          Enlever
-                        </button>
+                        />
                       ) : (
-                        <button
-                          type="button"
-                          className={l.actif ? 'btn btn-attention' : 'btn btn-secondaire'}
+                        <BoutonIcone
+                          icone={l.actif ? 'retirer' : 'restaurer'}
+                          variante={l.actif ? 'attention' : 'secondaire'}
+                          libelle={l.actif ? 'Retirer ce conditionnement de la vente' : 'Remettre en vente'}
                           onClick={() => modifierLigne(l.cle, { actif: !l.actif })}
-                        >
-                          {l.actif ? 'Retirer de la vente' : 'Remettre en vente'}
-                        </button>
+                        />
                       )}
                     </td>
                   </tr>
@@ -326,7 +333,8 @@ export function FenetreProduit(props: PropsFenetreProduit): React.JSX.Element {
             modifier({ conditionnements: [...champs.conditionnements, nouveauConditionnement()] })
           }
         >
-          + Ajouter un conditionnement
+          <Icone nom="ajouter" />
+          Ajouter un conditionnement
         </button>
         {alertes.map((a) => (
           <p key={a.conditionnement} className="bandeau" role="status">
@@ -363,9 +371,11 @@ function CellulesCodes(props: {
             onChange={(e) => props.onChange({ codeBarres: e.target.value })}
           />
           {c.codeBarres === '' && (
-            <button type="button" className="btn btn-secondaire" onClick={props.onGenerer}>
-              Générer
-            </button>
+            <BoutonIcone
+              icone="generer"
+              libelle="Générer un code-barres interne"
+              onClick={props.onGenerer}
+            />
           )}
         </div>
       </td>
