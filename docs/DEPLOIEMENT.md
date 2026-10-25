@@ -57,7 +57,6 @@ vide.
 | Point | Pourquoi | Qui |
 |-------|----------|-----|
 | **Figer le nom de l'application** : ajouter `"productName": "Ma Boutique POS"` à la racine de `package.json` (il n'est aujourd'hui que dans la section `build`) | Le nom du dossier de données en dépend. **S'il changeait entre deux versions, l'application ouvrirait une base vide dans un nouveau dossier.** Le fixer une fois pour toutes, avant la première installation | Dev B |
-| Page de codes de l'imprimante (D-A2) | Accents lisibles sur le ticket | Dev A, essai sur le terminal |
 | Plafond de remise de la caissière (D-A3) | Sans plafond, toute remise de la caissière demande le code du gérant | La cliente |
 | Politique de stock négatif (D-A1) | En attendant, une vente n'est jamais bloquée | La cliente |
 | Démarrage automatique et mode kiosque | Pas encore développés (Phase 5) : solution provisoire au § 5.6 | Dev B |
@@ -123,7 +122,9 @@ Sur un PC Windows de test (ou une machine virtuelle), **jamais** sur le terminal
 | Mise en veille | Écran et ordinateur : **jamais** pendant les heures d'ouverture | La caisse doit rester prête |
 | Alimentation | Onduleur conseillé ; à défaut, la base résiste aux coupures (transactions), mais un arrêt brutal reste à éviter | Coupures fréquentes |
 | Mises à jour Windows | Heures d'activité réglées sur les heures d'ouverture | Pas de redémarrage pendant une vente |
-| Imprimante Xprinter M804 | Pilote installé, imprimante visible dans Windows, page de test Windows réussie | L'application imprime par le spouleur de Windows |
+| Imprimante Xprinter M804 | Pilote installé, imprimante visible dans Windows, page de test Windows réussie | Préalable à tout le reste |
+| **Partage de l'imprimante** | Paramètres › Imprimantes › Xprinter › Propriétés de l'imprimante › onglet **Partage** : cocher « Partager cette imprimante », nom du partage **`XPOS`** (exactement, sans espace) | Configuration validée en Phase 0 (D-20) : l'application envoie le ticket vers `\\localhost\XPOS` |
+| Tiroir-caisse | Câble RJ11 branché sur le port tiroir de l'imprimante | Le tiroir s'ouvre par l'imprimante |
 | Douchette | Branchée, scan dans le Bloc-notes : le code s'écrit puis passe à la ligne (suffixe Entrée) | La caisse attend Entrée après le code |
 | Écran client | Paramètres d'affichage : **Étendre ces affichages**, écran 15,6″ en principal | L'écran client s'ouvre sur le second écran |
 | Compte Windows | Un compte dédié à la boutique, toujours le même (§ 2) | La base est dans ce profil |
@@ -158,7 +159,7 @@ Connectée en administratrice :
 | Ordre | Écran | Quoi |
 |-------|-------|------|
 | 1 | **Paramètres** | Nom, adresse, NIF de la boutique, pied du ticket, TVA par défaut, seuil des péremptions, produits dormants, plafond de remise (si décidé) |
-| 2 | **Réglages matériel** | Imprimante (méthode, nom), « Imprimer le test » : accents lisibles ; « Ouvrir le tiroir » |
+| 2 | **Réglages matériel** | « Modifier les réglages » : méthode **Partage réseau**, nom du partage **`XPOS`**, page de codes **cp1252** (valeurs validées, D-20). « Imprimer le test en cp1252 » : « éèêàçùôî ÉÇ € » justes sur le papier ; « Ouvrir le tiroir » |
 | 3 | **Comptes utilisateurs** | Un compte par personne (gérant, caissières), avec un code **provisoire** que chacun remplacera à sa première connexion |
 | 4 | **Catégories** | Les rayons (onglets de la caisse) — l'import Excel peut aussi les créer |
 | 5 | **Produits** → Importer depuis Excel | « Vérifier le fichier », corriger jusqu'à zéro erreur, puis « Importer » |
@@ -373,8 +374,9 @@ clôturer chaque jour et de garder la clé branchée.
 | **Dossier de données (base)** | `%APPDATA%\…` |
 | Dossier de l'application | `%LOCALAPPDATA%\Programs\…` |
 | Dossier des sauvegardes sur la clé USB | |
-| Imprimante : méthode et nom | |
-| Page de codes validée (ticket de test lisible) | ☐ oui |
+| Imprimante partagée sous le nom `XPOS` | ☐ oui |
+| Réglages matériel : Partage réseau · `XPOS` · cp1252 | ☐ oui |
+| Ticket de test : « éèêàçùôî ÉÇ € » justes | ☐ oui |
 | Écran client sur le second écran | ☐ oui |
 | Démarrage automatique en place | ☐ oui |
 | Comptes créés (nom, rôle) | |

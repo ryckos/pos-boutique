@@ -506,10 +506,13 @@ docs/SCENARIOS_TEST.docx "Scénarios de test — Ma Boutique POS"`).
 - **Résultat** : ☐ OK ☐ KO — remarque :
 
 ### KOS-24 — Réglages matériel
-- **Étapes** : « Modifier les réglages » (méthode, imprimante) ; « Imprimer le test en … » ; « Ouvrir
-  le tiroir ».
-- **Attendu** : le ticket de test sort avec les accents lisibles (page de codes, D-A2) ; le tiroir
-  s'ouvre et l'ouverture est journalisée (`ouverture_tiroir_hors_vente`).
+- **Pré-requis** (terminal) : l'imprimante est partagée dans Windows sous le nom `XPOS`.
+- **Étapes** : « Modifier les réglages » : méthode « Partage réseau », nom `XPOS`, page de codes
+  cp1252 ; « Imprimer le test en cp1252 » ; « Ouvrir le tiroir ».
+- **Attendu** : sur une base neuve, la page de codes proposée est déjà **cp1252** (D-20). Le ticket de
+  test sort avec « éèêàçùôî ÉÇ € » justes ; le tiroir s'ouvre et l'ouverture est journalisée
+  (`ouverture_tiroir_hors_vente`). Un nom de partage faux donne un message clair, sans bloquer
+  l'application.
 - **Résultat** : ☐ OK ☐ KO — remarque :
 
 ### KOS-25 — Sauvegardes (gérant)
@@ -695,7 +698,7 @@ d'installation.
 |------|--------|---------|----------|
 | TER-01 — Douchette | Scanner 20 articles à la suite, dont un carton dont l'unité se voit à travers le film | Chaque scan donne sa ligne en **moins d'une seconde** ; aucun caractère perdu ; « Changer le conditionnement » corrige le piège du carton | ☐ OK ☐ KO |
 | TER-02 — Tactile | Toute la vente AFI-02 au doigt, sans clavier ; appui long sur les icônes | Aucune cible trop petite ; infobulles lisibles ; aucun double déclenchement | ☐ OK ☐ KO |
-| TER-03 — Imprimante Xprinter M804 | AFI-05, AFI-09, AFI-14, KOS-24 | Accents lisibles, 48 colonnes, coupe du papier, tiroir ouvert seulement quand il faut | ☐ OK ☐ KO |
+| TER-03 — Imprimante Xprinter M804 | Partage `XPOS`, cp1252 ; AFI-05, AFI-09, AFI-14, KOS-24 | Accents lisibles, 48 colonnes, coupe du papier, tiroir ouvert seulement quand il faut | ☐ OK ☐ KO |
 | TER-04 — Écran client | Vente AFI-02 | Le client voit les lignes et le total en direct, remises comprises | ☐ OK ☐ KO |
 | TER-05 — Coupure de courant | Débrancher pendant la saisie d'une réception (brouillon), puis pendant un encaissement | Au redémarrage : brouillon de réception retrouvé ; la vente est soit entièrement enregistrée, soit absente, jamais à moitié | ☐ OK ☐ KO |
 | TER-06 — Client pressé | Chronométrer AFI-02 + AFI-05 | Moins de **30 secondes** | ☐ OK ☐ KO |

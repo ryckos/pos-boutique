@@ -32,7 +32,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 | Test | Objet                              | Résultat                                                |
 |------|------------------------------------|---------------------------------------------------------|
 | T1   | Douchette (émulation clavier)      | ✅                                                      |
-| T2   | Impression ESC/POS + accents       | ✅ — page de codes à reporter (DECISIONS D-A2)          |
+| T2   | Impression ESC/POS + accents       | ✅ — cp1252, partage réseau « XPOS » (DECISIONS D-20)   |
 | T3   | Impulsion tiroir-caisse            | ✅                                                      |
 | T4   | Double écran                       | ✅                                                      |
 | T5   | SQLite + coupure                   | ✅                                                      |
@@ -57,7 +57,7 @@ Le socle comprend :
 | A1.1  | Panier et logique de calcul                     | A   | ✅     | PR #3 — essai à la vraie douchette sur le terminal encore à faire (validé en simulation) |
 | A1.2  | Grille, recherche F2, conditionnement, attente  | A   | ✅     | PR #6 (attente, F2, raccourcis) et #15 (onglets de rayons, changer le conditionnement) |
 | A2    | Encaissement et enregistrement de la vente      | A   | ✅     | PR #7 (serveur) et #14 (ouverture de caisse, fenêtre de paiement) — impression et tiroir en A3 |
-| A3    | Ticket, tiroir, réglages matériel               | A   | 🔄     | PR #18 fusionnée (ticket, tiroir, réimpression DUPLICATA, Réglages matériel ; en-tête et imprimante dans les paramètres de B5) ; **reste l'essai sur le terminal avec la Xprinter** (critère de fin, et page de codes D-A2) |
+| A3    | Ticket, tiroir, réglages matériel               | A   | 🔄     | PR #18 fusionnée (ticket, tiroir, réimpression DUPLICATA, Réglages matériel ; en-tête et imprimante dans les paramètres de B5) ; **reste l'essai sur le terminal avec la Xprinter** (critère de fin) ; page de codes **cp1252** par défaut depuis le 2026-10-25 (D-20, D-A2 tranchée) |
 | A4    | Sessions de caisse, X et Z                      | A   | 🔄     | PR #28 fusionnée (clôture relue en base, écart coloré, rapports X / Z, Z original puis DUPLICATA ; tests 58 700 / −500) ; **reste l'impression réelle du Z avec l'essai Xprinter** (avec A3) |
 | A5    | Remises, droits, stabilisation                  | A   | 🔄     | PR #30 fusionnée (parties 1 et 2) : remises ligne / ticket contrôlées et journalisées, TVA de la remise sur le ticket au prorata, plafond sur le total du ticket (`null` = gérant obligatoire, D-A3), accord du gérant à usage unique, ticket imprimé et écran client avec remises, lignes retirées journalisées ; testée à la main. **Reste la partie 3** : performance (scan → ligne < 1 s sur le terminal) et recette de la Phase 1 avec Dev B |
 | B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | ✅     | PR #4 — connexion par nom et code (D-17), verrouillage par compte, code provisoire, écrans Comptes / Mon code / premier démarrage |

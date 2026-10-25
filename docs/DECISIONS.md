@@ -18,17 +18,6 @@ cliente ou entre les deux développeurs.
 - **En attendant** : ne jamais bloquer la vente ; afficher une alerte.
 - **Qui décide** : la cliente.
 
-### D-A2 — Page de codes de l'imprimante
-- **Question** : quelle page de codes (`cp1252`, `cp858` ou `cp437`) imprime correctement
-  « éèêàçùôî ÉÇ € » sur la Xprinter M804 du client ?
-- **Contexte** : le test T2 a été validé, mais la page gagnante n'a pas encore été reportée ici.
-- **À faire** : Dev A reporte le résultat ici et le code par défaut (tâche A3).
-- **En attendant (Dev A, 2026-09-24)** : personne ne se souvient du résultat de T2. La page de codes
-  devient un **réglage modifiable** (écran « Réglages matériel », A3), avec `cp858` comme valeur de
-  départ **provisoire** (la seule qui couvre en théorie toutes les lettres françaises et le €).
-  Sur le terminal : imprimer le ticket de test avec chacune des trois pages, garder celle où
-  « éèêàçùôî ÉÇ € » est entièrement juste, puis reporter le résultat ici et fixer la valeur par défaut.
-
 ### D-A3 — Plafond de remise du caissier
 - **Question** : quel montant ou pourcentage maximal le caissier peut-il accorder sans gérant ?
 - **Qui décide** : la cliente.
@@ -174,3 +163,17 @@ cliente ou entre les deux développeurs.
   Le mixte garde la règle « un bouton dit ce qu'il fait » là où l'on agit vite au doigt : au
   toucher il n'y a pas de survol, une icône seule y serait une devinette.
 - **Validée par** : Dev B, le 2026-10-19, avec l'accord de Dev A pour les écrans de la caisse.
+
+### D-20 — Imprimante : partage réseau « XPOS », page de codes cp1252 (D-A2 tranchée) · 2026-10-25
+- **Décision** : configuration validée en Phase 0 sur le terminal de la boutique (tests T2 et T3) :
+  - méthode **B — partage réseau** (`copy /b` vers `\\localhost\XPOS`) : l'imprimante Xprinter M804
+    est **partagée dans Windows sous le nom `XPOS`** ;
+  - page de codes **`cp1252`** : « éèêàçùôî ÉÇ € » sortent justes sur le papier ;
+  - tiroir-caisse branché sur l'imprimante (RJ11), ouvert par l'impulsion ESC/POS.
+- **Dans l'application** : `cp1252` est la page de codes par défaut (`PAGE_DE_CODES_PAR_DEFAUT`,
+  `src/main/materiel/reglages.ts`). La méthode et le nom du partage se saisissent à l'installation,
+  dans « Réglages matériel » (`DEPLOIEMENT.md` § 4 et § 5.4) : ils dépendent du terminal, et les
+  postes de développement gardent leur propre imprimante.
+- **Remplace** la valeur provisoire `cp858` posée par Dev A le 2026-09-24 (A3) en attendant D-A2.
+- **Validée par** : Dev B, le 2026-10-25, d'après les résultats du test sur le terminal (accents
+  vérifiés sur le papier) ; à annoncer à Dev A (son fichier `reglages.ts` et ses tests changent).
