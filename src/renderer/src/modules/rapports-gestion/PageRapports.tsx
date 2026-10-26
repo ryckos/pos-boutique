@@ -24,6 +24,10 @@ import {
   exportResultat,
   exportValeurStock
 } from './exportRapports'
+import { Icone } from '@renderer/ui/Icone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 type Onglet = 'pertes' | 'valeur' | 'achats' | 'resultat'
 
@@ -58,7 +62,7 @@ function useRapport<T>(charger: () => Promise<T>, cle: string): { donnees: T | n
 function Erreur({ message }: { message: string | null }): React.JSX.Element | null {
   if (!message) return null
   return (
-    <p className="alerte" role="alert" style={{ marginBottom: 16 }}>
+    <p className="alerte page-message" role="alert">
       {message}
     </p>
   )
@@ -73,15 +77,7 @@ function EnteteOnglet({
   children: React.ReactNode
 }): React.JSX.Element {
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: 12,
-        marginBottom: 16
-      }}
-    >
+    <div className="entete-onglet">
       <p>{children}</p>
       <div className="tableau-actions">
         <BoutonExporter demande={demande} />
@@ -105,14 +101,21 @@ export function PageRapports(): React.JSX.Element {
     <div className="page">
       <header className="page-entete">
         <h1>Rapports</h1>
-        <div className="tableau-actions" role="tablist">
+        <AideIcones
+          entrees={[
+            'exporter',
+            ['restaurer', 'Revenir au mois en cours']
+          ]}
+          pagination
+        />
+        <div className="onglets" role="tablist">
           {ONGLETS.map((o) => (
             <button
               key={o.cle}
               type="button"
               role="tab"
               aria-selected={onglet === o.cle}
-              className={onglet === o.cle ? 'btn' : 'btn btn-secondaire'}
+              className={onglet === o.cle ? 'onglet actif' : 'onglet'}
               onClick={() => setOnglet(o.cle)}
             >
               {o.libelle}
@@ -140,6 +143,7 @@ export function PageRapports(): React.JSX.Element {
                 setAu('')
               }}
             >
+              <Icone nom="restaurer" />
               Revenir au mois en cours
             </button>
           )}
@@ -174,7 +178,7 @@ function OngletPertes({ periode, cle }: ProprietesPeriode): React.JSX.Element {
           </span>
         )}
       </EnteteOnglet>
-      <div className="tableau-cadre" style={{ marginBottom: 24 }}>
+      <div className="tableau-cadre bloc-espace">
         <table className="tableau">
           <thead>
             <tr>
@@ -204,31 +208,45 @@ function OngletPertes({ periode, cle }: ProprietesPeriode): React.JSX.Element {
       {r.produits.length === 0 ? (
         <p className="vide">Aucune perte {textePeriode(r)}.</p>
       ) : (
-        <div className="tableau-cadre">
-          <table className="tableau">
-            <thead>
-              <tr>
-                <th>Cause</th>
-                <th>Produit</th>
-                <th className="nombre">Quantité</th>
-                <th className="nombre">Valeur</th>
-              </tr>
-            </thead>
-            <tbody>
-              {r.produits.map((p) => (
-                <tr key={`${p.cause}-${p.produitId}`}>
-                  <td>{libelles[p.cause]}</td>
-                  <td>{p.produit}</td>
-                  <td className="nombre">
-                    {p.quantite === null ? '—' : `${formaterQuantite(p.quantite)} ${p.unite}`}
-                  </td>
-                  <td className="nombre montant">{formaterFCFA(p.valeur)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <PertesParProduit produits={r.produits} libelles={libelles} />
       )}
+    </>
+  )
+}
+
+/** Détail des pertes produit par produit : la liste la plus longue des rapports, donc paginée. */
+function PertesParProduit(props: {
+  produits: RapportPertes['produits']
+  libelles: Record<string, string>
+}): React.JSX.Element {
+  const pages = usePagination(props.produits)
+  return (
+    <>
+      <div className="tableau-cadre">
+        <table className="tableau">
+          <thead>
+            <tr>
+              <th>Cause</th>
+              <th>Produit</th>
+              <th className="nombre">Quantité</th>
+              <th className="nombre">Valeur</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pages.elements.map((p) => (
+              <tr key={`${p.cause}-${p.produitId}`}>
+                <td>{props.libelles[p.cause]}</td>
+                <td className="cellule-titre">{p.produit}</td>
+                <td className="nombre">
+                  {p.quantite === null ? '—' : `${formaterQuantite(p.quantite)} ${p.unite}`}
+                </td>
+                <td className="nombre montant">{formaterFCFA(p.valeur)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Pagination pages={pages} />
     </>
   )
 }

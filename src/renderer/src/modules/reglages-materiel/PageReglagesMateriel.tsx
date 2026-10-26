@@ -11,6 +11,8 @@ import { useCallback, useEffect, useState } from 'react'
 import type { CibleImprimante, MethodeImpression, PageDeCodes } from '@shared/ipc/materiel'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { Icone } from '@renderer/ui/Icone'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 const METHODES: Record<MethodeImpression, string> = {
   spooler: 'Imprimante Windows (spouleur)',
@@ -53,7 +55,15 @@ export function PageReglagesMateriel(): React.JSX.Element {
     <div className="page">
       <header className="page-entete">
         <h1>Réglages matériel</h1>
+        <AideIcones
+          entrees={[
+            ['modifier', 'Modifier les réglages'],
+            ['imprimer', 'Imprimer un ticket de test'],
+            'tiroir'
+          ]}
+        />
         <button className="btn" disabled={!reglages} onClick={() => setModification(true)}>
+          <Icone nom="modifier" />
           Modifier les réglages
         </button>
       </header>
@@ -104,6 +114,7 @@ export function PageReglagesMateriel(): React.JSX.Element {
                 )
               }
             >
+              <Icone nom="imprimer" />
               Imprimer le test en {p}
             </button>
           ))}
@@ -126,6 +137,7 @@ export function PageReglagesMateriel(): React.JSX.Element {
             )
           }
         >
+          <Icone nom="tiroir" />
           Ouvrir le tiroir
         </button>
       </section>

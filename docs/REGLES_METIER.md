@@ -1009,16 +1009,16 @@ repart à 1 chaque année.
 | `plafond_remise_caissier`        | Remise maximale sans gérant (FCFA)         | à définir               |
 | `peremption_seuil_jours`         | Horizon du tableau des péremptions         | 15                      |
 | `dormant_jours`                  | Seuil des produits dormants                | 60                      |
-| `imprimante_methode`             | `spooler` ou `share`                       | spooler                 |
-| `imprimante_cible`               | Nom de l'imprimante ou du partage          | —                       |
-| `imprimante_page_codes`          | Page de codes validée en Phase 0           | voir DECISIONS.md       |
+| `imprimante_methode`             | `spooler` ou `share`                       | spooler (boutique : `share`, D-20) |
+| `imprimante_cible`               | Nom de l'imprimante ou du partage          | — (boutique : `XPOS`, D-20) |
+| `imprimante_page_codes`          | Page de codes validée en Phase 0           | cp1252 (D-20)           |
 | `sauvegarde_dossier_externe`     | Dossier de la clé USB des sauvegardes (§ 14) | —                     |
 
 **Utilisation par la caisse (A3)** : le ticket prend son en-tête et son pied dans `boutique_nom`,
 `boutique_adresse` (une ligne imprimée par ligne saisie) et `ticket_pied` ; « Ma Boutique » s'imprime si
 le nom n'est pas renseigné. L'imprimante est réglée par les clés `imprimante_*`, depuis l'écran
 « Réglages matériel » (gérant). Tant que `imprimante_page_codes` est vide ou illisible, la page de codes
-est `cp858` (**provisoire**, D-A2).
+est `cp1252`, validée sur l'imprimante de la boutique (D-20).
 
 Ajouter ici toute nouvelle clé.
 

@@ -18,6 +18,105 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-19 → 26 — feature/sk/ergonomie — UX1 refonte ergonomique, déploiement, version 1.0.0-rc.1
+**Fait** :
+- **UX1 — refonte ergonomique** (décision D-19, `UI_UX.md` § 2, 4.1, 4.2, 5.12, 6), sur **tous** les écrans,
+  y compris ceux de la caisse (accord de Dev A donné à Dev B) :
+  - palette « bleu commerce » : `--vert*` renommés `--primaire*` (bleu), nouveaux jetons `--succes`,
+    `--accent`, `--menu`, `--surface-douce`, `--bord-fort`, `--ombre` ;
+  - icônes SVG maison `ui/Icone.tsx` (sans dépendance) ; `ui/BoutonIcone.tsx` (icône seule + infobulle au
+    survol, au clavier et à l'**appui long** au doigt ; indisponible = `aria-disabled`) ; actions des lignes
+    de tableau en icônes, sur une seule ligne ; actions principales et caisse en icône + texte ;
+  - pagination de l'affichage (`lib/pagination.ts` testé, `ui/Pagination.tsx`) : 20 lignes, 10 dans les
+    fenêtres ; exports et totaux toujours sur toute la liste ;
+  - aide contextuelle « ? » (`ui/AideIcones.tsx`) à côté du titre de chaque page et dans les fenêtres à
+    icônes (`FenetreFormulaire`, propriété `aide`) : légende des icônes de la page ;
+  - menu à icônes, replié sous 1180 px ; `DefinitionRoute.icone` **obligatoire** ;
+  - caisse : actions de la ligne choisie en deux rangées (quantité + supprimer ; conditionnement + remise),
+    actions du ticket en grille de deux colonnes ; ligne du ticket libellé | prix.
+- **Imprimante (D-A2 tranchée → D-20)** : configuration validée en Phase 0 = partage réseau `XPOS`
+  (`copy /b` vers `\\localhost\XPOS`), page de codes **cp1252**. `PAGE_DE_CODES_PAR_DEFAUT` passe de
+  `cp858` à `cp1252` dans `src/main/materiel/reglages.ts` (fichier de Dev A) et ses tests ; méthode et nom
+  du partage se saisissent à l'installation (Réglages matériel).
+- **Documents** : `docs/SCENARIOS_TEST.md` (+ `.docx`, 61 tests par utilisateur, semaine enchaînée,
+  installation et mises à jour DEP-01 à 08, terminal) ; `docs/DEPLOIEMENT.md` (+ `.docx` : installation,
+  mises à jour par migrations seulement, retour arrière, reprise après panne, fiches) ; fiches de test
+  pour la cliente `docs/fiches-test/` et guides utilisateur `docs/guides/` (administratrice, gérant,
+  caissière ; `.md` + `.docx`) ; `scripts/md_vers_docx.py` régénère un Word depuis un `.md`
+  (`python-docx`).
+- **Version 1.0.0-rc.1** : `package.json` `version` et `productName` **à la racine** (fixe le dossier de la
+  base : `%APPDATA%\Ma Boutique POS`) ; installateur `dist\Ma Boutique POS Setup 1.0.0-rc.1.exe`
+  (SHA-256 `1D89BE80AB80EE61D04281182DC567AF108B788C0D585345A4D776883F2705AD`), commit `332d3b9`, tag
+  `v1.0.0-rc.1` poussé. Installé chez la cliente pour la phase de test, sur sa **vraie base**.
+- 698 tests verts (4 nouveaux : pagination), typecheck et build OK. Aucune migration.
+- Constats utiles :
+  - `npm run dist` échouait sur ce poste (extraction de `winCodeSign` : liens symboliques interdits).
+    Correctif sans droits admin : décompresser l'archive dans
+    `%LOCALAPPDATA%\electron-builder\Cache\winCodeSign\winCodeSign-2.6.0`, ou activer le mode développeur
+    de Windows ;
+  - avec `productName` à la racine, `npm run dev` utilise désormais `%APPDATA%\Ma Boutique POS` : l'ancienne
+    base de démo (`%APPDATA%\pos-boutique`) n'est plus lue (une démo neuve est créée) ;
+  - sous Windows, un script Python qui réécrit un fichier doit garder les fins de ligne LF
+    (`newline=''`), sinon tout le fichier passe en CRLF.
+
+**En cours** : PR `feature/sk/ergonomie` → `test` à ouvrir et fusionner (le 2026-10-26, la poussée directe
+sur `test` a été refusée par la règle GitHub qui impose une PR) :
+https://github.com/ryckos/pos-boutique/compare/test...feature/sk/ergonomie?expand=1
+Dev B veut la fusion rapide pour que chacun reprenne ses tâches sur une base commune ; Dev A relit au
+moins ses écrans (liste dans « Contrats »). La cliente teste la 1.0.0-rc.1 avec `docs/fiches-test/`.
+Sur le poste de Dev B, la branche `test` **locale** porte un commit de fusion non poussé : le jeter avec
+`git switch test` puis `git reset --hard origin/test` avant tout `git pull`.
+
+**Prochaine étape** :
+1. **Faire fusionner la PR** ci-dessus (merge commit, pas de squash : le tag `v1.0.0-rc.1` pointe sur
+   `332d3b9`, qui doit rester dans l'historique de `test`). Ensuite, chacun repart de `test` à jour.
+   Puis **suivre le test de la cliente** (fiches remplies, `docs/fiches-test/`). Une correction = une branche
+   `b/…` depuis `test`, puis version `1.0.0-rc.2`, `npm run dist`, tag, mise à jour chez la cliente selon
+   `DEPLOIEMENT.md` § 6.3 (sa base est conservée ; une migration se répète d'abord sur une copie de sa
+   dernière sauvegarde, § 6.2). Validation → `test` → `main`, version `1.0.0`, tag `v1.0.0`, installée en
+   mise à jour.
+2. **B13 — dépense payée au tiroir (débloquée)** : A8 est livré (PR #55,
+   `src/main/modules/caisse/service-mouvements.ts` : `sessionOuverte(db, utilisateurId?)`,
+   `enregistrerMouvementCaisse(db, { sessionId, utilisateurId, sens, motif, montant, commentaire,
+   documentType?, documentId? })`, `annulerMouvementCaisse`). Branche `b/depenses-caisse` depuis `test` :
+   dans `depenses/service.ts`, source `caisse` = session ouverte de l'utilisateur exigée, date du jour,
+   `session_caisse_id`, mouvement `sortie` motif `depense`, `document_type = 'depense'`, **dans la même
+   transaction** ; sortie plafonnée aux espèces du tiroir ; annulation = `annulerMouvementCaisse`, refusée
+   si la session est clôturée. Ouvrir `depenses:enregistrer` à la caissière pour la source caisse ;
+   retirer la limite `SOURCES_OUVERTES` de `saisieDepense.ts` ; décider avec Dev A où la caissière saisit
+   (bouton dans la caisse ou menu restreint). Test de référence : taxi-moto 1 000 F → espèces théoriques
+   **58 700** (`SCENARIO_REFERENCE.md`, vendredi soir). Puis B13 → ✅ et la ligne de `SCENARIOS_TEST.md`
+   § 8 « Dépense payée au tiroir » devient un test.
+3. **B16** : essai de restauration sur le terminal, puis B16 → ✅ (hors envoi distant, D-A4).
+4. **B-P5** : démarrage automatique et mode kiosque (provisoire : raccourci dans `shell:startup`), icône
+   de l'application et champ `author` de `package.json`, signature de l'installateur (plus tard).
+5. **B14** : marge et résultat dès que `caisse:ventesPeriode` (A14) arrive.
+
+**Questions ouvertes** :
+- D-A1 (stock négatif), D-A3 (plafond de remise), D-A4 (sauvegarde distante), D-A5 : toujours en attente.
+- PR de grande taille (65 fichiers) : Dev A doit relire au moins ce qui touche ses écrans (liste
+  ci-dessous) et signaler tout souci.
+- Retours de la cliente sur les fiches et les guides (textes, ordre des modules).
+
+**Contrats** :
+- **Pour Dev A (changements dans son périmètre ou ses habitudes)** :
+  - `src/main/materiel/reglages.ts` : `PAGE_DE_CODES_PAR_DEFAUT = 'cp1252'` (D-20) ;
+    `tests/caisse-ticket.test.ts` adapté ;
+  - écrans de la caisse retouchés (icônes, disposition) : `PageCaisse.tsx` (actions de la ligne en deux
+    rangées, actions du ticket en grille), `PageClotureCaisse.tsx` (aide « ? »), `FenetreTiroir.tsx`
+    (annulation en icône), `FenetrePaiement`, `FenetreFacture`, `FenetreProforma`,
+    `FenetreRepriseProforma`, `FenetreRetour`, `FenetreAnnulation`, `OuvertureCaisse`,
+    `PageReglagesMateriel.tsx` ; **aucun service ni contrat de la caisse modifié** ;
+  - `DefinitionRoute.icone` est **obligatoire** : toute nouvelle route (A14, A15, A11…) doit donner une
+    icône de `ui/Icone.tsx` ;
+  - jetons CSS renommés : `--vert`, `--vert-fonce`, `--vert-pale` n'existent plus → `--primaire*` pour
+    l'action, `--succes*` pour le positif ;
+  - réutilisables : `BoutonIcone`, `Pagination` / `usePagination`, `AideIcones`, `FenetreFormulaire`
+    (propriété `aide`) ; règles dans `UI_UX.md` § 4.1, 4.2 et 5.12.
+- Ajoutés : aucun canal. Attendus : `caisse:ventesPeriode` (A14, pour B14).
+
+---
+
 ## 2026-10-12 — b/docs-b15-fusion, b/sauvegardes, b/sauvegardes-ecran — B16 Sauvegardes et restauration
 **Fait** :
 - **B14 et B15 fusionnées** (PR #47 à #51). Le carnet du 09/10 et la petite PR de documentation de
@@ -685,71 +784,3 @@ fusion de la précédente. Le texte de chacune a été fourni à Dev B dans la s
   - nouvelle classe commune `.tableau-saisie select`.
 - Prochain rendez-vous à livrer : `allouerFefo()` (fin S10, B9). Attendus inchangés : `sessionOuverte()` et
   `enregistrerMouvementCaisse()` (Dev A, fin S10).
-
----
-
-## 2026-09-30 — b/fournisseurs — B4 fusionnée, B7 Fournisseurs (partie 1)
-**Fait** :
-- **B4 fusionnée** (PR #22 et #23, le 28/09) et passée à ✅ dans `ETAT_AVANCEMENT.md`, avec deux lignes
-  au journal des fusions (commit `7e613c8`).
-- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 4.6 :
-  - droits : gérant (et admin) ;
-  - nom obligatoire, unique parmi les fournisseurs actifs (majuscules et espaces ignorés) ;
-  - délai de paiement entier de 0 (comptant) à 365 jours ;
-  - contact, téléphone, adresse facultatifs, en texte libre ;
-  - désactivation avec motif obligatoire, journalisée (`desactivation_fournisseur`), **refusée tant que
-    le solde dû est supérieur à 0**, sinon la dette sortirait de `v_dettes_fournisseurs`, qui ne compte
-    que les actifs ;
-  - modifications de la fiche non journalisées ;
-  - fournisseur de démo « Grossiste Hédzranawoé », 15 jours.
-- **B7 partie 1** (commit `66d9114`, poussé sur `origin/b/fournisseurs`) :
-  - module `src/main/modules/fournisseurs/` (`service.ts`, `ipc.ts`) et contrat
-    `src/shared/ipc/fournisseurs.ts` ;
-  - écran `modules/fournisseurs/PageFournisseurs.tsx` : menu « Fournisseurs » (gérant), « Total dû »,
-    fenêtres modales, `UI_UX.md` § 5.17 ;
-  - seed : le grossiste de démo, présent seulement dans une base créée à neuf.
-  - Aucune migration : la table `fournisseurs` existait déjà.
-- Le solde dû est calculé dans le service avec la même formule que la vue (réceptions − règlements),
-  pour afficher aussi celui des fournisseurs désactivés. Les avoirs (B11) ne sont pas encore déduits.
-- 277 tests verts (18 nouveaux dans `tests/fournisseurs.test.ts`) ; typecheck OK. **Essai à la main fait
-  par Dev B.** Le refus pour dette ne peut pas encore s'essayer à l'écran (pas de réception avant B8) :
-  il est couvert par les tests, avec des réceptions et des règlements insérés directement.
-
-**En cours** :
-- PR `b/fournisseurs` → `test` à ouvrir sur GitHub (`gh` absent de ce poste) :
-  https://github.com/ryckos/pos-boutique/compare/test...b/fournisseurs?expand=1. Le texte, rempli
-  selon le modèle, a été fourni à Dev B. Ensuite, relecture par Dev A.
-- Les branches déjà fusionnées `b/stock` et `b/stock-historique` sont **à supprimer par Dev B**, en local
-  et sur GitHub. La suppression a été refusée à Claude par les permissions du poste.
-
-**Prochaine étape** :
-1. Après la fusion de la PR B7 partie 1 :
-   - ajouter une ligne au journal des fusions de `ETAT_AVANCEMENT.md` ;
-   - laisser B7 en 🔄, la partie 2 restant à faire.
-2. **B8 Commandes et réceptions** (`/tache B8`), sur une branche `b/receptions` créée depuis `test` à jour.
-   - Relire `REGLES_METIER.md` § 4.1 à 4.5, `UI_UX.md` § 5.6 et 5.7, et `SCENARIO_REFERENCE.md` (lundi 8 h).
-   - Tests du CUMP : 3 cartons à 6 000 → **250** ; puis 46 boîtes en stock à 250 + 2 cartons à 6 600
-     (48 boîtes à 275) → **262,8**.
-   - La dette est égale au total de la réception, avec une échéance calculée depuis
-     `delai_paiement_jours`. Il faut regarder où la stocker : la table `receptions` n'a pas de colonne
-     d'échéance, ce qui demandera peut-être une migration.
-   - Mettre `document_type = 'reception'` pour que l'historique B4 affiche le numéro `RC`.
-   - Ne proposer à la réception que les fournisseurs **actifs**.
-3. **B7 partie 2**, avec ou juste après B8 : historique des achats et des prix d'achat d'un fournisseur
-   (lecture de `receptions` et `lignes_reception`), en fenêtre depuis la page Fournisseurs. B7 passera
-   alors à ✅.
-
-**Questions ouvertes** :
-- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
-- Plafond de remise caissier (D-A3) : en attente de la cliente.
-- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photo des produits : reportée.
-
-**Contrats** :
-- Ajoutés (gérant, **sans impact pour la caisse**) : `fournisseurs:liste` → `Fournisseur[]` (avec
-  `soldeDu` et `derniereReception`), `fournisseurs:creer`, `fournisseurs:modifier`,
-  `fournisseurs:desactiver` `{ id, motif }`. Nouveau module enregistré dans `src/main/ipc/index.ts`,
-  contrat dans `src/shared/ipc/index.ts`, menu dans `app/routes.tsx`.
-- Prochain rendez-vous à livrer : `allouerFefo()` (fin S10, B9).
-- Attendus, inchangés : `sessionOuverte()` et `enregistrerMouvementCaisse()` (Dev A, fin S10).
-
----

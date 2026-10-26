@@ -18,17 +18,6 @@ cliente ou entre les deux développeurs.
 - **En attendant** : ne jamais bloquer la vente ; afficher une alerte.
 - **Qui décide** : la cliente.
 
-### D-A2 — Page de codes de l'imprimante
-- **Question** : quelle page de codes (`cp1252`, `cp858` ou `cp437`) imprime correctement
-  « éèêàçùôî ÉÇ € » sur la Xprinter M804 du client ?
-- **Contexte** : le test T2 a été validé, mais la page gagnante n'a pas encore été reportée ici.
-- **À faire** : Dev A reporte le résultat ici et le code par défaut (tâche A3).
-- **En attendant (Dev A, 2026-09-24)** : personne ne se souvient du résultat de T2. La page de codes
-  devient un **réglage modifiable** (écran « Réglages matériel », A3), avec `cp858` comme valeur de
-  départ **provisoire** (la seule qui couvre en théorie toutes les lettres françaises et le €).
-  Sur le terminal : imprimer le ticket de test avec chacune des trois pages, garder celle où
-  « éèêàçùôî ÉÇ € » est entièrement juste, puis reporter le résultat ici et fixer la valeur par défaut.
-
 ### D-A3 — Plafond de remise du caissier
 - **Question** : quel montant ou pourcentage maximal le caissier peut-il accorder sans gérant ?
 - **Qui décide** : la cliente.
@@ -135,7 +124,7 @@ cliente ou entre les deux développeurs.
 - **Décision** :
   - police Segoe UI, native et hors ligne ;
   - jetons de couleurs uniques dans `styles.css` ;
-  - vert `#0f6e56`, dans la continuité des documents remis à la cliente ;
+  - vert `#0f6e56`, dans la continuité des documents remis à la cliente (**remplacé par D-19**, palette bleu commerce, le 2026-10-19) ;
   - cibles tactiles larges ;
   - le total comme élément fort de la caisse.
 - **Référence** : `docs/UI_UX.md`.
@@ -157,3 +146,34 @@ cliente ou entre les deux développeurs.
   (CVE-2023-30533, CVE-2024-22363) ; les versions corrigées ne sont publiées que par SheetJS. Un
   `npm install` doit donc pouvoir joindre `cdn.sheetjs.com` (poste de développement et CI).
 - **Validée par** : Dev B, le 2026-09-25 (tâche B3).
+
+### D-19 — Refonte ergonomique : palette bleu commerce, icônes, pagination · 2026-10-19
+- **Décision** :
+  - palette « bleu commerce » (bleu `#1f5fbf` pour l'action, marine `#13294b` pour le menu, orange
+    `#e8790f` en accent rare) ; le vert reste celui du positif (`--succes`). Remplace le vert de D-16 ;
+  - icônes SVG dessinées dans le code (`ui/Icone.tsx`), **sans dépendance** ;
+  - boutons « mixtes » : icône seule + infobulle pour les actions de ligne des tableaux, icône +
+    texte pour les actions principales, les validations et la caisse (`UI_UX.md` § 4.1) ;
+  - infobulle au survol, au focus clavier et à l'appui long (écran tactile) ;
+  - pagination de l'affichage des listes de gestion, 20 lignes par défaut (`UI_UX.md` § 5.12) ;
+  - menu avec icônes, replié sous 1180 px ;
+  - actions d'une ligne de tableau sur une seule ligne, et aide contextuelle « ? » en tête de chaque
+    page et des fenêtres à icônes : légende des icônes et de leur fonction (`UI_UX.md` § 4.2).
+- **Raison** : demande de modernisation pour la cliente (interface plus attractive et plus lisible).
+  Le mixte garde la règle « un bouton dit ce qu'il fait » là où l'on agit vite au doigt : au
+  toucher il n'y a pas de survol, une icône seule y serait une devinette.
+- **Validée par** : Dev B, le 2026-10-19, avec l'accord de Dev A pour les écrans de la caisse.
+
+### D-20 — Imprimante : partage réseau « XPOS », page de codes cp1252 (D-A2 tranchée) · 2026-10-25
+- **Décision** : configuration validée en Phase 0 sur le terminal de la boutique (tests T2 et T3) :
+  - méthode **B — partage réseau** (`copy /b` vers `\\localhost\XPOS`) : l'imprimante Xprinter M804
+    est **partagée dans Windows sous le nom `XPOS`** ;
+  - page de codes **`cp1252`** : « éèêàçùôî ÉÇ € » sortent justes sur le papier ;
+  - tiroir-caisse branché sur l'imprimante (RJ11), ouvert par l'impulsion ESC/POS.
+- **Dans l'application** : `cp1252` est la page de codes par défaut (`PAGE_DE_CODES_PAR_DEFAUT`,
+  `src/main/materiel/reglages.ts`). La méthode et le nom du partage se saisissent à l'installation,
+  dans « Réglages matériel » (`DEPLOIEMENT.md` § 4 et § 5.4) : ils dépendent du terminal, et les
+  postes de développement gardent leur propre imprimante.
+- **Remplace** la valeur provisoire `cp858` posée par Dev A le 2026-09-24 (A3) en attendant D-A2.
+- **Validée par** : Dev B, le 2026-10-25, d'après les résultats du test sur le terminal (accents
+  vérifiés sur le papier) ; à annoncer à Dev A (son fichier `reglages.ts` et ses tests changent).

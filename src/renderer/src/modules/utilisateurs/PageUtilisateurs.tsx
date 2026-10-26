@@ -11,6 +11,11 @@ import { formaterDate } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { useUtilisateur } from '@renderer/app/contexte'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Icone } from '@renderer/ui/Icone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 const LIBELLES_ROLE: Record<Role, string> = { caissier: 'Caissier', gerant: 'Gérant', admin: 'Administrateur' }
 const ROLES: Role[] = ['caissier', 'gerant', 'admin']
@@ -52,17 +57,29 @@ export function PageUtilisateurs(): React.JSX.Element {
 
   const actifs = comptes.filter((c) => c.actif).length
 
+  const pages = usePagination(comptes)
+
   return (
     <div className="page">
       <header className="page-entete">
         <h1>Comptes utilisateurs</h1>
+        <AideIcones
+          entrees={[
+            ['ajouter', 'Créer un compte'],
+            'cle',
+            'utilisateur',
+            ['desactiver', 'Désactiver le compte']
+          ]}
+          pagination
+        />
         <button className="btn" onClick={() => ouvrir({ type: 'creer' })}>
+          <Icone nom="ajouter" />
           Créer un compte
         </button>
       </header>
 
       {succes && (
-        <p className="succes" role="status" style={{ marginBottom: 16 }}>
+        <p className="succes page-message" role="status">
           {succes}
         </p>
       )}
@@ -120,7 +137,7 @@ export function PageUtilisateurs(): React.JSX.Element {
       )}
 
       {erreur && (
-        <p className="alerte" role="alert" style={{ marginBottom: 16 }}>
+        <p className="alerte page-message" role="alert">
           {erreur}
         </p>
       )}
@@ -133,13 +150,15 @@ export function PageUtilisateurs(): React.JSX.Element {
               <th>Rôle</th>
               <th>État</th>
               <th>Créé le</th>
-              <th />
+              <th className="colonne-actions">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
-            {comptes.map((c) => (
+            {pages.elements.map((c) => (
               <tr key={c.id} className={c.actif ? undefined : 'inactif'}>
-                <td>
+                <td className="cellule-titre">
                   {c.nom}
                   {c.id === moi.id && ' (vous)'}
                 </td>
@@ -151,24 +170,28 @@ export function PageUtilisateurs(): React.JSX.Element {
                   {c.actif && c.codeProvisoire && <span className="pastille pastille-alerte">Code provisoire</span>}
                 </td>
                 <td>{formaterDate(c.creeLe)}</td>
-                <td>
+                <td className="colonne-actions">
                   {c.actif && (
                     <div className="tableau-actions">
                       {c.id !== moi.id && (
-                        <button className="btn btn-secondaire" onClick={() => ouvrir({ type: 'code', compte: c })}>
-                          Réinitialiser le code
-                        </button>
+                        <BoutonIcone
+                          icone="cle"
+                          libelle={`Réinitialiser le code de ${c.nom}`}
+                          onClick={() => ouvrir({ type: 'code', compte: c })}
+                        />
                       )}
-                      <button className="btn btn-secondaire" onClick={() => ouvrir({ type: 'role', compte: c })}>
-                        Changer le rôle
-                      </button>
+                      <BoutonIcone
+                        icone="utilisateur"
+                        libelle={`Changer le rôle de ${c.nom}`}
+                        onClick={() => ouvrir({ type: 'role', compte: c })}
+                      />
                       {c.id !== moi.id && (
-                        <button
-                          className="btn btn-attention"
+                        <BoutonIcone
+                          icone="desactiver"
+                          variante="attention"
+                          libelle={`Désactiver le compte de ${c.nom}`}
                           onClick={() => ouvrir({ type: 'desactiver', compte: c })}
-                        >
-                          Désactiver
-                        </button>
+                        />
                       )}
                     </div>
                   )}
@@ -178,7 +201,8 @@ export function PageUtilisateurs(): React.JSX.Element {
           </tbody>
         </table>
       </div>
-      <p className="vide" style={{ marginTop: 12 }}>
+      <Pagination pages={pages} />
+      <p className="vide note-bas">
         {actifs} compte{actifs > 1 ? 's' : ''} actif{actifs > 1 ? 's' : ''}. Le code que vous donnez est
         provisoire : chacun choisit le sien à sa connexion. Votre propre code se change dans « Mon code ».
       </p>

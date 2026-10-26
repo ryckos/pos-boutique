@@ -6,6 +6,7 @@ import { PageRapports } from './PageRapports'
 export const routesRapportsGestion: DefinitionRoute[] = [
   {
     chemin: '/rapports-gestion',
+    icone: 'rapports',
     libelle: 'Rapports de gestion',
     element: <PageRapports />,
     roles: ['gerant']

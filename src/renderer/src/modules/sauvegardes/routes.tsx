@@ -4,5 +4,11 @@ import { PageSauvegardes } from './PageSauvegardes'
 
 // Gérant : consulter et sauvegarder ; la clé USB et la restauration sont réservées à l'admin dans la page.
 export const routesSauvegardes: DefinitionRoute[] = [
-  { chemin: '/sauvegardes', libelle: 'Sauvegardes', element: <PageSauvegardes />, roles: ['gerant'] }
+  {
+    chemin: '/sauvegardes',
+    icone: 'sauvegarder',
+    libelle: 'Sauvegardes',
+    element: <PageSauvegardes />,
+    roles: ['gerant']
+  }
 ]

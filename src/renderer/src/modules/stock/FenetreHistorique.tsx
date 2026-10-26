@@ -10,6 +10,8 @@ import { formaterDate, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { texteRepartition } from './affichageStock'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
 
 interface Props {
   produitId: number
@@ -44,6 +46,7 @@ export function FenetreHistorique({ produitId, nom, onFermer }: Props): React.JS
   }
 
   const h = historique
+  const pages = usePagination(h?.mouvements ?? [])
   return (
     <FenetreFormulaire
       titre={`Historique — ${nom}`}
@@ -91,14 +94,17 @@ export function FenetreHistorique({ produitId, nom, onFermer }: Props): React.JS
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>{formaterDate(h.du)}</td>
-                <td colSpan={3}>Stock au début de la période</td>
-                <td className="nombre">
-                  <strong>{formaterQuantite(h.stockDebut)}</strong>
-                </td>
-                <td />
-              </tr>
+              {/* Stock de début sur la première page, stock de fin sur la dernière : le calcul se lit. */}
+              {pages.page === 1 && (
+                <tr>
+                  <td>{formaterDate(h.du)}</td>
+                  <td colSpan={3}>Stock au début de la période</td>
+                  <td className="nombre">
+                    <strong>{formaterQuantite(h.stockDebut)}</strong>
+                  </td>
+                  <td />
+                </tr>
+              )}
               {h.mouvements.length === 0 && (
                 <tr>
                   <td colSpan={6} className="vide">
@@ -106,7 +112,7 @@ export function FenetreHistorique({ produitId, nom, onFermer }: Props): React.JS
                   </td>
                 </tr>
               )}
-              {h.mouvements.map((m) => (
+              {pages.elements.map((m) => (
                 <tr key={m.id}>
                   <td>{dateHeure(m.horodatage)}</td>
                   <td>{LIBELLES_MOUVEMENT[m.type]}</td>
@@ -115,25 +121,30 @@ export function FenetreHistorique({ produitId, nom, onFermer }: Props): React.JS
                     {m.lot && <span className="detail">Lot {m.lot}</span>}
                     {m.motif && <span className="detail">{m.motif}</span>}
                   </td>
-                  <td className="nombre">{signe(m.quantite)}</td>
+                  <td className={m.quantite < 0 ? 'nombre valeur-negative' : 'nombre valeur-positive'}>
+                    {signe(m.quantite)}
+                  </td>
                   <td className="nombre">{formaterQuantite(m.stockApres)}</td>
                   <td>{m.utilisateur}</td>
                 </tr>
               ))}
-              <tr>
-                <td>{formaterDate(h.au)}</td>
-                <td colSpan={3}>
-                  <strong>Stock à la fin de la période</strong>
-                </td>
-                <td className="nombre">
-                  <strong>{formaterQuantite(h.stockFin)}</strong>
-                </td>
-                <td />
-              </tr>
+              {pages.page === pages.nbPages && (
+                <tr>
+                  <td>{formaterDate(h.au)}</td>
+                  <td colSpan={3}>
+                    <strong>Stock à la fin de la période</strong>
+                  </td>
+                  <td className="nombre">
+                    <strong>{formaterQuantite(h.stockFin)}</strong>
+                  </td>
+                  <td />
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       )}
+      <Pagination pages={pages} />
     </FenetreFormulaire>
   )
 }

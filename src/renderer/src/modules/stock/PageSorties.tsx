@@ -28,6 +28,10 @@ import {
   versSaisieSortie,
   type ChampsSortie
 } from './saisieSortie'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 type Action = { type: 'sortir'; fiche: FicheSortie } | { type: 'annuler'; sortie: SortieStock } | null
 
@@ -148,6 +152,8 @@ export function PageSorties(): React.JSX.Element {
     else if (resultats.length > 0) ouvrir(resultats[0].produitId)
   }
 
+  const pages = usePagination(sorties ?? [])
+
   const apres = (message: string): void => {
     setAction(null)
     setSucces(message)
@@ -159,7 +165,14 @@ export function PageSorties(): React.JSX.Element {
     <div className="page">
       <header className="page-entete">
         <h1>Sorties de stock</h1>
-        <div className="tableau-actions">
+        <AideIcones
+          entrees={[
+            'exporter',
+            ['annuler', 'Annuler une sortie : le stock revient, avec un motif']
+          ]}
+          pagination
+        />
+        <div className="page-entete-actions">
           <BoutonExporter
             demande={() => exportSorties(sorties ?? [])}
             desactive={!sorties || sorties.length === 0}
@@ -236,17 +249,19 @@ export function PageSorties(): React.JSX.Element {
                 <th className="nombre">Valeur</th>
                 <th>Retour</th>
                 <th>Par</th>
-                <th />
+                <th className="colonne-actions">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {sorties.map((s) => (
+              {pages.elements.map((s) => (
                 <tr key={s.mouvementId} className={s.motifAnnulation !== null ? 'inactif' : undefined}>
                   <td>
                     {formaterDate(s.horodatage)}
                     <span className="detail">{s.horodatage.slice(11, 16)}</span>
                   </td>
-                  <td>
+                  <td className="cellule-titre">
                     {s.produit}
                     {s.lot && <span className="detail">Lot {s.lot}</span>}
                   </td>
@@ -269,7 +284,7 @@ export function PageSorties(): React.JSX.Element {
                     )}
                   </td>
                   <td>{s.utilisateur}</td>
-                  <td>
+                  <td className="colonne-actions">
                     {s.motifAnnulation !== null ? (
                       <>
                         <span className="pastille pastille-inactif">Annulée</span>
@@ -277,16 +292,15 @@ export function PageSorties(): React.JSX.Element {
                       </>
                     ) : (
                       (!s.retour || s.retour.statut === 'attendu') && (
-                        <button
-                          type="button"
-                          className="btn btn-attention"
+                        <BoutonIcone
+                          icone="annuler"
+                          variante="attention"
+                          libelle={`Annuler la sortie de « ${s.produit} »`}
                           onClick={() => {
                             setSucces(null)
                             setAction({ type: 'annuler', sortie: s })
                           }}
-                        >
-                          Annuler
-                        </button>
+                        />
                       )
                     )}
                   </td>
@@ -296,6 +310,7 @@ export function PageSorties(): React.JSX.Element {
           </table>
         </div>
       )}
+      <Pagination pages={pages} />
     </div>
   )
 }

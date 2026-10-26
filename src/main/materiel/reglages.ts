@@ -20,10 +20,10 @@ export type ReglagesImprimante = CibleImprimante
 const PAGES: PageDeCodes[] = ['cp858', 'cp1252', 'cp437']
 
 /**
- * Page de codes tant qu'aucune n'est renseignée. PROVISOIRE (décision en attente D-A2) : la page
- * gagnante du test T2 n'a pas été reportée ; elle sera déterminée sur le terminal.
+ * Page de codes tant qu'aucune n'est renseignée : cp1252, validée sur la Xprinter M804 de la boutique
+ * au test T2 de la Phase 0 (« éèêàçùôî ÉÇ € » justes sur le papier). D-A2 tranchée, voir D-20.
  */
-export const PAGE_DE_CODES_PAR_DEFAUT: PageDeCodes = 'cp858'
+export const PAGE_DE_CODES_PAR_DEFAUT: PageDeCodes = 'cp1252'
 
 /** Nom imprimé si la boutique n'a pas encore renseigné le sien (écran Paramètres de Dev B). */
 export const NOM_BOUTIQUE_PAR_DEFAUT = 'Ma Boutique'

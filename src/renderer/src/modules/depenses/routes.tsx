@@ -4,5 +4,11 @@ import { PageDepenses } from './PageDepenses'
 
 // Gérant tant que les dépenses payées au tiroir (caissière) attendent A8 de Dev A.
 export const routesDepenses: DefinitionRoute[] = [
-  { chemin: '/depenses', libelle: 'Dépenses', element: <PageDepenses />, roles: ['gerant'] }
+  {
+    chemin: '/depenses',
+    icone: 'depenses',
+    libelle: 'Dépenses',
+    element: <PageDepenses />,
+    roles: ['gerant']
+  }
 ]

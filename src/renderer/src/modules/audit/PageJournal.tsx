@@ -12,6 +12,8 @@ import { appel } from '@renderer/lib/api'
 import { suffixePeriode } from '@renderer/lib/exportExcel'
 import { BoutonExporter } from '@renderer/ui/BoutonExporter'
 import type { DemandeExport } from '@shared/ipc/exports'
+import { Icone } from '@renderer/ui/Icone'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 function texteDetails(details: DetailAudit[]): string {
   return details.map((d) => `${d.libelle} : ${d.valeur}`).join(' ; ')
@@ -100,7 +102,13 @@ export function PageJournal(): React.JSX.Element {
     <div className="page">
       <header className="page-entete">
         <h1>Journal des opérations</h1>
-        <div className="tableau-actions">
+        <AideIcones
+          entrees={[
+            'exporter',
+            ['suivant', 'Afficher plus : les opérations plus anciennes']
+          ]}
+        />
+        <div className="page-entete-actions">
           <BoutonExporter demande={demandeExport} desactive={entrees.length === 0} />
         </div>
       </header>
@@ -150,7 +158,7 @@ export function PageJournal(): React.JSX.Element {
       </div>
 
       {erreur && (
-        <p className="alerte" role="alert" style={{ marginBottom: 16 }}>
+        <p className="alerte page-message" role="alert">
           {erreur}
         </p>
       )}
@@ -178,7 +186,7 @@ export function PageJournal(): React.JSX.Element {
                     <span className="detail">{e.horodatage.slice(11, 16)}</span>
                   </td>
                   <td>{e.utilisateur}</td>
-                  <td>{e.libelle}</td>
+                  <td className="cellule-titre">{e.libelle}</td>
                   <td>
                     {e.apres.length > 0 && texteDetails(e.apres)}
                     {e.avant.length > 0 && <span className="detail">Avant : {texteDetails(e.avant)}</span>}
@@ -191,8 +199,10 @@ export function PageJournal(): React.JSX.Element {
       )}
 
       {suite && (
-        <p style={{ marginTop: 16 }}>
+        <p className="pagination">
+          <span className="pagination-compte">{entrees.length} opérations affichées</span>
           <button type="button" className="btn btn-secondaire" onClick={() => charger(entrees.at(-1)!.id)}>
+            <Icone nom="suivant" />
             Afficher plus
           </button>
         </p>

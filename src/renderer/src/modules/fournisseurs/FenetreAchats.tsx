@@ -10,6 +10,9 @@ import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { FenetreDetailReception } from '@renderer/modules/achats/FenetreDetailReception'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
 
 interface Props {
   fournisseurId: number
@@ -52,11 +55,18 @@ export function FenetreAchats({ fournisseurId, nom, onFermer }: Props): React.JS
       .catch((e: Error) => setErreur(e.message))
   }
 
+  const pagesLivraisons = usePagination(achats?.receptions ?? [], 10)
+  const pagesPrix = usePagination(achats?.prix ?? [], 10)
+
   if (detail) return <FenetreDetailReception reception={detail} onFermer={() => setDetail(null)} />
 
   return (
     <FenetreFormulaire
       titre={`Achats — ${nom}`}
+      aide={[
+        ['afficher', 'Voir le détail de la livraison'],
+        ['suivant', 'Sous un tableau : changer de page']
+      ]}
       pastille={
         achats && (
           <span className="pastille pastille-ok">
@@ -101,25 +111,25 @@ export function FenetreAchats({ fournisseurId, nom, onFermer }: Props): React.JS
                     <th className="nombre">Articles</th>
                     <th className="nombre">Total</th>
                     <th>À payer avant le</th>
-                    <th />
+                    <th className="colonne-actions">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {achats.receptions.map((r) => (
+                  {pagesLivraisons.elements.map((r) => (
                     <tr key={r.id}>
                       <td>{r.numero}</td>
                       <td>{formaterDate(r.dateReception)}</td>
                       <td className="nombre">{r.nbLignes}</td>
                       <td className="nombre montant">{formaterFCFA(r.total)}</td>
                       <td>{r.dateEcheance ? formaterDate(r.dateEcheance) : ''}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn btn-secondaire"
+                      <td className="colonne-actions">
+                        <BoutonIcone
+                          icone="afficher"
+                          libelle={`Voir le détail de la réception ${r.numero}`}
                           onClick={() => ouvrirDetail(r.id)}
-                        >
-                          Voir le détail
-                        </button>
+                        />
                       </td>
                     </tr>
                   ))}
@@ -127,6 +137,7 @@ export function FenetreAchats({ fournisseurId, nom, onFermer }: Props): React.JS
               </table>
             </div>
           )}
+          <Pagination pages={pagesLivraisons} />
 
           <h3>Prix d’achat</h3>
           {achats.prix.length === 0 ? (
@@ -144,7 +155,7 @@ export function FenetreAchats({ fournisseurId, nom, onFermer }: Props): React.JS
                   </tr>
                 </thead>
                 <tbody>
-                  {achats.prix.map((p) => (
+                  {pagesPrix.elements.map((p) => (
                     <tr key={`${p.produitId}-${p.conditionnement}`}>
                       <td>
                         {p.produit} — {p.conditionnement}
@@ -173,6 +184,7 @@ export function FenetreAchats({ fournisseurId, nom, onFermer }: Props): React.JS
               </table>
             </div>
           )}
+          <Pagination pages={pagesPrix} />
         </div>
       )}
     </FenetreFormulaire>

@@ -180,11 +180,11 @@ describe('Impression : original, duplicata et droits', () => {
 })
 
 describe('Réglages de l’imprimante et en-tête : paramètres de la boutique (B5)', () => {
-  it('base de démo : en-tête des paramètres, aucune imprimante, page de codes cp858 provisoire (D-A2)', () => {
+  it('base de démo : en-tête des paramètres, aucune imprimante, page de codes cp1252 validée (D-20)', () => {
     const db = baseAvecDemo()
     expect(lireEntete(db)).toEqual(ENTETE)
-    expect(lireReglages(db)).toEqual({ methode: 'spooler', cible: '', pageDeCodes: 'cp858' })
-    expect(PAGE_DE_CODES_PAR_DEFAUT).toBe('cp858')
+    expect(lireReglages(db)).toEqual({ methode: 'spooler', cible: '', pageDeCodes: 'cp1252' })
+    expect(PAGE_DE_CODES_PAR_DEFAUT).toBe('cp1252')
   })
 
   it('le gérant enregistre l’imprimante : relue telle quelle, chaque clé journalisée', () => {
@@ -207,10 +207,10 @@ describe('Réglages de l’imprimante et en-tête : paramètres de la boutique (
     expect(lireReglages(db).cible).toBe('')
   })
 
-  it('une page de codes illisible en base revient à cp858', () => {
+  it('une page de codes illisible en base revient à cp1252', () => {
     const db = baseAvecDemo()
     ecrireParametres(db, PATRON, { imprimantePageCodes: 'cp999' })
-    expect(lireReglages(db).pageDeCodes).toBe('cp858')
+    expect(lireReglages(db).pageDeCodes).toBe('cp1252')
   })
 
   it('en-tête : adresse sur plusieurs lignes, nom par défaut si la boutique n’en a pas', () => {

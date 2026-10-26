@@ -10,6 +10,11 @@ import { appel } from '@renderer/lib/api'
 import { useUtilisateur } from '@renderer/app/contexte'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { LIBELLES_MOTIF, formaterTaille, messageCopieExterne } from './affichageSauvegardes'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Icone } from '@renderer/ui/Icone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 /** Ce qu'on restaure : une sauvegarde de la liste, ou un fichier à choisir (sur la clé). */
 type ARestaurer = { type: 'liste'; sauvegarde: Sauvegarde } | { type: 'fichier' } | null
@@ -72,6 +77,8 @@ export function PageSauvegardes(): React.JSX.Element {
       .catch((e: Error) => setMessage({ texte: e.message, alerte: true }))
   }
 
+  const pages = usePagination(liste ?? [])
+
   if (redemarrage) {
     return (
       <div className="page">
@@ -84,13 +91,23 @@ export function PageSauvegardes(): React.JSX.Element {
     <div className="page">
       <header className="page-entete">
         <h1>Sauvegardes</h1>
-        <div className="tableau-actions">
+        <AideIcones
+          entrees={[
+            'sauvegarder',
+            ['dossier', 'Restaurer depuis un fichier, ou choisir la clé USB'],
+            ['restaurer', 'Restaurer cette sauvegarde (admin)']
+          ]}
+          pagination
+        />
+        <div className="page-entete-actions">
           {admin && (
             <button className="btn btn-secondaire" onClick={() => setARestaurer({ type: 'fichier' })}>
+              <Icone nom="dossier" />
               Restaurer depuis un fichier
             </button>
           )}
           <button className="btn" onClick={sauvegarderMaintenant} disabled={enCours}>
+            <Icone nom="sauvegarder" />
             {enCours ? 'Sauvegarde en cours…' : 'Sauvegarder maintenant'}
           </button>
         </div>
@@ -98,15 +115,14 @@ export function PageSauvegardes(): React.JSX.Element {
 
       {message && (
         <p
-          className={message.alerte ? 'alerte' : 'succes'}
+          className={message.alerte ? 'alerte page-message' : 'succes page-message'}
           role={message.alerte ? 'alert' : 'status'}
-          style={{ marginBottom: 16 }}
         >
           {message.texte}
         </p>
       )}
       {erreur && (
-        <p className="alerte" role="alert" style={{ marginBottom: 16 }}>
+        <p className="alerte page-message" role="alert">
           {erreur}
         </p>
       )}
@@ -127,7 +143,7 @@ export function PageSauvegardes(): React.JSX.Element {
       )}
 
       {etat && (
-        <div className="formulaire-bloc" style={{ marginBottom: 16 }}>
+        <div className="formulaire-bloc page-message">
           {etat.derniere ? (
             <p>
               Dernière sauvegarde : <strong>{formaterDateHeure(etat.derniere.date)}</strong> (
@@ -167,6 +183,7 @@ export function PageSauvegardes(): React.JSX.Element {
             </span>
             {admin && (
               <button className="btn btn-secondaire" onClick={choisirCle}>
+                <Icone nom="dossier" />
                 {etat.dossierExterne ? 'Changer de clé' : 'Choisir la clé USB'}
               </button>
             )}
@@ -190,23 +207,27 @@ export function PageSauvegardes(): React.JSX.Element {
                   <th>Date et heure</th>
                   <th>Faite</th>
                   <th className="nombre">Taille</th>
-                  {admin && <th />}
+                  {admin && (
+                    <th className="colonne-actions">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
-                {liste.map((s) => (
+                {pages.elements.map((s) => (
                   <tr key={s.nom}>
-                    <td>{formaterDateHeure(s.date)}</td>
+                    <td className="cellule-titre">{formaterDateHeure(s.date)}</td>
                     <td>{LIBELLES_MOTIF[s.motif]}</td>
                     <td className="nombre">{formaterTaille(s.taille)}</td>
                     {admin && (
-                      <td>
-                        <button
-                          className="btn btn-attention"
+                      <td className="colonne-actions">
+                        <BoutonIcone
+                          icone="restaurer"
+                          variante="attention"
+                          libelle={`Restaurer la sauvegarde du ${formaterDateHeure(s.date)}`}
                           onClick={() => setARestaurer({ type: 'liste', sauvegarde: s })}
-                        >
-                          Restaurer
-                        </button>
+                        />
                       </td>
                     )}
                   </tr>
@@ -216,7 +237,8 @@ export function PageSauvegardes(): React.JSX.Element {
           </div>
         )
       )}
-      <p className="vide" style={{ marginTop: 12 }}>
+      <Pagination pages={pages} />
+      <p className="vide note-bas">
         Une sauvegarde est faite à chaque clôture de caisse, au démarrage si la dernière a plus d’un jour et
         avant chaque mise à jour. On garde les 30 dernières, puis une par semaine pendant un an.
       </p>

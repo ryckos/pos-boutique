@@ -50,6 +50,7 @@ import { FenetreRepriseProforma } from './FenetreRepriseProforma'
 import { alerteRemisesHorsPlafond, panierDeProforma } from './documents'
 import { messageRetour } from './retour'
 import { OuvertureCaisse } from './OuvertureCaisse'
+import { Icone } from '@renderer/ui/Icone'
 
 /** Durée du surlignage d'une ligne ajoutée : un retour visuel, pas une animation décorative. */
 const DUREE_SURLIGNAGE_MS = 600
@@ -332,6 +333,7 @@ export function PageCaisse(): React.JSX.Element {
     <div className="caisse">
       <section className="caisse-grille">
         <button className="caisse-recherche" onClick={() => setRechercheOuverte(true)}>
+          <Icone nom="rechercher" />
           Rechercher un produit par nom ou code PLU (F2)
         </button>
         {grille.length === 0 ? (
@@ -366,6 +368,7 @@ export function PageCaisse(): React.JSX.Element {
           className="btn btn-discret caisse-ecran-client"
           onClick={() => appel('materiel:ouvrirEcranClient')}
         >
+          <Icone nom="ecran" />
           Ouvrir l’écran client
         </button>
       </section>
@@ -440,42 +443,53 @@ export function PageCaisse(): React.JSX.Element {
         )}
 
         {selection && (
+          // Actions de la ligne sélectionnée : quantité et suppression sur la première rangée (les
+          // gestes les plus fréquents), conditionnement et remise côte à côte en dessous.
           <div className="ticket-actions">
-            <button
-              className="btn btn-discret"
-              aria-label="Diminuer la quantité (−)"
-              onClick={() => diminuer(selection.article.conditionnementId)}
-            >
-              −
-            </button>
-            <span className="montant ticket-actions-quantite">{selection.quantite}</span>
-            <button
-              className="btn btn-discret"
-              aria-label="Augmenter la quantité (+)"
-              onClick={() =>
-                agir({ type: 'incrementer', conditionnementId: selection.article.conditionnementId })
-              }
-            >
-              +
-            </button>
-            <button
-              className="btn btn-discret ticket-actions-conditionnement"
-              onClick={() => setConditionnementOuvert(selection.article.conditionnementId)}
-            >
-              Changer le conditionnement
-            </button>
-            <button
-              className="btn btn-discret"
-              onClick={() => setRemiseOuverte({ ligne: selection.article.conditionnementId })}
-            >
-              {selection.remise ? 'Modifier la remise' : 'Faire une remise'}
-            </button>
-            <button
-              className="btn btn-discret ticket-actions-supprimer"
-              onClick={() => supprimer(selection.article.conditionnementId)}
-            >
-              Supprimer la ligne (Suppr)
-            </button>
+            <div className="ticket-actions-rangee">
+              <div className="ticket-quantite" role="group" aria-label="Quantité de la ligne">
+                <button
+                  className="ticket-quantite-bouton"
+                  aria-label="Diminuer la quantité (−)"
+                  onClick={() => diminuer(selection.article.conditionnementId)}
+                >
+                  −
+                </button>
+                <span className="montant ticket-actions-quantite">{selection.quantite}</span>
+                <button
+                  className="ticket-quantite-bouton"
+                  aria-label="Augmenter la quantité (+)"
+                  onClick={() =>
+                    agir({ type: 'incrementer', conditionnementId: selection.article.conditionnementId })
+                  }
+                >
+                  +
+                </button>
+              </div>
+              <button
+                className="btn btn-attention ticket-actions-supprimer"
+                onClick={() => supprimer(selection.article.conditionnementId)}
+              >
+                <Icone nom="supprimer" />
+                Supprimer la ligne (Suppr)
+              </button>
+            </div>
+            <div className="ticket-actions-rangee ticket-actions-deux">
+              <button
+                className="btn btn-secondaire"
+                onClick={() => setConditionnementOuvert(selection.article.conditionnementId)}
+              >
+                <Icone nom="conditionnement" />
+                Changer le conditionnement
+              </button>
+              <button
+                className="btn btn-secondaire"
+                onClick={() => setRemiseOuverte({ ligne: selection.article.conditionnementId })}
+              >
+                <Icone nom="remise" />
+                {selection.remise ? 'Modifier la remise' : 'Faire une remise'}
+              </button>
+            </div>
           </div>
         )}
 
@@ -559,6 +573,7 @@ export function PageCaisse(): React.JSX.Element {
                 className="btn"
                 onClick={() => void imprimer(impression.venteId, impression.numeroTicket)}
               >
+                <Icone nom="imprimer" />
                 Réimprimer
               </button>
               <button className="btn btn-discret" onClick={() => setImpression(null)}>
@@ -596,6 +611,7 @@ export function PageCaisse(): React.JSX.Element {
             disabled={!peutEncaisser}
             onClick={() => setPaiement('especes')}
           >
+            <Icone nom="payer" />
             Espèces (F4)
           </button>
           <button className="btn" disabled={!peutEncaisser} onClick={() => setPaiement('tmoney')}>
@@ -615,6 +631,7 @@ export function PageCaisse(): React.JSX.Element {
             disabled={panier.lignes.length === 0}
             onClick={() => dispatch({ type: 'mettreEnAttente', maintenant: Date.now() })}
           >
+            <Icone nom="attente" />
             Mettre en attente (F8)
           </button>
           <button
@@ -622,6 +639,7 @@ export function PageCaisse(): React.JSX.Element {
             disabled={panier.lignes.length === 0}
             onClick={() => setRemiseOuverte({ ligne: null })}
           >
+            <Icone nom="remise" />
             {panier.remiseGlobale ? 'Modifier la remise sur le ticket' : 'Remise sur le ticket'}
           </button>
           <button
@@ -632,18 +650,23 @@ export function PageCaisse(): React.JSX.Element {
               agir({ type: 'vider' })
             }}
           >
+            <Icone nom="supprimer" />
             Vider le ticket
           </button>
           <button className="btn btn-discret" onClick={() => setReimpressionOuverte(true)}>
+            <Icone nom="imprimer" />
             Réimprimer un ticket
           </button>
           <button className="btn btn-discret" onClick={() => setAnnulationOuverte(true)}>
+            <Icone nom="annuler" />
             Annuler un ticket
           </button>
           <button className="btn btn-discret" onClick={() => setRetourOuvert(true)}>
+            <Icone nom="restaurer" />
             Retour client
           </button>
           <button className="btn btn-discret" onClick={() => setFactureOuverte(true)}>
+            <Icone nom="facture" />
             Faire une facture
           </button>
           <button
@@ -651,14 +674,17 @@ export function PageCaisse(): React.JSX.Element {
             disabled={panier.lignes.length === 0}
             onClick={() => setProformaOuverte(true)}
           >
+            <Icone nom="commandes" />
             Proforma
           </button>
           <button className="btn btn-discret" onClick={() => setRepriseOuverte(true)}>
+            <Icone nom="ouvrir" />
             Reprendre une proforma
           </button>
           {/* Apports et retraits : gérant seulement (règle 6.10). */}
           {utilisateur.role !== 'caissier' && (
             <button className="btn btn-discret" onClick={() => setTiroirOuvert(true)}>
+              <Icone nom="tiroir" />
               Espèces du tiroir
             </button>
           )}
@@ -673,6 +699,7 @@ export function PageCaisse(): React.JSX.Element {
               } else naviguer('/cloture')
             }}
           >
+            <Icone nom="cloturer" />
             Clôturer la caisse
           </button>
         </div>

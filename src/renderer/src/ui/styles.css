@@ -7,24 +7,54 @@
  *  - Cibles tactiles de 56 px minimum.
  *  - Un seul élément fort : le total du ticket. Tout le reste reste calme.
  *
+ * Palette « bleu commerce » (2026-10-19) : bleu pour l'action, marine pour le menu, orange en
+ * accent rare (marque, promotions), et un vert gardé pour ce qui est positif (succès, monnaie à
+ * rendre). Ambre = attention, rouge = problème. Contrastes AA vérifiés sur fond blanc.
+ *
  * Les jetons ci-dessous sont la seule source des couleurs. Pas de couleur en dur ailleurs.
  */
 
 :root {
-  --encre: #1f2d33;
-  --encre-douce: #56646a;
-  --fond: #f4f6f5;
+  --encre: #1a2233;
+  --encre-douce: #5a6478;
+  --fond: #f4f6fa;
   --surface: #ffffff;
-  --bord: #d9dedb;
-  --vert: #0f6e56;
-  --vert-fonce: #0b5543;
-  --vert-pale: #e3f1ec;
+  /* En-tête de tableau, survol d'une ligne, zones de lecture. */
+  --surface-douce: #f8fafd;
+  --bord: #dbe1ea;
+  --bord-fort: #c3ccd9;
+
+  /* Action principale, élément actif, prix. */
+  --primaire: #1f5fbf;
+  --primaire-fonce: #184c99;
+  --primaire-pale: #e5eefb;
+  /* Texte posé sur le bleu ou sur le menu. */
+  --sur-primaire: #ffffff;
+
+  /* Accent commerce : marque, promotions. Jamais pour un texte sur fond blanc (contraste). */
+  --accent: #e8790f;
+  --accent-texte: #a04f00;
+  --accent-pale: #fdeedd;
+
+  /* Positif : succès, valeur juste, monnaie à rendre, remise accordée. */
+  --succes: #1d7a4c;
+  --succes-pale: #e3f4ea;
+
   --ambre: #8a5a0b;
   --ambre-pale: #fbf1dc;
-  --rouge: #a3321f;
-  --rouge-pale: #f9e4e0;
-  /* Fond assombri derrière une fenêtre : l'encre à 55 %. */
-  --voile: rgba(31, 45, 51, 0.55);
+  --rouge: #b3261e;
+  --rouge-pale: #fbe6e4;
+
+  /* Menu latéral, écrans de connexion et client. */
+  --menu: #13294b;
+  --menu-texte: #e6ecf5;
+  --menu-survol: rgba(255, 255, 255, 0.08);
+
+  /* Fond assombri derrière une fenêtre : le marine à 55 %. */
+  --voile: rgba(19, 41, 75, 0.55);
+  /* Ombres légères : elles détachent les cartes et les fenêtres du fond, sans décorer. */
+  --ombre: 0 1px 2px rgba(19, 41, 75, 0.06), 0 1px 3px rgba(19, 41, 75, 0.08);
+  --ombre-fenetre: 0 16px 40px rgba(19, 41, 75, 0.28);
 
   --rayon: 8px;
   --cible: 56px;
@@ -50,8 +80,18 @@ select {
 }
 
 :focus-visible {
-  outline: 3px solid var(--vert);
+  outline: 3px solid var(--primaire);
   outline-offset: 2px;
+}
+
+/* Texte lu par le lecteur d'écran seulement (en-tête de la colonne des actions). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .montant {
@@ -61,22 +101,39 @@ select {
 
 /* ─── Boutons ─── */
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-height: 48px;
   padding: 0 20px;
   border: none;
   border-radius: var(--rayon);
-  background: var(--vert);
-  color: #fff;
+  background: var(--primaire);
+  color: var(--sur-primaire);
   font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
+  transition:
+    background-color 120ms,
+    border-color 120ms,
+    color 120ms;
 }
 .btn:hover {
-  background: var(--vert-fonce);
+  background: var(--primaire-fonce);
+}
+/* Retour tactile : répond à une action, donc autorisé (UI_UX § 2). */
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
 }
 .btn:disabled {
   background: var(--bord);
+  border-color: var(--bord);
   color: var(--encre-douce);
   cursor: not-allowed;
+}
+.btn .icone {
+  flex: none;
 }
 .btn-discret {
   background: transparent;
@@ -88,101 +145,320 @@ select {
   background: transparent;
   opacity: 1;
 }
+/* Bouton réduit à une icône (actions d'une ligne de tableau, pagination) : carré de 48 px. */
+.btn-icone {
+  width: 48px;
+  min-width: 48px;
+  padding: 0;
+}
+.btn-icone.btn-secondaire,
+.btn-icone.btn-attention {
+  border-color: var(--bord);
+}
+.btn-icone.btn-secondaire:hover:not([aria-disabled='true']) {
+  border-color: var(--primaire);
+}
+.btn-icone.btn-attention:hover:not([aria-disabled='true']) {
+  border-color: var(--rouge);
+}
+.btn-icone[aria-disabled='true'] {
+  background: var(--surface);
+  border-color: var(--bord);
+  color: var(--encre-douce);
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Bouton à icône enfoncé (aide ouverte). */
+.btn-icone.actif {
+  background: var(--primaire-pale);
+  border-color: var(--primaire);
+}
+
+/* Aide contextuelle (ui/AideIcones.tsx) : « ? » à droite du titre, légende qui s'ouvre dessous. */
+.aide {
+  position: relative;
+}
+.page-entete > .aide {
+  margin-right: auto;
+}
+.aide-legende {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  width: min(420px, 86vw);
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  box-shadow: var(--ombre-fenetre);
+  color: var(--encre);
+  font-size: 14px;
+  font-weight: 400;
+  text-align: left;
+}
+/* Dans une fenêtre, le « ? » est à droite : la légende s'ouvre vers la gauche. */
+.fenetre-entete .aide-legende {
+  left: auto;
+  right: 0;
+}
+.aide-legende h2 {
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+.aide-legende ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.aide-legende li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.3;
+}
+.aide-icone {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  color: var(--primaire);
+}
+.aide-icone-sensible {
+  color: var(--rouge);
+}
+.aide-note {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--bord);
+  font-size: 13px;
+  color: var(--encre-douce);
+}
+
+/* Infobulle d'un bouton à icône (ui/BoutonIcone.tsx), en position fixe au-dessus de tout. */
+.infobulle {
+  position: fixed;
+  z-index: 100;
+  transform: translate(-50%, -100%);
+  max-width: 280px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--encre);
+  color: var(--sur-primaire);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: var(--ombre);
+}
+.infobulle-dessous {
+  transform: translate(-50%, 0);
+}
 
 /* ─── Coque : menu + contenu ─── */
 .coque {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 236px 1fr;
   height: 100vh;
 }
 .menu {
   display: flex;
   flex-direction: column;
-  background: var(--encre);
-  color: #e8eeec;
-  padding: 20px 12px;
+  min-height: 0;
+  background: var(--menu);
+  color: var(--menu-texte);
+  padding: 16px 10px;
 }
 .menu-marque {
-  font-size: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 19px;
   font-weight: 700;
-  padding: 0 12px 20px;
+  padding: 4px 10px 18px;
+}
+/* Pastille orange de la marque : le seul accent permanent de l'écran. */
+.menu-marque-logo {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--rayon);
+  background: var(--accent);
+  color: var(--sur-primaire);
 }
 .menu ul {
   list-style: none;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.menu li + li {
+  margin-top: 2px;
 }
 .menu a {
   display: flex;
   align-items: center;
-  min-height: var(--cible);
+  gap: 12px;
+  min-height: 48px;
   padding: 0 12px;
   border-radius: var(--rayon);
   color: inherit;
   text-decoration: none;
+  opacity: 0.88;
+}
+.menu a .icone {
+  flex: none;
+  opacity: 0.9;
 }
 .menu a:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--menu-survol);
+  opacity: 1;
 }
 .menu a.actif {
-  background: var(--vert);
+  background: var(--primaire);
+  box-shadow: inset 3px 0 0 var(--accent);
   font-weight: 600;
+  opacity: 1;
 }
 .menu-pied {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px;
+  padding: 12px 10px 4px;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 .menu-pied p {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   font-weight: 600;
 }
-.menu-pied span {
+.menu-utilisateur {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.menu-pied .menu-role {
   font-weight: 400;
-  font-size: 14px;
+  font-size: 13px;
   opacity: 0.75;
+}
+.menu-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--menu-survol);
+  font-weight: 700;
 }
 .contenu {
   overflow: auto;
 }
 
+/* Écran étroit (fenêtre réduite, petit écran) : le menu se replie sur ses icônes. */
+@media (max-width: 1180px) {
+  .coque {
+    grid-template-columns: 72px 1fr;
+  }
+  .menu {
+    padding: 14px 8px;
+  }
+  .menu-marque {
+    justify-content: center;
+    padding: 0 0 14px;
+  }
+  .menu a {
+    justify-content: center;
+    padding: 0;
+  }
+  .menu-libelle,
+  .menu-utilisateur {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .menu-pied {
+    align-items: center;
+    padding: 12px 0 4px;
+  }
+  .menu-pied .btn {
+    width: 48px;
+    padding: 0;
+  }
+}
+
 /* ─── Pages de gestion ─── */
 .page {
-  padding: 28px 32px;
-  max-width: 1100px;
+  padding: 24px 28px 40px;
+  max-width: 1440px;
 }
 .page-entete {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: 12px 16px;
   margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--bord);
 }
 .page-entete h1 {
   font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+/* Groupe de droite de l'en-tête : chiffre clé, messages, actions. */
+.page-entete-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 10px;
 }
 .tableau-cadre {
   overflow-x: auto;
   background: var(--surface);
   border: 1px solid var(--bord);
   border-radius: var(--rayon);
+  box-shadow: var(--ombre);
 }
 .tableau {
   width: 100%;
   border-collapse: collapse;
 }
 .tableau th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   text-align: left;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--encre-douce);
-  padding: 12px 16px;
+  background: var(--surface-douce);
+  padding: 11px 14px;
   border-bottom: 1px solid var(--bord);
+  white-space: nowrap;
 }
 .tableau td {
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--bord);
+  vertical-align: middle;
+}
+.tableau tbody tr:hover td {
+  background: var(--surface-douce);
 }
 .tableau tr:last-child td {
   border-bottom: none;
@@ -190,23 +466,140 @@ select {
 .tableau .nombre {
   text-align: right;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* Quantité ou montant signé : entrée en vert, sortie en rouge (le signe reste écrit). */
+.valeur-positive {
+  color: var(--succes);
+  font-weight: 600;
+}
+.valeur-negative {
+  color: var(--rouge);
+  font-weight: 600;
+}
+/* Chiffre clé d'un en-tête de page (valeur du stock, total dû). */
+.chiffre-cle {
+  font-size: 17px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.chiffre-cle .montant {
+  font-weight: 700;
+  color: var(--primaire-fonce);
+}
+/* Colonne des actions d'une ligne : collée à droite, jamais coupée sur deux lignes. */
+.tableau .colonne-actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+/* Nom principal d'une ligne (produit, fournisseur) : un peu plus marqué que le reste. */
+.tableau .cellule-titre {
+  font-weight: 600;
 }
 /* Précision sous une valeur de tableau (répartition du stock, date de dernière vente). */
 .tableau .detail {
   display: block;
   font-size: 13px;
+  font-weight: 400;
   color: var(--encre-douce);
 }
 .tableau .pastille + .pastille {
   margin-left: 6px;
 }
 
+/* Onglets d'une page (Rapports) : une barre segmentée, l'onglet actif en bleu. */
+.onglets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+}
+.onglet {
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--encre-douce);
+  font-weight: 600;
+  cursor: pointer;
+}
+.onglet:hover {
+  background: var(--surface-douce);
+  color: var(--encre);
+}
+.onglet.actif {
+  background: var(--primaire);
+  color: var(--sur-primaire);
+}
+/* Phrase de synthèse d'un onglet, avec son bouton d'export à droite. */
+.entete-onglet {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+/* Tableau suivi d'un autre bloc : un peu d'air. */
+.bloc-espace {
+  margin-bottom: 24px;
+}
+/* Titre d'une seconde partie de page (« Inventaires précédents »). */
+.section-titre {
+  font-size: 18px;
+  margin: 28px 0 12px;
+}
+/* Pagination sous un tableau (ui/Pagination.tsx). */
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--encre-douce);
+}
+.pagination-taille {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pagination-taille select {
+  min-height: 40px;
+  padding: 0 8px;
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  color: var(--encre);
+}
+.pagination-boutons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.pagination-page {
+  min-width: 96px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--encre);
+  font-variant-numeric: tabular-nums;
+}
+
 .pastille {
   display: inline-block;
   font-size: 13px;
   font-weight: 600;
+  line-height: 1.5;
   padding: 2px 10px;
   border-radius: 999px;
+  white-space: nowrap;
 }
 .pastille-alerte {
   background: var(--ambre-pale);
@@ -235,16 +628,21 @@ select {
 .vide {
   color: var(--encre-douce);
 }
+/* Note sous un tableau (rappel d'une règle). */
+.note-bas {
+  margin-top: 12px;
+  font-size: 14px;
+}
 
 .succes {
-  background: var(--vert-pale);
-  color: var(--vert);
+  background: var(--succes-pale);
+  color: var(--succes);
   padding: 10px 14px;
   border-radius: var(--rayon);
 }
 .pastille-ok {
-  background: var(--vert-pale);
-  color: var(--vert);
+  background: var(--succes-pale);
+  color: var(--succes);
 }
 .pastille-inactif {
   background: var(--fond);
@@ -273,24 +671,38 @@ select {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
+}
+/* Actions d'une ligne de tableau : toujours sur une seule ligne, dans le même ordre d'une ligne à l'autre. */
+.colonne-actions .tableau-actions {
+  flex-wrap: nowrap;
+}
+/* Pastille d'accent (promotion, nouveauté) et d'information (brouillon envoyé, en cours). */
+.pastille-accent {
+  background: var(--accent-pale);
+  color: var(--accent-texte);
+}
+.pastille-info {
+  background: var(--primaire-pale);
+  color: var(--primaire-fonce);
 }
 
 /* ─── Boutons secondaires (actions d'une ligne de tableau) ─── */
 .btn-secondaire {
   background: var(--surface);
-  color: var(--vert);
-  border: 1px solid var(--vert);
+  color: var(--primaire);
+  border: 1px solid var(--primaire);
 }
-.btn-secondaire:hover {
-  background: var(--vert-pale);
+.btn-secondaire:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--primaire-pale);
 }
 .btn-attention {
   background: var(--surface);
   color: var(--rouge);
   border: 1px solid var(--rouge);
 }
-.btn-attention:hover {
+.btn-attention:hover:not(:disabled):not([aria-disabled='true']) {
   background: var(--rouge-pale);
 }
 
@@ -299,6 +711,7 @@ select {
   background: var(--surface);
   border: 1px solid var(--bord);
   border-radius: var(--rayon);
+  box-shadow: var(--ombre);
   padding: 20px 24px;
   margin-bottom: 20px;
 }
@@ -368,15 +781,29 @@ select {
   color: var(--encre-douce);
 }
 .champ input,
-.champ select {
+.champ select,
+.champ textarea {
   min-height: 48px;
   padding: 0 12px;
-  border: 1px solid var(--bord);
+  border: 1px solid var(--bord-fort);
   border-radius: var(--rayon);
   background: var(--surface);
   color: var(--encre);
   font-size: 16px;
   font-weight: 400;
+}
+/* Le champ actif se voit sans chercher : bord bleu, en plus du contour de focus clavier. */
+.champ input:focus,
+.champ select:focus,
+.champ textarea:focus,
+.tableau-saisie input:focus,
+.tableau-saisie select:focus {
+  border-color: var(--primaire);
+}
+.champ input:disabled,
+.champ select:disabled {
+  background: var(--fond);
+  color: var(--encre-douce);
 }
 .champ-large {
   flex: 1;
@@ -388,7 +815,16 @@ select {
 }
 .formulaire-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
+}
+/* Pied d'une fenêtre de formulaire : actions séparées des champs par un filet. */
+.fenetre-formulaire .formulaire-actions {
+  padding-top: 14px;
+  border-top: 1px solid var(--bord);
+}
+.formulaire > .formulaire-actions {
+  flex-basis: 100%;
 }
 
 /* ─── Assistant de premier démarrage ─── */
@@ -396,7 +832,7 @@ select {
   display: grid;
   place-items: center;
   min-height: 100vh;
-  background: var(--encre);
+  background: var(--menu);
 }
 .assistant-boite {
   width: 440px;
@@ -421,12 +857,12 @@ select {
   display: grid;
   place-items: center;
   height: 100vh;
-  background: var(--encre);
+  background: var(--menu);
 }
 .connexion-boite {
   width: 340px;
   text-align: center;
-  color: #fff;
+  color: var(--sur-primaire);
 }
 .connexion-boite h1 {
   font-size: 28px;
@@ -448,8 +884,8 @@ select {
   border: 2px solid rgba(255, 255, 255, 0.6);
 }
 .pin-points span.plein {
-  background: #fff;
-  border-color: #fff;
+  background: var(--sur-primaire);
+  border-color: var(--sur-primaire);
 }
 .connexion-erreur {
   min-height: 24px;
@@ -466,12 +902,12 @@ select {
   border: none;
   border-radius: var(--rayon);
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: var(--sur-primaire);
   font-size: 26px;
   cursor: pointer;
 }
 .pave-touche:active {
-  background: var(--vert);
+  background: var(--primaire);
 }
 .connexion-noms {
   display: grid;
@@ -491,7 +927,7 @@ select {
   cursor: pointer;
 }
 .connexion-nom:active {
-  background: var(--vert);
+  background: var(--primaire);
 }
 .connexion-changer {
   margin-top: 20px;
@@ -538,11 +974,11 @@ select {
   cursor: pointer;
 }
 .bouton-article:active {
-  background: var(--vert-pale);
-  border-color: var(--vert);
+  background: var(--primaire-pale);
+  border-color: var(--primaire);
 }
 .bouton-article .montant {
-  color: var(--vert);
+  color: var(--primaire);
   font-weight: 600;
 }
 .caisse-ticket {
@@ -588,10 +1024,14 @@ select {
   align-items: baseline;
   gap: 12px;
 }
+/* Ligne du ticket : libellé à gauche (sur deux lignes si besoin), prix toujours à droite. */
 .ticket-lignes li.ticket-ligne {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 4px 12px;
   min-height: 48px;
-  align-items: center;
-  padding: 10px 8px;
+  padding: 10px 10px;
   cursor: pointer;
 }
 .ticket-ligne-libelle {
@@ -599,16 +1039,17 @@ select {
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 8px;
+  line-height: 1.35;
+}
+.ticket-lignes li.ticket-ligne > .montant {
+  font-weight: 600;
 }
 /* Remises (A5) : prix brut et remise sous la ligne, sous-total et remise sur le ticket au-dessus du total. */
-.ticket-lignes li.ticket-ligne {
-  flex-wrap: wrap;
-}
 .ticket-ligne-remise {
-  flex-basis: 100%;
+  grid-column: 1 / -1;
   text-align: right;
   font-size: 13px;
-  color: var(--vert);
+  color: var(--succes);
 }
 .ticket-remises {
   display: grid;
@@ -650,8 +1091,8 @@ select {
   font-size: 32px;
 }
 .ticket-ligne-selectionnee {
-  background: var(--vert-pale);
-  box-shadow: inset 4px 0 0 var(--vert);
+  background: var(--primaire-pale);
+  box-shadow: inset 4px 0 0 var(--primaire);
 }
 /* Retour visuel d'un scan réussi (UI_UX § 3) : répond à une action, donc autorisé. */
 .ticket-ligne-surlignee {
@@ -659,34 +1100,76 @@ select {
 }
 @keyframes ticket-surlignage {
   from {
-    background: var(--vert-pale);
+    background: var(--succes-pale);
   }
 }
 .pastille-conditionnement {
-  background: var(--vert-pale);
-  color: var(--vert);
+  background: var(--primaire-pale);
+  color: var(--primaire);
 }
+/*
+ * Actions de la ligne sélectionnée : deux rangées alignées sur la largeur du ticket.
+ * 1) sélecteur de quantité « − 1 + » d'un seul bloc, Supprimer à droite ;
+ * 2) Changer le conditionnement et Remise, deux boutons de même taille.
+ */
 .ticket-actions {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--surface-douce);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+}
+.ticket-actions-rangee {
+  display: flex;
+  align-items: stretch;
   gap: 8px;
 }
-.ticket-actions .ticket-actions-conditionnement {
-  font-size: 16px;
+.ticket-actions-deux > .btn {
+  flex: 1 1 0;
+  min-width: 0;
 }
 .ticket-actions .btn {
-  min-width: 56px;
-  font-size: 22px;
+  min-height: 52px;
+  padding: 0 12px;
+  font-size: 15px;
+  line-height: 1.2;
+  white-space: normal;
+  text-align: left;
 }
 .ticket-actions .ticket-actions-supprimer {
   margin-left: auto;
-  font-size: 16px;
-  color: var(--rouge);
+}
+.ticket-quantite {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--bord-fort);
+  border-radius: var(--rayon);
+}
+.ticket-quantite-bouton {
+  width: 56px;
+  min-height: 52px;
+  border: none;
+  background: transparent;
+  color: var(--primaire);
+  font-size: 26px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ticket-quantite-bouton:hover {
+  background: var(--primaire-pale);
+}
+.ticket-quantite-bouton:active {
+  background: var(--primaire-pale);
 }
 .ticket-actions-quantite {
-  min-width: 40px;
-  text-align: center;
+  display: grid;
+  place-items: center;
+  min-width: 52px;
+  border-inline: 1px solid var(--bord);
   font-size: 22px;
   font-weight: 700;
 }
@@ -761,8 +1244,8 @@ select {
   cursor: pointer;
 }
 .caisse-onglet.actif {
-  background: var(--vert);
-  border-color: var(--vert);
+  background: var(--primaire);
+  border-color: var(--primaire);
   color: var(--surface);
 }
 /* Fenêtre « Changer le conditionnement ». */
@@ -788,22 +1271,25 @@ select {
   cursor: pointer;
 }
 .conditionnement-option:active {
-  background: var(--vert-pale);
-  border-color: var(--vert);
+  background: var(--primaire-pale);
+  border-color: var(--primaire);
 }
 .conditionnement-option.actuel {
-  background: var(--vert-pale);
-  border-color: var(--vert);
+  background: var(--primaire-pale);
+  border-color: var(--primaire);
   cursor: default;
 }
 .conditionnement-option .pastille {
   margin-left: 8px;
 }
 .conditionnement-option .montant {
-  color: var(--vert);
+  color: var(--primaire);
   font-weight: 700;
 }
 .caisse-recherche {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   min-height: var(--cible);
   padding: 0 16px;
   text-align: left;
@@ -813,13 +1299,38 @@ select {
   border-radius: var(--rayon);
   cursor: pointer;
 }
+/*
+ * Actions secondaires du ticket : une grille de deux colonnes, icône + texte court, alignés à
+ * gauche. Onze actions tiennent ainsi dans la colonne du ticket sans la faire défiler.
+ */
 .caisse-ticket-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
 }
 .caisse-ticket-actions .btn {
-  flex: 1;
+  justify-content: flex-start;
+  min-height: 48px;
+  padding: 0 10px;
+  font-size: 14px;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.2;
+}
+.caisse-ticket-actions .btn-discret {
+  border-color: var(--bord);
+  color: var(--encre);
+  opacity: 1;
+}
+.caisse-ticket-actions .btn-discret:hover:not(:disabled) {
+  border-color: var(--primaire);
+  background: var(--primaire-pale);
+}
+.caisse-ticket-actions .btn .icone {
+  color: var(--primaire);
+}
+.caisse-ticket-actions .btn:disabled .icone {
+  color: inherit;
 }
 .attente-liste {
   display: flex;
@@ -866,10 +1377,11 @@ select {
   flex-direction: column;
   gap: 14px;
   width: min(640px, 92vw);
-  max-height: 80vh;
-  padding: 20px 24px;
+  max-height: 84vh;
+  padding: 22px 26px;
   background: var(--surface);
-  border-radius: var(--rayon);
+  border-radius: 12px;
+  box-shadow: var(--ombre-fenetre);
 }
 /* Fenêtre de formulaire (création, modification, désactivation) : défile si elle est longue. */
 .fenetre-formulaire {
@@ -891,6 +1403,13 @@ select {
 .formulaire-bloc h3 {
   font-size: 16px;
 }
+.formulaire > .tableau-cadre,
+.formulaire > .pagination {
+  flex-basis: 100%;
+}
+.formulaire-bloc .pagination {
+  align-self: stretch;
+}
 .formulaire-bloc .tableau-cadre {
   align-self: stretch;
 }
@@ -909,7 +1428,7 @@ select {
 .tableau-saisie input[type='checkbox'] {
   width: 24px;
   height: 24px;
-  accent-color: var(--vert);
+  accent-color: var(--primaire);
 }
 /* Case dans une cellule de tableau : cible de 48 px avec son libellé, bordée pour se voir. */
 .case-cellule {
@@ -920,9 +1439,9 @@ select {
   white-space: nowrap;
 }
 .case-cellule:has(input:checked) {
-  background: var(--vert-pale);
-  border-color: var(--vert);
-  color: var(--vert);
+  background: var(--primaire-pale);
+  border-color: var(--primaire);
+  color: var(--primaire);
 }
 .champ-etroit input {
   width: 110px;
@@ -995,14 +1514,20 @@ select {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 16px;
+  gap: 12px 16px;
   margin-bottom: 16px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
 }
 .fenetre-entete {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--bord);
 }
 .fenetre-entete h2 {
   font-size: 20px;
@@ -1010,7 +1535,7 @@ select {
 .recherche-champ {
   min-height: var(--cible);
   padding: 0 14px;
-  border: 2px solid var(--vert);
+  border: 2px solid var(--primaire);
   border-radius: var(--rayon);
   background: var(--surface);
   font-size: 20px;
@@ -1034,10 +1559,10 @@ select {
   cursor: pointer;
 }
 .recherche-resultat.actif {
-  background: var(--vert-pale);
+  background: var(--primaire-pale);
 }
 .recherche-resultat .montant {
-  color: var(--vert);
+  color: var(--primaire);
   font-weight: 600;
 }
 
@@ -1142,7 +1667,7 @@ select {
 .paiement-monnaie .montant {
   font-size: 48px;
   font-weight: 700;
-  color: var(--vert);
+  color: var(--succes);
 }
 .paiement-ligne {
   display: flex;
@@ -1192,8 +1717,8 @@ select {
   flex-direction: column;
   height: 100vh;
   padding: 32px 40px;
-  background: var(--encre);
-  color: #fff;
+  background: var(--menu);
+  color: var(--sur-primaire);
 }
 .ecran-client h1 {
   font-size: 26px;
@@ -1269,7 +1794,7 @@ select {
   cursor: pointer;
 }
 .cloture-session:hover {
-  border-color: var(--vert);
+  border-color: var(--primaire);
 }
 .cloture-session-nom {
   font-size: 18px;
@@ -1332,8 +1857,8 @@ select {
   color: var(--ambre);
 }
 .cloture-ecart-juste {
-  background: var(--vert-pale);
-  color: var(--vert);
+  background: var(--succes-pale);
+  color: var(--succes);
 }
 .cloture-commentaire {
   margin-top: 14px;

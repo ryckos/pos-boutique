@@ -5,6 +5,7 @@ import { PageReglagesMateriel } from './PageReglagesMateriel'
 export const routesReglagesMateriel: DefinitionRoute[] = [
   {
     chemin: '/reglages-materiel',
+    icone: 'materiel',
     libelle: 'Réglages matériel',
     element: <PageReglagesMateriel />,
     roles: ['gerant']

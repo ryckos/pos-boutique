@@ -36,6 +36,11 @@ import {
   type Brouillon,
   type LigneBrouillon
 } from './saisieReception'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Icone } from '@renderer/ui/Icone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 const CLE_BROUILLON = 'pos.reception.brouillon'
 
@@ -142,16 +147,27 @@ function ListeReceptions(props: { succes: string | null; onNouvelle: () => void 
       .catch((e: Error) => setErreur(e.message))
   }
 
+  const pages = usePagination(receptions ?? [])
+
   return (
     <div className="page">
       <header className="page-entete">
         <h1>Réceptions</h1>
-        <div className="tableau-actions">
+        <AideIcones
+          entrees={[
+            ['ajouter', 'Nouvelle réception'],
+            'exporter',
+            ['afficher', 'Voir le détail de la réception']
+          ]}
+          pagination
+        />
+        <div className="page-entete-actions">
           <BoutonExporter
             demande={() => exportReceptions(receptions ?? [])}
             desactive={!receptions || receptions.length === 0}
           />
           <button className="btn" onClick={props.onNouvelle}>
+            <Icone nom="ajouter" />
             Nouvelle réception
           </button>
         </div>
@@ -184,13 +200,15 @@ function ListeReceptions(props: { succes: string | null; onNouvelle: () => void 
                 <th className="nombre">Articles</th>
                 <th className="nombre">Total</th>
                 <th>À payer avant le</th>
-                <th />
+                <th className="colonne-actions">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {receptions.map((r) => (
+              {pages.elements.map((r) => (
                 <tr key={r.id}>
-                  <td>{r.numero}</td>
+                  <td className="cellule-titre">{r.numero}</td>
                   <td>
                     {formaterDate(r.dateReception)}
                     <span className="detail">par {r.utilisateur}</span>
@@ -199,10 +217,12 @@ function ListeReceptions(props: { succes: string | null; onNouvelle: () => void 
                   <td className="nombre">{r.nbLignes}</td>
                   <td className="nombre montant">{formaterFCFA(r.total)}</td>
                   <td>{r.dateEcheance ? formaterDate(r.dateEcheance) : ''}</td>
-                  <td>
-                    <button className="btn btn-secondaire" onClick={() => ouvrir(r.id)}>
-                      Voir le détail
-                    </button>
+                  <td className="colonne-actions">
+                    <BoutonIcone
+                      icone="afficher"
+                      libelle={`Voir le détail de la réception ${r.numero}`}
+                      onClick={() => ouvrir(r.id)}
+                    />
                   </td>
                 </tr>
               ))}
@@ -210,6 +230,7 @@ function ListeReceptions(props: { succes: string | null; onNouvelle: () => void 
           </table>
         </div>
       )}
+      <Pagination pages={pages} />
     </div>
   )
 }
@@ -398,6 +419,15 @@ function SaisieReception(props: {
     <div className="page">
       <header className="page-entete">
         <h1>Nouvelle réception</h1>
+        <AideIcones
+          entrees={[
+            'livrer',
+            ['modifier', 'Modifier la fiche du produit (ajouter un carton…)'],
+            ['supprimer', 'Retirer la ligne de la réception'],
+            ['valider', 'Valider la réception'],
+            ['annuler', 'Abandonner la saisie']
+          ]}
+        />
         <span className="pastille pastille-alerte">Brouillon · numéro attribué à la validation</span>
       </header>
       {info && (
@@ -464,6 +494,7 @@ function SaisieReception(props: {
                 className="btn"
                 onClick={() => livrer(c.id).catch((e: Error) => setErreur(e.message))}
               >
+                <Icone nom="livrer" />
                 Livrer {c.numero} du {formaterDate(c.dateCommande)}
               </button>
             ))}
@@ -491,9 +522,10 @@ function SaisieReception(props: {
           <div className="bandeau bandeau-action page-message">
             <span>
               Code {codeInconnu} inconnu. Nouveau produit : créez-le. Carton d’un produit connu : cherchez le
-              produit par son nom, puis « Modifier la fiche » pour ajouter ce conditionnement.
+              produit par son nom, puis le crayon « Modifier la fiche » pour ajouter ce conditionnement.
             </span>
             <button className="btn" onClick={() => setFenetre({ type: 'creerProduit', code: codeInconnu })}>
+              <Icone nom="ajouter" />
               Créer le produit
             </button>
           </div>
@@ -518,7 +550,9 @@ function SaisieReception(props: {
                 <th className="nombre">Qté reçue</th>
                 <th className="nombre">Prix d’achat</th>
                 <th className="nombre">Total</th>
-                <th />
+                <th className="colonne-actions">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -561,14 +595,15 @@ function SaisieReception(props: {
         <span className="vide">
           {b.lignes.length} ligne{b.lignes.length > 1 ? 's' : ''} · à comparer au bon de livraison
         </span>
-        <div className="tableau-actions">
-          <span className="montant">
-            <strong>Total : {formaterFCFA(total)}</strong>
+        <div className="page-entete-actions">
+          <span className="chiffre-cle">
+            Total : <span className="montant">{formaterFCFA(total)}</span>
           </span>
           <button
             className="btn btn-secondaire"
             onClick={() => (brouillonUtile(b) ? setFenetre({ type: 'abandonner' }) : props.onTerminer(null))}
           >
+            <Icone nom={brouillonUtile(b) ? 'annuler' : 'precedent'} />
             {brouillonUtile(b) ? 'Abandonner la saisie' : 'Retour à la liste'}
           </button>
           <button
@@ -576,6 +611,7 @@ function SaisieReception(props: {
             disabled={aCorriger !== null}
             onClick={() => setFenetre({ type: 'valider' })}
           >
+            <Icone nom="valider" />
             Valider la réception
           </button>
         </div>
@@ -691,9 +727,7 @@ function LigneSaisie(props: {
               </option>
             ))}
           </select>
-          <button type="button" className="btn btn-discret" onClick={props.onFiche}>
-            Modifier la fiche
-          </button>
+          <BoutonIcone icone="modifier" libelle="Modifier la fiche du produit" onClick={props.onFiche} />
         </div>
         {conversion && <span className="detail montant">⇄ {conversion}</span>}
         {a.suiviPeremption && (
@@ -745,10 +779,13 @@ function LigneSaisie(props: {
         />
       </td>
       <td className="nombre montant">{e.conversion ? formaterFCFA(e.conversion.total) : ''}</td>
-      <td>
-        <button type="button" className="btn btn-secondaire" onClick={props.onRetirer}>
-          Retirer
-        </button>
+      <td className="colonne-actions">
+        <BoutonIcone
+          icone="supprimer"
+          variante="attention"
+          libelle="Retirer la ligne"
+          onClick={props.onRetirer}
+        />
       </td>
     </tr>
   )

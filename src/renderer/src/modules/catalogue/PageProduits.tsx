@@ -11,11 +11,16 @@ import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { BoutonExporter } from '@renderer/ui/BoutonExporter'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Icone } from '@renderer/ui/Icone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
 import { jourLocal } from '@renderer/lib/exportExcel'
 import type { DemandeExport } from '@shared/ipc/exports'
 import { FenetreImport } from './FenetreImport'
 import { FenetreProduit } from './FenetreProduit'
 import { champsDepuisCodeScanne } from './saisieProduit'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 type Action =
   | { type: 'creer'; codeScanne?: string }
@@ -96,6 +101,7 @@ export function PageProduits(): React.JSX.Element {
       (filtreRayon === '' || (p.categorie ?? '').split(' › ')[0] === filtreRayon) &&
       (cle === '' || normaliserRecherche(p.nom).includes(cle))
   )
+  const pages = usePagination(visibles)
 
   // L'export reprend la liste affichée, filtres compris (REGLES_METIER § 11.2).
   const demandeExport = (): DemandeExport => {
@@ -137,44 +143,57 @@ export function PageProduits(): React.JSX.Element {
     <div className="page">
       <header className="page-entete">
         <h1>Produits</h1>
-        <div className="tableau-actions">
+        <AideIcones
+          entrees={[
+            ['ajouter', 'Créer un produit'],
+            'importer',
+            'exporter',
+            ['modifier', 'Modifier la fiche du produit'],
+            ['desactiver', 'Désactiver le produit : il ne se vend plus, son historique reste']
+          ]}
+          pagination
+        />
+        <div className="page-entete-actions">
           <BoutonExporter demande={demandeExport} desactive={visibles.length === 0} />
           <button className="btn btn-secondaire" onClick={() => ouvrir({ type: 'importer' })}>
+            <Icone nom="importer" />
             Importer depuis Excel
           </button>
           <button className="btn" onClick={() => ouvrir({ type: 'creer' })}>
+            <Icone nom="ajouter" />
             Nouveau produit
           </button>
         </div>
       </header>
 
       {succes && (
-        <p className="succes" role="status" style={{ marginBottom: 16 }}>
+        <p className="succes page-message" role="status">
           {succes}
         </p>
       )}
       {alertes.map((a) => (
-        <p key={a.conditionnement} className="bandeau" role="status" style={{ marginBottom: 16 }}>
+        <p key={a.conditionnement} className="bandeau page-message" role="status">
           Attention : « {a.conditionnement} » à {formaterFCFA(a.prixVente)} coûte plus cher que la même
           quantité à l’unité ({formaterFCFA(a.prixALUnite)}). Corrigez le prix si ce n’est pas voulu.
         </p>
       ))}
       {erreur && (
-        <p className="alerte" role="alert" style={{ marginBottom: 16 }}>
+        <p className="alerte page-message" role="alert">
           {erreur}
         </p>
       )}
 
       {codeInconnu !== null &&
         (champsDepuisCodeScanne(codeInconnu) ? (
-          <div className="bandeau bandeau-action" role="status" style={{ marginBottom: 16 }}>
+          <div className="bandeau bandeau-action page-message" role="status">
             <span>Code {codeInconnu} inconnu : aucun produit en vente ne porte ce code.</span>
             <button className="btn" onClick={() => ouvrir({ type: 'creer', codeScanne: codeInconnu })}>
+              <Icone nom="ajouter" />
               Créer le produit avec ce code
             </button>
           </div>
         ) : (
-          <p className="alerte" role="alert" style={{ marginBottom: 16 }}>
+          <p className="alerte page-message" role="alert">
             Code {codeInconnu} illisible : un code-barres a 8 à 14 chiffres, un code PLU 1 à 5. Vérifiez le
             code ou scannez à nouveau.
           </p>
@@ -265,13 +284,15 @@ export function PageProduits(): React.JSX.Element {
                 <th className="nombre">Conditionnements</th>
                 <th className="nombre">Stock</th>
                 <th>État</th>
-                <th />
+                <th className="colonne-actions">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {visibles.map((p) => (
+              {pages.elements.map((p) => (
                 <tr key={p.id} className={p.actif ? undefined : 'inactif'}>
-                  <td>{p.nom}</td>
+                  <td className="cellule-titre">{p.nom}</td>
                   <td>{p.categorie ?? 'Non classé'}</td>
                   <td className="nombre montant">{formaterFCFA(p.prixUnite)}</td>
                   <td className="nombre">{p.tauxTva} %</td>
@@ -282,21 +303,20 @@ export function PageProduits(): React.JSX.Element {
                       {p.actif ? 'En vente' : 'Désactivé'}
                     </span>
                   </td>
-                  <td>
+                  <td className="colonne-actions">
                     {p.actif && (
                       <div className="tableau-actions">
-                        <button
-                          className="btn btn-secondaire"
+                        <BoutonIcone
+                          icone="modifier"
+                          libelle={`Modifier « ${p.nom} »`}
                           onClick={() => ouvrir({ type: 'modifier', produitId: p.id })}
-                        >
-                          Modifier
-                        </button>
-                        <button
-                          className="btn btn-attention"
+                        />
+                        <BoutonIcone
+                          icone="desactiver"
+                          variante="attention"
+                          libelle={`Désactiver « ${p.nom} »`}
                           onClick={() => ouvrir({ type: 'desactiver', produit: p })}
-                        >
-                          Désactiver
-                        </button>
+                        />
                       </div>
                     )}
                   </td>
@@ -306,6 +326,7 @@ export function PageProduits(): React.JSX.Element {
           </table>
         </div>
       )}
+      <Pagination pages={pages} />
     </div>
   )
 }

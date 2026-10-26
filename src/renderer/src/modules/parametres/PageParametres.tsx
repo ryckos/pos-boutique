@@ -9,6 +9,8 @@ import { formaterFCFA } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { champsDuGroupe, versModifications, type ChampsParametres, type Groupe } from './saisieParametres'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 const TITRES: Record<Groupe, string> = {
   boutique: 'Boutique et ticket',
@@ -46,9 +48,11 @@ export function PageParametres(): React.JSX.Element {
     <section className="panneau">
       <div className="panneau-entete">
         <h2>{TITRES[g]}</h2>
-        <button className="btn btn-secondaire" onClick={() => ouvrir(g)}>
-          Modifier
-        </button>
+        <BoutonIcone
+          icone="modifier"
+          libelle={`Modifier : ${TITRES[g].toLowerCase()}`}
+          onClick={() => ouvrir(g)}
+        />
       </div>
       <dl className="liste-valeurs">
         {lignes.map(([libelle, valeur]) => (
@@ -65,15 +69,20 @@ export function PageParametres(): React.JSX.Element {
     <div className="page">
       <header className="page-entete">
         <h1>Paramètres</h1>
+        <AideIcones
+          entrees={[
+            ['modifier', 'Modifier ce groupe de réglages']
+          ]}
+        />
       </header>
 
       {succes && (
-        <p className="succes" role="status" style={{ marginBottom: 16 }}>
+        <p className="succes page-message" role="status">
           {succes}
         </p>
       )}
       {erreur && (
-        <p className="alerte" role="alert" style={{ marginBottom: 16 }}>
+        <p className="alerte page-message" role="alert">
           {erreur}
         </p>
       )}

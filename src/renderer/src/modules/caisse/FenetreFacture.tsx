@@ -18,6 +18,7 @@ import {
   type SaisieClient
 } from './documents'
 import { ChampsClient } from './ChampsClient'
+import { Icone } from '@renderer/ui/Icone'
 
 interface Props {
   /** Numéro proposé : le dernier ticket de la caisse. */
@@ -118,6 +119,7 @@ export function FenetreFacture({ numeroInitial, onFermer }: Props): React.JSX.El
       </label>
       {etape.sorte === 'recherche' && (
         <button type="button" className="btn btn-discret" onClick={() => void chercher(numero)}>
+          <Icone nom="rechercher" />
           Chercher le ticket
         </button>
       )}
@@ -156,6 +158,7 @@ export function FenetreFacture({ numeroInitial, onFermer }: Props): React.JSX.El
             disabled={impressionEnCours}
             onClick={() => imprimer(etape.facture.factureId)}
           >
+            <Icone nom="imprimer" />
             Imprimer la facture
           </button>
         </div>

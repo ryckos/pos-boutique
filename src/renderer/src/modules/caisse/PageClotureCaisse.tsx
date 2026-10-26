@@ -15,6 +15,8 @@ import { appel } from '@renderer/lib/api'
 import { useUtilisateur } from '@renderer/app/contexte'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { dateHeure, etatCompte, type TonEcart } from './cloture'
+import { Icone } from '@renderer/ui/Icone'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 type Vue =
   | { type: 'chargement' }
@@ -190,6 +192,7 @@ export function PageClotureCaisse(): React.JSX.Element {
             disabled={impression?.etat === 'en_cours'}
             onClick={() => void imprimer(r.sessionId, 'Z')}
           >
+            <Icone nom="imprimer" />
             Réimprimer le Z
           </button>
           {gerant && (
@@ -220,6 +223,12 @@ export function PageClotureCaisse(): React.JSX.Element {
     <div className="page">
       <header className="page-entete">
         <h1>Clôture de caisse</h1>
+        <AideIcones
+          entrees={[
+            ['imprimer', 'Imprimer le rapport X (sans clôturer) ou réimprimer le Z'],
+            ['cloturer', 'Clôturer la caisse et imprimer le Z']
+          ]}
+        />
         <span className="vide">
           Caisse : {r.caissier} · ouverte le {dateHeure(r.dateOuverture)} · {r.nombreTickets} ticket
           {r.nombreTickets > 1 ? 's' : ''}
@@ -294,9 +303,11 @@ export function PageClotureCaisse(): React.JSX.Element {
           disabled={impression?.etat === 'en_cours'}
           onClick={() => void imprimer(r.sessionId, 'X')}
         >
+          <Icone nom="imprimer" />
           Imprimer le rapport X
         </button>
         <button className="btn" disabled={!saisie.peutCloturer} onClick={() => setConfirmation(true)}>
+          <Icone nom="cloturer" />
           Clôturer et imprimer le Z
         </button>
         {vue.plusieurs && (

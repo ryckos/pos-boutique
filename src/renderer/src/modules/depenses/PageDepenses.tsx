@@ -20,6 +20,11 @@ import {
   lireMontant,
   manqueDepense
 } from './saisieDepense'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Icone } from '@renderer/ui/Icone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 type Action =
   | { type: 'nouvelle' | 'categories' }
@@ -117,28 +122,41 @@ export function PageDepenses(): React.JSX.Element {
     }
   }
 
+  const pages = usePagination(liste?.depenses ?? [])
+
   return (
     <div className="page">
       <header className="page-entete">
         <h1>Dépenses</h1>
-        <div className="tableau-actions">
+        <AideIcones
+          entrees={[
+            ['ajouter', 'Nouvelle dépense'],
+            'categories',
+            'exporter',
+            ['annuler', 'Annuler la dépense, avec un motif']
+          ]}
+          pagination
+        />
+        <div className="page-entete-actions">
           {liste && (
-            <span>
+            <span className="chiffre-cle">
               Total de la période : <span className="montant">{formaterFCFA(liste.total)}</span>
             </span>
           )}
           <BoutonExporter demande={demandeExport} desactive={!liste || liste.depenses.length === 0} />
           <button className="btn btn-secondaire" onClick={() => ouvrir({ type: 'categories' })}>
+            <Icone nom="categories" />
             Catégories
           </button>
           <button className="btn" onClick={() => ouvrir({ type: 'nouvelle' })}>
+            <Icone nom="ajouter" />
             Nouvelle dépense
           </button>
         </div>
       </header>
 
       {succes && (
-        <p className="succes" role="status" style={{ marginBottom: 16 }}>
+        <p className="succes page-message" role="status">
           {succes}
         </p>
       )}
@@ -234,13 +252,13 @@ export function PageDepenses(): React.JSX.Element {
       </div>
 
       {erreur && (
-        <p className="alerte" role="alert" style={{ marginBottom: 16 }}>
+        <p className="alerte page-message" role="alert">
           {erreur}
         </p>
       )}
 
       {liste && liste.parCategorie.length > 1 && (
-        <p className="tableau-actions" style={{ marginBottom: 16 }}>
+        <p className="tableau-actions page-message">
           {liste.parCategorie.map((c) => (
             <span key={c.categorieId} className="pastille">
               {c.categorie} : {formaterFCFA(c.total)}
@@ -267,15 +285,17 @@ export function PageDepenses(): React.JSX.Element {
                   <th>Payée par</th>
                   <th className="nombre">Montant</th>
                   <th>État</th>
-                  <th />
+                  <th className="colonne-actions">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {liste.depenses.map((d) => {
+                {pages.elements.map((d) => {
                   const etat = etatDepense(d)
                   return (
                     <tr key={d.id} className={d.annuleLe ? 'inactif' : undefined}>
-                      <td>
+                      <td className="cellule-titre">
                         {d.numero}
                         <div className="detail">par {d.utilisateur}</div>
                       </td>
@@ -295,14 +315,14 @@ export function PageDepenses(): React.JSX.Element {
                           </div>
                         )}
                       </td>
-                      <td>
+                      <td className="colonne-actions">
                         {!d.annuleLe && d.source === 'fonds_propres' && (
-                          <button
-                            className="btn btn-attention"
+                          <BoutonIcone
+                            icone="annuler"
+                            variante="attention"
+                            libelle={`Annuler la dépense ${d.numero}`}
                             onClick={() => ouvrir({ type: 'annuler', depense: d })}
-                          >
-                            Annuler
-                          </button>
+                          />
                         )}
                       </td>
                     </tr>
@@ -313,7 +333,8 @@ export function PageDepenses(): React.JSX.Element {
           </div>
         )
       )}
-      <p className="vide" style={{ marginTop: 12 }}>
+      <Pagination pages={pages} />
+      <p className="vide note-bas">
         Une dépense saisie par erreur s’annule avec un motif, puis se ressaisit. Les dépenses payées au tiroir
         arriveront avec les mouvements de caisse.
       </p>
@@ -458,6 +479,9 @@ function FenetreCategories(props: {
   return (
     <FenetreFormulaire
       titre="Catégories de dépenses"
+      aide={[
+        ['desactiver', 'Désactiver la catégorie (une au moins reste active)']
+      ]}
       libelleValider="Créer la catégorie"
       valide={nom.trim() !== ''}
       onValider={async () => {
@@ -481,11 +505,14 @@ function FenetreCategories(props: {
                     {c.actif ? 'Active' : 'Désactivée'}
                   </span>
                 </td>
-                <td>
+                <td className="colonne-actions">
                   {c.actif && actives.length > 1 && (
-                    <button type="button" className="btn btn-attention" onClick={() => props.onDesactiver(c)}>
-                      Désactiver
-                    </button>
+                    <BoutonIcone
+                      icone="desactiver"
+                      variante="attention"
+                      libelle={`Désactiver « ${c.nom} »`}
+                      onClick={() => props.onDesactiver(c)}
+                    />
                   )}
                 </td>
               </tr>

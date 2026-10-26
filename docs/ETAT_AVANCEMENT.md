@@ -32,7 +32,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 | Test | Objet                              | Résultat                                                |
 |------|------------------------------------|---------------------------------------------------------|
 | T1   | Douchette (émulation clavier)      | ✅                                                      |
-| T2   | Impression ESC/POS + accents       | ✅ — page de codes à reporter (DECISIONS D-A2)          |
+| T2   | Impression ESC/POS + accents       | ✅ — cp1252, partage réseau « XPOS » (DECISIONS D-20)   |
 | T3   | Impulsion tiroir-caisse            | ✅                                                      |
 | T4   | Double écran                       | ✅                                                      |
 | T5   | SQLite + coupure                   | ✅                                                      |
@@ -57,7 +57,7 @@ Le socle comprend :
 | A1.1  | Panier et logique de calcul                     | A   | ✅     | PR #3 — essai à la vraie douchette sur le terminal encore à faire (validé en simulation) |
 | A1.2  | Grille, recherche F2, conditionnement, attente  | A   | ✅     | PR #6 (attente, F2, raccourcis) et #15 (onglets de rayons, changer le conditionnement) |
 | A2    | Encaissement et enregistrement de la vente      | A   | ✅     | PR #7 (serveur) et #14 (ouverture de caisse, fenêtre de paiement) — impression et tiroir en A3 |
-| A3    | Ticket, tiroir, réglages matériel               | A   | 🔄     | PR #18 fusionnée (ticket, tiroir, réimpression DUPLICATA, Réglages matériel ; en-tête et imprimante dans les paramètres de B5) ; **reste l'essai sur le terminal avec la Xprinter** (critère de fin, et page de codes D-A2) |
+| A3    | Ticket, tiroir, réglages matériel               | A   | 🔄     | PR #18 fusionnée (ticket, tiroir, réimpression DUPLICATA, Réglages matériel ; en-tête et imprimante dans les paramètres de B5) ; **reste l'essai sur le terminal avec la Xprinter** (critère de fin) ; page de codes **cp1252** par défaut depuis le 2026-10-25 (D-20, D-A2 tranchée) |
 | A4    | Sessions de caisse, X et Z                      | A   | 🔄     | PR #28 fusionnée (clôture relue en base, écart coloré, rapports X / Z, Z original puis DUPLICATA ; tests 58 700 / −500) ; **reste l'impression réelle du Z avec l'essai Xprinter** (avec A3) |
 | A5    | Remises, droits, stabilisation                  | A   | 🔄     | PR #30 fusionnée (parties 1 et 2) : remises ligne / ticket contrôlées et journalisées, TVA de la remise sur le ticket au prorata, plafond sur le total du ticket (`null` = gérant obligatoire, D-A3), accord du gérant à usage unique, ticket imprimé et écran client avec remises, lignes retirées journalisées ; testée à la main. **Reste la partie 3** : performance (scan → ligne < 1 s sur le terminal) et recette de la Phase 1 avec Dev B |
 | B1    | Utilisateurs, rôles, verrouillage, 1er démarrage| B   | ✅     | PR #4 — connexion par nom et code (D-17), verrouillage par compte, code provisoire, écrans Comptes / Mon code / premier démarrage |
@@ -76,7 +76,7 @@ Le socle comprend :
 | A7    | Retour client et remboursement            | A   | ✅     | PR #63 (serveur : migration `20261013_1400_retours_client.sql`, numéro R, montants négatifs, rendu au prorata du payé, lots repris, X/Z « Retours client », ticket de retour imprimé) et #64 (fenêtre « Retour client ») ; avoir en boutique reporté à A11 |
 | A8    | Mouvements de caisse (+ API pour B)       | A   | ✅     | PR #55 (serveur : migration `20261008_1704_mouvements_caisse.sql`, sortie plafonnée au tiroir, annulation par contre-mouvement, API pour B13) et #56 (fenêtre « Espèces du tiroir » du gérant, sauvegarde après clôture de B16) |
 | A9    | FEFO à la vente                           | A   | ✅     | PR #57 — `allouerFefo` (B9) branché dans `enregistrerVente` : un mouvement par lot, lot sur la ligne si unique, alerte si le stock restant est périmé |
-| A10   | Facture et proforma                       | A   | 🔄     | PR #65 (facture : migration `20261015_1000_factures_proformas.sql`, numéro F, une par ticket, retours et net payé, montant en lettres, PDF / impression, original puis COPIE) et #66 (proforma : numéro PF, prix recopiés, 30 jours, reprise aux prix du jour, PDF) fusionnées ; **reste les écrans** : PR 3 « Faire une facture » (`a/caisse-facture-ecran`, en relecture), PR 4 « Proforma » et « Reprendre une proforma » (`a/caisse-proforma-ecran`, empilée sur la PR 3, en relecture) ; A10 → ✅ après les deux fusions |
+| A10   | Facture et proforma                       | A   | ✅     | PR #65 (facture côté serveur), #66 (proforma côté serveur), #68 (fenêtre « Faire une facture ») et #70 (« Proforma » et « Reprendre une proforma ») fusionnées |
 | B7    | Fournisseurs                              | B   | ✅     | PR #24 (fiches, solde dû, désactivation si dette réglée, écran Fournisseurs) et #27 (bouton « Achats » : livraisons d'une période et derniers prix d'achat, canal `fournisseurs:achats`) |
 | B8    | Commandes et réceptions (CUMP)            | B   | ✅     | PR #25 (réception côté serveur : lignes, lots, mouvements, CUMP, dette avec échéance, RC), #26 (écran Réceptions), #31 (commandes fournisseur côté serveur, migration `conditionnement_id`, réception liée à une commande) et #33 (écran Commandes, proposer depuis les alertes, aperçu à copier, « Livrer CA-… » sur Réceptions) |
 | B9    | Lots, FEFO, tableau des péremptions       | B   | ✅     | PR #35 (`allouerFefo` pour Dev A) et #36 (tableau des péremptions `stock:peremptions`, retrait d'un lot `stock:retirerLot` en `perte_peremption`, écran Péremptions) |
@@ -90,7 +90,7 @@ Le socle comprend :
 | A13   | Écran client définitif                    | A   | ⏳     |   |
 | B11   | Sorties de stock, retours fournisseur     | B   | ✅     | PR #39 (serveur : sorties, retours, avoirs déduits de la dette, migration `retours_fournisseur`) et #40 (écran Sorties de stock, avoirs reçus ou refusés dans « Dettes », avoir à valoir sur la page Fournisseurs) |
 | B12   | Inventaires                               | B   | ✅     | PR #42 (serveur : inventaire total ou par rayon, comptage par conditionnement, validation au CUMP, démarque, migration `20261007_0900_inventaires.sql`) et #43 (menu « Inventaires », comptage en fenêtre, rapport de démarque) ; testé à la main |
-| B13   | Dépenses                                  | B   | 🔄     | PR #44 (serveur : catégories, numéro DEP, annulation avec motif, source « fonds propres », migration `20261008_0900_depenses.sql`) et #45 (menu « Dépenses », fenêtres nouvelle dépense, annulation, catégories) ; testé à la main. **Reste la source « caisse »**, en attente de `enregistrerMouvementCaisse()` (A8) |
+| B13   | Dépenses                                  | B   | 🔄     | PR #44 (serveur : catégories, numéro DEP, annulation avec motif, source « fonds propres », migration `20261008_0900_depenses.sql`) et #45 (menu « Dépenses », fenêtres nouvelle dépense, annulation, catégories) ; testé à la main. **Reste la source « caisse »**, débloquée : A8 livré (PR #55) |
 
 ## Phase 4 — Pilotage (S16–S18)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
@@ -100,13 +100,18 @@ Le socle comprend :
 | A16   | Promotions programmées                    | A   | ⏳     |   |
 | B14   | Rapports de gestion, journal d'audit      | B   | 🔄     | PR #47 (serveur : pertes par cause, valeur du stock par rayon, achats par fournisseur, résultat sans marge), #48 (menu « Rapports de gestion », quatre onglets) et #49 (journal des opérations, admin, `audit:journal` / `audit:choix`) ; testé à la main. **Reste la marge**, en attente de `caisse:ventesPeriode` (A14) |
 | B15   | Exports Excel                             | B   | ✅     | PR #50 (canal générique `exports:excel`, `BoutonExporter`, Stock, Dépenses, Rapports de gestion) et #51 (Produits, Péremptions, Sorties, Réceptions, Commandes, Fournisseurs, détail d'un inventaire, Journal en entier) ; testé à la main |
-| B16   | Sauvegardes et restauration               | B   | ⏳     |   |
+| B16   | Sauvegardes et restauration               | B   | 🔄     | PR #53 (sauvegarde : clôture, démarrage, avant mise à jour, manuelle ; rotation ; clé USB) et #54 (écran Sauvegardes, restauration admin) fusionnées ; sauvegarde après clôture branchée par A (PR #56). **Reste** l'essai de restauration sur le terminal, et l'envoi distant (D-A4) |
 
 ## Phase 5 — Mise en service (S19–S20)
 | Tâche | Intitulé                                            | Dev | Statut | Notes (branche, blocage) |
 |-------|-----------------------------------------------------|-----|--------|--------------------------|
 | A-P5  | Tests terrain caisse, guide caissier, formation     | A   | ⏳     |   |
-| B-P5  | Installateur, kiosque, mises à jour, guide gérant   | B   | ⏳     |   |
+| B-P5  | Installateur, kiosque, mises à jour, guide gérant   | B   | 🔄     | `npm run dist` opérationnel, version **1.0.0-rc.1** installée chez la cliente pour test (tag `v1.0.0-rc.1`) ; procédure `docs/DEPLOIEMENT.md` ; guides utilisateur `docs/guides/` et fiches de test `docs/fiches-test/`. **Reste** : démarrage automatique, mode kiosque, icône, signature |
+
+## Transverse
+| Tâche | Intitulé                                            | Dev | Statut | Notes (branche, blocage) |
+|-------|-----------------------------------------------------|-----|--------|--------------------------|
+| UX1   | Refonte ergonomique : palette, icônes, pagination, aide « ? » (D-19) | B (+ écrans de A, avec son accord) | 🔄 | `feature/sk/ergonomie` terminée, **PR vers `test` à fusionner** (merge commit, tag `v1.0.0-rc.1`) ; `UI_UX.md` § 2, 4.1, 4.2, 5.12, 6 ; testée avec `docs/SCENARIOS_TEST.md` et chez la cliente (1.0.0-rc.1) |
 
 ## Journal des fusions notables
 <!-- Une ligne par PR importante : date · tâche · résumé · contrat ajouté/modifié -->
@@ -164,3 +169,4 @@ Le socle comprend :
 | 2026-10-14 | A7    | Partie 1 : retour client côté serveur, numéro R, montants négatifs, rendu au prorata, lots repris, X/Z « Retours client » ; migration `20261013_1400_retours_client.sql` (PR #63) |
 | 2026-10-16 | A7    | Partie 2 : fenêtre « Retour client » dans la caisse (lignes à cocher, motif, sort, remboursement, code du gérant) (PR #64) |
 | 2026-10-16 | A10   | Parties 1 et 2 : facture A4 d'un ticket (F, PDF, original puis COPIE) et proforma (PF, 30 jours, reprise aux prix du jour) ; migration `20261015_1000_factures_proformas.sql` (PR #65, #66) |
+| 2026-10-19 | A10   | Parties 3 et 4 : fenêtre « Faire une facture » (PR #68), « Proforma » et « Reprendre une proforma » (PR #70) |

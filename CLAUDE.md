@@ -50,6 +50,8 @@ Ne modifie jamais un fichier du périmètre de l'autre développeur : signale le
 | Tables, vues, triggers, qui écrit où                          | `docs/MODELE_DONNEES.md`          |
 | Décisions déjà prises et pourquoi (ne pas les rediscuter)     | `docs/DECISIONS.md`               |
 | Scénario de référence avec chiffres attendus (recette)        | `docs/SCENARIO_REFERENCE.md`      |
+| Scénarios de test de bout en bout, par utilisateur            | `docs/SCENARIOS_TEST.md`          |
+| Installer chez la cliente, mettre à jour, revenir en arrière  | `docs/DEPLOIEMENT.md` (+ `.docx`)  |
 | Ce qui est fait, en cours, à faire                            | `docs/ETAT_AVANCEMENT.md`         |
 | Tâches détaillées de chaque développeur                       | `docs/DEV_A_COMPTOIR.md`, `docs/DEV_B_BACKOFFICE.md` |
 | Brief de passation et carnet de bord de chaque développeur    | `docs/claude/`                    |

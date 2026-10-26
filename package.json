@@ -1,6 +1,7 @@
 {
   "name": "pos-boutique",
-  "version": "0.1.0",
+  "productName": "Ma Boutique POS",
+  "version": "1.0.0-rc.1",
   "description": "Application de gestion de boutique (POS) — Electron + React + TypeScript + SQLite",
   "main": "./out/main/index.js",
   "private": true,

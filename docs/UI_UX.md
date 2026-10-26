@@ -22,18 +22,26 @@ utilisée des centaines de fois par jour par des personnes pressées, devant un 
 
 ## 2. Jetons de design (source unique : `src/renderer/src/ui/styles.css`)
 
+Palette « bleu commerce » depuis le 2026-10-19 (D-19, remplace le vert de D-16).
+
 | Jeton           | Valeur    | Usage                                                  |
 |-----------------|-----------|--------------------------------------------------------|
-| `--encre`       | `#1f2d33` | Texte principal, menu latéral, fonds sombres            |
-| `--encre-douce` | `#56646a` | Texte secondaire, en-têtes de tableaux                 |
-| `--fond`        | `#f4f6f5` | Fond de l'application                                  |
+| `--encre`       | `#1a2233` | Texte principal                                        |
+| `--encre-douce` | `#5a6478` | Texte secondaire, en-têtes de tableaux                 |
+| `--fond`        | `#f4f6fa` | Fond de l'application                                  |
 | `--surface`     | `#ffffff` | Cartes, tableaux, zone ticket                          |
-| `--bord`        | `#d9dedb` | Bordures et séparateurs                                |
-| `--vert`        | `#0f6e56` | Action principale, élément actif, prix                 |
-| `--vert-fonce`  | `#0b5543` | Survol de l'action principale                          |
-| `--vert-pale`   | `#e3f1ec` | Retour tactile, ligne mise en avant                    |
+| `--surface-douce` | `#f8fafd` | En-tête de tableau, survol d'une ligne               |
+| `--bord` / `--bord-fort` | `#dbe1ea` / `#c3ccd9` | Séparateurs / bord des champs          |
+| `--primaire`    | `#1f5fbf` | Action principale, élément actif, prix                 |
+| `--primaire-fonce` | `#184c99` | Survol de l'action principale, chiffre clé          |
+| `--primaire-pale` | `#e5eefb` | Retour tactile, ligne sélectionnée                   |
+| `--sur-primaire` | `#ffffff` | Texte posé sur le bleu ou le menu                     |
+| `--accent` / `--accent-texte` / `--accent-pale` | `#e8790f` / `#a04f00` / `#fdeedd` | Accent commerce, rare : marque, promotions. Jamais un texte orange sur blanc |
+| `--succes` / `--succes-pale` | `#1d7a4c` / `#e3f4ea` | Positif : succès, valeur juste, monnaie à rendre, remise, entrée de stock |
 | `--ambre` / `--ambre-pale` | `#8a5a0b` / `#fbf1dc` | Avertissement : stock bas, péremption proche, brouillon |
-| `--rouge` / `--rouge-pale` | `#a3321f` / `#f9e4e0` | Erreur, écart négatif, péremption imminente |
+| `--rouge` / `--rouge-pale` | `#b3261e` / `#fbe6e4` | Erreur, écart négatif, péremption imminente, sortie de stock |
+| `--menu` / `--menu-texte` | `#13294b` / `#e6ecf5` | Menu latéral, connexion, écran client |
+| `--ombre` / `--ombre-fenetre` | — | Ombre légère des cartes et tableaux / des fenêtres |
 | `--rayon`       | `8px`     | Arrondi unique                                         |
 | `--cible`       | `56px`    | Hauteur minimale d'une cible tactile de navigation     |
 
@@ -42,19 +50,29 @@ Règles :
   par une PR de zone partagée.
 - **Police Segoe UI**, native sur le terminal : aucune police web, car l'application est hors
   ligne. Taille de base 16 px ; pas de texte sous 13 px.
-- **Pas de décoration** : pas de dégradé, pas d'ombre systématique, pas d'animation d'entrée. Une
-  animation n'est acceptée que si elle répond à une action, par exemple le retour visuel au toucher.
-- Le vert signifie « action ou valeur positive », l'ambre « attention », le rouge « problème ».
-  Ne jamais s'appuyer sur la couleur seule : toujours ajouter un texte ou une pastille.
+- **Pas de décoration** : pas de dégradé, pas d'animation d'entrée. Seules deux ombres légères
+  (`--ombre`, `--ombre-fenetre`) détachent cartes, tableaux et fenêtres du fond. Une animation n'est
+  acceptée que si elle répond à une action, par exemple le retour visuel au toucher.
+- Le bleu signifie « action », le vert « valeur positive », l'ambre « attention », le rouge
+  « problème ». Ne jamais s'appuyer sur la couleur seule : toujours ajouter un texte, un signe ou
+  une pastille.
 
 Classes existantes :
 
 | Classe                                      | Rôle                                  |
 |---------------------------------------------|---------------------------------------|
-| `.btn`, `.btn-discret`                      | Boutons                               |
+| `.btn`, `.btn-secondaire`, `.btn-attention`, `.btn-discret` | Boutons (icône + texte possible) |
+| `.btn-icone` (`ui/BoutonIcone.tsx`), `.infobulle` | Bouton réduit à une icône, avec son infobulle (§ 4.1) |
+| `.icone` (`ui/Icone.tsx`)                   | Icônes SVG maison                     |
+| `.pagination` (`ui/Pagination.tsx`, `lib/pagination.ts`) | Pagination sous un tableau (§ 5.12) |
+| `.page-entete-actions`, `.chiffre-cle`      | Groupe de droite de l'en-tête, chiffre clé (total, valeur) |
+| `.colonne-actions`, `.cellule-titre`, `.sr-only` | Colonne des actions d'une ligne, nom principal d'une ligne, texte pour lecteur d'écran |
+| `.onglets`, `.onglet`                       | Barre d'onglets (Rapports)            |
+| `.valeur-positive`, `.valeur-negative`      | Quantité ou montant signé (entrée, sortie) |
+| `.section-titre`, `.note-bas`, `.bloc-espace`, `.entete-onglet` | Mise en page des pages de gestion |
 | `.page`, `.page-entete`                     | Pages de gestion                      |
 | `.tableau-cadre`, `.tableau` (+ `.nombre`)  | Tableaux (colonne numérique alignée)  |
-| `.pastille`, `.pastille-alerte`             | Pastilles d'état (aussi `-ok`, `-inactif`, `-erreur`) |
+| `.pastille`, `.pastille-alerte`             | Pastilles d'état (aussi `-ok`, `-inactif`, `-erreur`, `-info`, `-accent`) |
 | `.alerte`, `.bandeau`, `.vide`              | Messages et états vides               |
 | `.montant`                                  | Montants en chiffres tabulaires       |
 | `.voile`, `.fenetre`, `.fenetre-large`, `.formulaire-bloc` | Fenêtres modales (`ui/FenetreFormulaire.tsx`) |
@@ -123,6 +141,41 @@ Classes existantes :
   | avoir            |                                                |
   | réception        | et non « entrée de stock »                     |
 - Les montants s'écrivent toujours `7 500 F` (espace des milliers, lettre F), via `formaterFCFA()`.
+
+### 4.1 Icônes et infobulles (D-19, 2026-10-19)
+
+- **Actions répétées sur chaque ligne d'un tableau** (modifier, désactiver, renommer, annuler,
+  historique, voir, retirer, promotion, payer, achats, dettes, compter, restaurer…) : **icône
+  seule**, avec `BoutonIcone`. Son `libelle` est un verbe qui dit l'action et nomme la ligne
+  (« Modifier « Savon Omo » ») : c'est l'`aria-label` et le texte de l'infobulle.
+- **Actions principales d'une page** (« Nouveau produit », « Exporter », « Importer depuis Excel »),
+  **boutons de validation des fenêtres** et **actions de la caisse** : **icône + texte**. Le texte
+  reste la règle du § 4 ; l'icône aide à reconnaître l'action d'un coup d'œil.
+- L'infobulle s'ouvre au survol de la souris, au focus clavier et, sur l'écran tactile, par un
+  **appui long** (un appui bref agit, un appui long montre le nom sans agir).
+- Un bouton à icône indisponible reste survolable (`aria-disabled`) : son infobulle dit pourquoi
+  (« Promotion −20 % : disponible avec les promotions programmées »).
+- Une même action garde la même icône partout : `modifier` crayon, `desactiver` cercle barré,
+  `annuler` flèche de retour, `supprimer` corbeille (ligne non enregistrée seulement), `afficher`
+  œil, `historique` horloge, `exporter` / `importer` flèches, `payer` billet. Liste complète :
+  `ui/Icone.tsx`.
+- Les icônes d'une ligne de tableau restent **sur une seule ligne**, dans le même ordre d'une ligne
+  à l'autre (une icône absente laisse les autres à leur place relative).
+
+### 4.2 Aide contextuelle : légende des icônes (2026-10-19)
+
+- Chaque page de gestion porte un bouton **« ? »** juste à droite de son titre
+  (`ui/AideIcones.tsx`). Il ouvre, sous le titre, la **légende des icônes de la page** : chaque
+  icône dessinée comme sur son bouton (en rouge pour les actions sensibles), suivie de ce qu'elle
+  fait, et une ligne pour les flèches de pagination quand le tableau est paginé.
+- Les fenêtres qui contiennent des icônes (Dettes, Achats, fiche produit, catégories de dépenses,
+  saisie d'une commande) ont le même « ? » dans leur en-tête (`FenetreFormulaire`, propriété `aide`).
+- Le texte vient d'un sens commun par icône (`SENS` dans `AideIcones.tsx`, le même partout) ; une
+  page peut le préciser (`['ajouter', 'Ajouter un sous-rayon à un rayon']`).
+- La légende se ferme par le « ? », par Échap (sans fermer la fenêtre qui la contient) ou par un
+  toucher à côté. Elle ne masque rien de façon durable : elle est fermée à l'ouverture de la page.
+- Nouvel écran, nouvelle icône : **ajouter son entrée à la légende de la page**.
+- La caisse n'en a pas : ses boutons portent leur texte (§ 4.1).
 
 ## 5. Écrans validés
 
@@ -444,9 +497,24 @@ Chaque page de gestion utilise `.page` et `.page-entete`. L'en-tête contient :
 - à droite, un chiffre clé ou l'action principale.
 
 Le tableau est en `.tableau`, avec les colonnes numériques alignées à droite. Les états sont
-signalés par des pastilles. Les filtres se placent au-dessus du tableau. Une action destructive
-n'existe jamais : on propose « Désactiver » ou « Annuler », avec un motif. Les boutons « Créer… »,
-« Modifier… », « Désactiver… » ouvrent une fenêtre modale (§ 3).
+signalés par des pastilles. Les filtres se placent au-dessus du tableau, dans un bandeau blanc. Une
+action destructive n'existe jamais : on propose « Désactiver » ou « Annuler », avec un motif. Les
+boutons « Créer… », « Modifier… », « Désactiver… » ouvrent une fenêtre modale (§ 3).
+
+**Organisation d'un tableau (2026-10-19)** : la première colonne nomme la ligne (`.cellule-titre`,
+en gras), les précisions vont dessous (`.detail`), la dernière colonne porte les actions en icônes
+(`.colonne-actions`, collée à droite, en-tête « Actions » lu par le lecteur d'écran seulement).
+
+**Pagination (2026-10-19)** : toute liste de gestion qui peut grandir est paginée
+(`usePagination(liste)` + `<Pagination pages={…} />`) : 20 lignes par page par défaut (elles tiennent
+sur l'écran du terminal), choix 10 / 20 / 50 / 100, « Lignes 21 à 40 sur 57 », boutons première /
+précédente / suivante / dernière. La barre est masquée tant que la liste tient sur 10 lignes. On
+revient à la première page quand un filtre change le nombre de lignes. **On ne pagine que
+l'affichage** : filtres, totaux et exports Excel portent toujours sur toute la liste. Dans une
+fenêtre, 10 lignes par page. Ne sont pas paginés : les tableaux de saisie (lignes d'une réception,
+d'une commande, conditionnements), les lignes d'un seul document, les listes courtes par nature
+(causes de pertes, rayons) et le journal des opérations, déjà découpé par le serveur (200 puis
+« Afficher plus », § 5.21).
 
 **Exporter vers Excel (B15)** : bouton secondaire dans l'en-tête (`ui/BoutonExporter.tsx`), grisé tant
 que la liste est vide ; pour les Rapports de gestion, à droite de la phrase de synthèse de chaque
@@ -655,3 +723,5 @@ douchette et raccourcis coupés pendant les fenêtres.
 - `prefers-reduced-motion` est respecté.
 - L'interface est pensée pour 1366×768 et plus (écran 15,6″) ; l'écran client s'adapte à la
   résolution du 11,6″.
+- Sous 1180 px de large (fenêtre réduite, petit écran), le menu se replie sur ses icônes ; le nom
+  de chaque page s'affiche en infobulle. Les en-têtes de page et les filtres passent à la ligne.

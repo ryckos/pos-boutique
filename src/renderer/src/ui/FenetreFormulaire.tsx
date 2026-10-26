@@ -10,6 +10,7 @@
  *   perdre une saisie sur l'écran tactile.
  */
 import { useEffect, useId, useRef, useState } from 'react'
+import { AideIcones, type EntreeAide } from './AideIcones'
 
 export interface PropsFenetreFormulaire {
   titre: string
@@ -18,6 +19,8 @@ export interface PropsFenetreFormulaire {
   /** Verbe qui dit l'action : « Créer la catégorie », « Désactiver le compte »… */
   libelleValider: string
   valide: boolean
+  /** Icônes présentes dans la fenêtre : un « ? » dans l'en-tête ouvre leur légende (UI_UX § 4.2). */
+  aide?: EntreeAide[]
   /** Action sensible (désactivation) : bouton rouge. */
   attention?: boolean
   /** Formulaire à plusieurs colonnes ou avec un tableau (fiche produit). */
@@ -71,6 +74,7 @@ export function FenetreFormulaire(props: PropsFenetreFormulaire): React.JSX.Elem
         <div className="fenetre-entete">
           <h2 id={idTitre}>{props.titre}</h2>
           {props.pastille}
+          {props.aide && <AideIcones entrees={props.aide} />}
         </div>
         <form ref={refFormulaire} className="formulaire" onSubmit={soumettre}>
           {props.children}

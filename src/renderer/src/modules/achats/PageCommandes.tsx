@@ -35,6 +35,11 @@ import {
   type LigneCommandeSaisie
 } from './saisieCommande'
 import { texteUnitesBase } from './saisieReception'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Icone } from '@renderer/ui/Icone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 type Fenetre =
   | { type: 'saisie'; brouillon: BrouillonCommande; retires: string[] }
@@ -126,11 +131,25 @@ export function PageCommandes(): React.JSX.Element {
     })
   }
 
+  const pages = usePagination(commandes ?? [])
+
   return (
     <div className="page">
       <header className="page-entete">
         <h1>Commandes fournisseur</h1>
-        <div className="tableau-actions">
+        <AideIcones
+          entrees={[
+            ['ajouter', 'Nouvelle commande'],
+            'exporter',
+            ['afficher', 'Voir la commande'],
+            ['modifier', 'Modifier un brouillon'],
+            'envoyer',
+            ['annuler', 'Annuler la commande, avec un motif'],
+            ['cloturer', 'Clôturer une commande reçue en partie (le reste ne viendra pas)']
+          ]}
+          pagination
+        />
+        <div className="page-entete-actions">
           <BoutonExporter
             demande={() => exportCommandes(commandes ?? [])}
             desactive={!commandes || commandes.length === 0}
@@ -142,6 +161,7 @@ export function PageCommandes(): React.JSX.Element {
               setFenetre({ type: 'saisie', brouillon: commandeVide(), retires: [] })
             }}
           >
+            <Icone nom="ajouter" />
             Nouvelle commande
           </button>
         </div>
@@ -173,13 +193,15 @@ export function PageCommandes(): React.JSX.Element {
                 <th className="nombre">Articles</th>
                 <th className="nombre">Total prévu</th>
                 <th>État</th>
-                <th />
+                <th className="colonne-actions">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {commandes.map((c) => (
+              {pages.elements.map((c) => (
                 <tr key={c.id}>
-                  <td>{c.numero}</td>
+                  <td className="cellule-titre">{c.numero}</td>
                   <td>
                     {formaterDate(c.dateCommande)}
                     <span className="detail">par {c.utilisateur}</span>
@@ -190,44 +212,44 @@ export function PageCommandes(): React.JSX.Element {
                   <td>
                     <span className={PASTILLE_STATUT[c.statut]}>{LIBELLES_STATUT[c.statut]}</span>
                   </td>
-                  <td>
+                  <td className="colonne-actions">
                     <div className="tableau-actions">
-                      <button
-                        className="btn btn-secondaire"
+                      <BoutonIcone
+                        icone="afficher"
+                        libelle={`Voir la commande ${c.numero}`}
                         onClick={() => lire(c.id, (commande) => setFenetre({ type: 'detail', commande }))}
-                      >
-                        Voir
-                      </button>
+                      />
                       {c.statut === 'brouillon' && (
                         <>
-                          <button className="btn btn-secondaire" onClick={() => modifier(c.id)}>
-                            Modifier
-                          </button>
-                          <button
-                            className="btn"
+                          <BoutonIcone
+                            icone="modifier"
+                            libelle={`Modifier la commande ${c.numero}`}
+                            onClick={() => modifier(c.id)}
+                          />
+                          <BoutonIcone
+                            icone="envoyer"
+                            variante="principal"
+                            libelle="Marquer comme envoyée"
                             onClick={() =>
                               lire(c.id, (commande) => setFenetre({ type: 'envoyer', commande }))
                             }
-                          >
-                            Marquer comme envoyée
-                          </button>
+                          />
                         </>
                       )}
                       {(c.statut === 'brouillon' || c.statut === 'envoyee') && (
-                        <button
-                          className="btn btn-secondaire"
+                        <BoutonIcone
+                          icone="annuler"
+                          variante="attention"
+                          libelle={`Annuler la commande ${c.numero}`}
                           onClick={() => setFenetre({ type: 'annuler', commande: c })}
-                        >
-                          Annuler
-                        </button>
+                        />
                       )}
                       {c.statut === 'recue_partiel' && (
-                        <button
-                          className="btn btn-secondaire"
+                        <BoutonIcone
+                          icone="cloturer"
+                          libelle={`Clôturer la commande ${c.numero} (le reste ne viendra pas)`}
                           onClick={() => setFenetre({ type: 'cloturer', commande: c })}
-                        >
-                          Clôturer
-                        </button>
+                        />
                       )}
                     </div>
                   </td>
@@ -237,6 +259,7 @@ export function PageCommandes(): React.JSX.Element {
           </table>
         </div>
       )}
+      <Pagination pages={pages} />
 
       {fenetre?.type === 'saisie' && (
         <FenetreSaisieCommande
@@ -321,6 +344,7 @@ function Apercu(props: { texte: string }): React.JSX.Element {
       <pre className="apercu">{props.texte}</pre>
       <div className="tableau-actions">
         <button type="button" className="btn btn-secondaire" onClick={copier}>
+          <Icone nom="copier" />
           Copier le texte
         </button>
         {message && <span className="vide">{message}</span>}
@@ -454,6 +478,8 @@ function FenetreSaisieCommande(props: {
   const [resultats, setResultats] = useState<ArticleCatalogue[]>([])
   const [alertes, setAlertes] = useState<ProduitEnAlerte[] | null>(null)
   const [coches, setCoches] = useState<Set<number>>(new Set())
+  // Les cases cochées restent cochées d'une page à l'autre (l'ensemble est gardé à part).
+  const pagesAlertes = usePagination(alertes ?? [], 10)
   const [message, setMessage] = useState<string | null>(
     props.retires.length > 0
       ? `Retiré${props.retires.length > 1 ? 's' : ''} de la commande car désactivé${props.retires.length > 1 ? 's' : ''} : ${props.retires.join(', ')}.`
@@ -584,6 +610,10 @@ function FenetreSaisieCommande(props: {
   return (
     <FenetreFormulaire
       titre={b.numero ? `Commande ${b.numero}` : 'Nouvelle commande'}
+      aide={[
+        'avertissement',
+        ['supprimer', 'Retirer la ligne de la commande']
+      ]}
       pastille={<span className="pastille pastille-alerte">Brouillon</span>}
       libelleValider={b.id ? 'Enregistrer les modifications' : 'Enregistrer la commande'}
       valide={aCorriger === null}
@@ -628,6 +658,7 @@ function FenetreSaisieCommande(props: {
           />
         </label>
         <button type="button" className="btn btn-secondaire" onClick={ouvrirAlertes}>
+          <Icone nom="avertissement" />
           Proposer depuis les alertes
         </button>
       </div>
@@ -669,7 +700,7 @@ function FenetreSaisieCommande(props: {
                   </tr>
                 </thead>
                 <tbody>
-                  {alertes.map((a) => (
+                  {pagesAlertes.elements.map((a) => (
                     <tr key={a.produitId}>
                       <td>
                         {a.produit}{' '}
@@ -708,8 +739,10 @@ function FenetreSaisieCommande(props: {
               </table>
             </div>
           )}
+          <Pagination pages={pagesAlertes} />
           <div className="tableau-actions">
             <button type="button" className="btn" disabled={coches.size === 0} onClick={ajouterCoches}>
+              <Icone nom="ajouter" />
               Ajouter les produits cochés
             </button>
             <button type="button" className="btn btn-secondaire" onClick={() => setAlertes(null)}>
@@ -733,7 +766,9 @@ function FenetreSaisieCommande(props: {
                 <th className="nombre">Qté commandée</th>
                 <th className="nombre">Prix prévu</th>
                 <th className="nombre">Total</th>
-                <th />
+                <th className="colonne-actions">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -792,14 +827,13 @@ function FenetreSaisieCommande(props: {
                       />
                     </td>
                     <td className="nombre montant">{e.total !== null ? formaterFCFA(e.total) : ''}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="btn btn-secondaire"
+                    <td className="colonne-actions">
+                      <BoutonIcone
+                        icone="supprimer"
+                        variante="attention"
+                        libelle="Retirer la ligne"
                         onClick={() => setB((x) => retirerLigneCommande(x, l.cle))}
-                      >
-                        Retirer
-                      </button>
+                      />
                     </td>
                   </tr>
                 )

@@ -14,6 +14,10 @@ import { BoutonExporter } from '@renderer/ui/BoutonExporter'
 import type { DemandeExport } from '@shared/ipc/exports'
 import { FenetreHistorique } from './FenetreHistorique'
 import { texteRepartition } from './affichageStock'
+import { BoutonIcone } from '@renderer/ui/BoutonIcone'
+import { Pagination } from '@renderer/ui/Pagination'
+import { usePagination } from '@renderer/lib/pagination'
+import { AideIcones } from '@renderer/ui/AideIcones'
 
 type Filtre = 'tous' | 'alertes' | 'dormants'
 
@@ -81,6 +85,7 @@ export function PageStock(): React.JSX.Element {
       (rayon === '' || l.rayon === rayon) &&
       (cle === '' || normaliserRecherche(l.nom).includes(cle))
   )
+  const pages = usePagination(visibles)
 
   // L'export reprend la liste affichée, filtres compris (REGLES_METIER § 11.2).
   const demandeExport = (): DemandeExport => {
@@ -129,8 +134,15 @@ export function PageStock(): React.JSX.Element {
     <div className="page">
       <header className="page-entete">
         <h1>Stock</h1>
+        <AideIcones
+          entrees={[
+            'exporter',
+            ['historique', 'Historique du stock : pourquoi il en reste tant']
+          ]}
+          pagination
+        />
         {etat && (
-          <div className="tableau-actions">
+          <div className="page-entete-actions">
             {etat.nbRuptures > 0 && (
               <span className="pastille pastille-erreur">{etat.nbRuptures} en rupture</span>
             )}
@@ -142,7 +154,9 @@ export function PageStock(): React.JSX.Element {
                 {etat.nbDormants} {etat.nbDormants > 1 ? 'dormants' : 'dormant'}
               </span>
             )}
-            <span className="montant">Valeur : {formaterFCFA(etat.valeurTotale)}</span>
+            <span className="chiffre-cle">
+              Valeur : <span className="montant">{formaterFCFA(etat.valeurTotale)}</span>
+            </span>
             <BoutonExporter demande={demandeExport} desactive={visibles.length === 0} />
           </div>
         )}
@@ -213,15 +227,17 @@ export function PageStock(): React.JSX.Element {
                 <th className="nombre">Coût moyen</th>
                 <th className="nombre">Valeur</th>
                 <th>État</th>
-                <th />
+                <th className="colonne-actions">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {visibles.map((l) => {
+              {pages.elements.map((l) => {
                 const niveau = NIVEAUX[l.niveau]
                 return (
                   <tr key={l.produitId}>
-                    <td>{l.nom}</td>
+                    <td className="cellule-titre">{l.nom}</td>
                     <td>{l.rayon ?? 'Non classé'}</td>
                     <td className="nombre">
                       <strong>{formaterQuantite(l.stock)}</strong>
@@ -241,10 +257,12 @@ export function PageStock(): React.JSX.Element {
                         </span>
                       )}
                     </td>
-                    <td>
-                      <button type="button" className="btn btn-secondaire" onClick={() => setHistorique(l)}>
-                        Historique
-                      </button>
+                    <td className="colonne-actions">
+                      <BoutonIcone
+                        icone="historique"
+                        libelle={`Historique du stock de « ${l.nom} »`}
+                        onClick={() => setHistorique(l)}
+                      />
                     </td>
                   </tr>
                 )
@@ -253,6 +271,7 @@ export function PageStock(): React.JSX.Element {
           </table>
         </div>
       )}
+      <Pagination pages={pages} />
     </div>
   )
 }
