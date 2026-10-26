@@ -111,7 +111,7 @@ Le socle comprend :
 ## Transverse
 | Tâche | Intitulé                                            | Dev | Statut | Notes (branche, blocage) |
 |-------|-----------------------------------------------------|-----|--------|--------------------------|
-| UX1   | Refonte ergonomique : palette, icônes, pagination, aide « ? » (D-19) | B (+ écrans de A, avec son accord) | ✅ | `feature/sk/ergonomie` fusionnée dans `test` le 2026-10-26 (directement, sans PR) ; `UI_UX.md` § 2, 4.1, 4.2, 5.12, 6 ; testée avec `docs/SCENARIOS_TEST.md` et chez la cliente (1.0.0-rc.1) |
+| UX1   | Refonte ergonomique : palette, icônes, pagination, aide « ? » (D-19) | B (+ écrans de A, avec son accord) | 🔄 | `feature/sk/ergonomie` terminée, **PR vers `test` à fusionner** (merge commit, tag `v1.0.0-rc.1`) ; `UI_UX.md` § 2, 4.1, 4.2, 5.12, 6 ; testée avec `docs/SCENARIOS_TEST.md` et chez la cliente (1.0.0-rc.1) |
 
 ## Journal des fusions notables
 <!-- Une ligne par PR importante : date · tâche · résumé · contrat ajouté/modifié -->
@@ -170,4 +170,3 @@ Le socle comprend :
 | 2026-10-16 | A7    | Partie 2 : fenêtre « Retour client » dans la caisse (lignes à cocher, motif, sort, remboursement, code du gérant) (PR #64) |
 | 2026-10-16 | A10   | Parties 1 et 2 : facture A4 d'un ticket (F, PDF, original puis COPIE) et proforma (PF, 30 jours, reprise aux prix du jour) ; migration `20261015_1000_factures_proformas.sql` (PR #65, #66) |
 | 2026-10-19 | A10   | Parties 3 et 4 : fenêtre « Faire une facture » (PR #68), « Proforma » et « Reprendre une proforma » (PR #70) |
-| 2026-10-26 | UX1   | Refonte ergonomique (palette, icônes, infobulles, pagination, aide « ? »), imprimante XPOS / cp1252 (D-20), procédures de déploiement et de test, guides ; version 1.0.0-rc.1 (fusion directe de `feature/sk/ergonomie`) |

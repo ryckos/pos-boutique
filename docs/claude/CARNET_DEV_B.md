@@ -59,12 +59,18 @@ Format d'une entrée :
   - sous Windows, un script Python qui réécrit un fichier doit garder les fins de ligne LF
     (`newline=''`), sinon tout le fichier passe en CRLF.
 
-**En cours** : `feature/sk/ergonomie` fusionnée dans `test` le 2026-10-26, **directement, sans PR**, à la
-demande de Dev B, pour que chacun reprenne ses tâches sur une base commune. La cliente teste la
-1.0.0-rc.1 avec les fiches de `docs/fiches-test/`.
+**En cours** : PR `feature/sk/ergonomie` → `test` à ouvrir et fusionner (le 2026-10-26, la poussée directe
+sur `test` a été refusée par la règle GitHub qui impose une PR) :
+https://github.com/ryckos/pos-boutique/compare/test...feature/sk/ergonomie?expand=1
+Dev B veut la fusion rapide pour que chacun reprenne ses tâches sur une base commune ; Dev A relit au
+moins ses écrans (liste dans « Contrats »). La cliente teste la 1.0.0-rc.1 avec `docs/fiches-test/`.
+Sur le poste de Dev B, la branche `test` **locale** porte un commit de fusion non poussé : le jeter avec
+`git switch test` puis `git reset --hard origin/test` avant tout `git pull`.
 
 **Prochaine étape** :
-1. **Suivre le test de la cliente** (fiches remplies, `docs/fiches-test/`). Une correction = une branche
+1. **Faire fusionner la PR** ci-dessus (merge commit, pas de squash : le tag `v1.0.0-rc.1` pointe sur
+   `332d3b9`, qui doit rester dans l'historique de `test`). Ensuite, chacun repart de `test` à jour.
+   Puis **suivre le test de la cliente** (fiches remplies, `docs/fiches-test/`). Une correction = une branche
    `b/…` depuis `test`, puis version `1.0.0-rc.2`, `npm run dist`, tag, mise à jour chez la cliente selon
    `DEPLOIEMENT.md` § 6.3 (sa base est conservée ; une migration se répète d'abord sur une copie de sa
    dernière sauvegarde, § 6.2). Validation → `test` → `main`, version `1.0.0`, tag `v1.0.0`, installée en
@@ -88,8 +94,8 @@ demande de Dev B, pour que chacun reprenne ses tâches sur une base commune. La 
 
 **Questions ouvertes** :
 - D-A1 (stock négatif), D-A3 (plafond de remise), D-A4 (sauvegarde distante), D-A5 : toujours en attente.
-- Fusion directe dans `test` sans relecture : Dev A doit relire les changements qui touchent ses écrans
-  (liste ci-dessous) et signaler tout souci.
+- PR de grande taille (65 fichiers) : Dev A doit relire au moins ce qui touche ses écrans (liste
+  ci-dessous) et signaler tout souci.
 - Retours de la cliente sur les fiches et les guides (textes, ordre des modules).
 
 **Contrats** :
