@@ -22,6 +22,7 @@ import { baseAvecDemo } from './aide'
 // Démo : Kossi = 3 (gérant) ; Grossiste Hédzranawoé = fournisseur 1 ; riz = 1 (20, sans lot),
 // tomate = 3 (72, CUMP 250), savon = 7 (30, CUMP 150, rayon Entretien).
 const KOSSI = 3
+const GERANT = { id: KOSSI, nom: 'Kossi', role: 'gerant' as const }
 const GROSSISTE = 1
 const RIZ = 1
 const TOMATE = 3
@@ -296,7 +297,7 @@ describe('Rapports : résultat de la période', () => {
     const categorie = (nom: string) =>
       une<{ id: number }>(db, 'SELECT id FROM categories_depense WHERE nom = ?', nom)!.id
     const depense = (nom: string, montant: number) =>
-      enregistrerDepense(db, KOSSI, {
+      enregistrerDepense(db, GERANT, {
         categorieId: categorie(nom),
         libelle: nom,
         montant,

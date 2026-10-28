@@ -2,13 +2,13 @@
 import type { DefinitionRoute } from '@renderer/app/types'
 import { PageDepenses } from './PageDepenses'
 
-// Gérant tant que les dépenses payées au tiroir (caissière) attendent A8 de Dev A.
+// Gérant ; la caissière y saisit les dépenses payées au tiroir de sa caisse (vue restreinte).
 export const routesDepenses: DefinitionRoute[] = [
   {
     chemin: '/depenses',
     icone: 'depenses',
     libelle: 'Dépenses',
     element: <PageDepenses />,
-    roles: ['gerant']
+    roles: ['gerant', 'caissier']
   }
 ]

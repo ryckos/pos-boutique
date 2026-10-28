@@ -902,15 +902,30 @@ repart à 1 chaque année.
   Date du jour par défaut ; une date passée est acceptée pour « fonds propres », jamais une date
   future ; une dépense « caisse » est toujours datée du jour. Numéro `DEP` attribué à l'enregistrement.
 - **Justificatif** : référence texte facultative (n° du reçu ou de la facture). La photo est reportée.
-- **Droits** : gérant (et admin) pour tout. La caissière n'enregistrera que des dépenses « caisse »,
-  sur sa session ouverte, une fois les mouvements de caisse livrés (A8, Dev A). D'ici là, la source
-  « caisse » est refusée avec un message clair.
+- **Droits** : gérant (et admin) pour tout. La caissière n'enregistre que des dépenses « caisse »,
+  sur sa session ouverte (§ 10.2).
 - **Correction** : annulation par le gérant, motif obligatoire, journalisée (`annulation_depense`,
-  § 1.4), une seule fois. La dépense reste visible et ne compte plus dans les totaux. Après A8, une
-  dépense « caisse » s'annulera par une entrée de caisse compensatoire, refusée si la session est
-  clôturée.
+  § 1.4), une seule fois. La dépense reste visible et ne compte plus dans les totaux. Une dépense
+  « caisse » s'annule par une entrée de caisse compensatoire, refusée si la session est clôturée
+  (§ 10.2).
 - **Liste** : 30 derniers jours par défaut, filtre par catégorie, total et total par catégorie (hors
   annulées).
+
+### 10.2 Dépense payée au tiroir (validé par Dev B le 2026-10-28)
+- **Quelle caisse** : la caissière paie toujours sur **sa** caisse ouverte (refus sinon : « Ouvrez votre
+  caisse… »), jamais sur celle d'une autre ; elle ne saisit pas de dépense « fonds propres ». Le gérant
+  paie sur la caisse qu'il choisit, sinon sur la sienne si elle est ouverte, sinon sur la seule caisse
+  ouverte ; s'il y en a plusieurs, il doit choisir ; s'il n'y en a aucune, refus.
+- **Écriture** : dans une seule transaction, la dépense (datée du jour, `session_caisse_id`) et un
+  mouvement de caisse `sortie`, motif `depense`, `document_type = 'depense'`, commentaire = libellé
+  (« Dépense (Taxi-moto) » sur le X et le Z). La sortie ne dépasse jamais les espèces théoriques du
+  tiroir (règle de Dev A, § 6.10) : sinon rien n'est écrit et aucun numéro DEP n'est consommé.
+- **Annulation** : gérant seulement, tant que la caisse est ouverte ; les espèces reviennent au tiroir
+  par un contre-mouvement lié à la sortie. Après la clôture, refus : le Z est figé.
+- **Liste de la caissière** : les dépenses de sa caisse ouverte seulement, sans période ni catégories ni
+  annulation ; après sa clôture, la liste est vide.
+- Exemple (vendredi soir, `SCENARIO_REFERENCE.md`) : fond 10 000 + espèces 46 200 + créance 3 500 −
+  taxi-moto 1 000 = **58 700** d'espèces théoriques.
 
 ---
 

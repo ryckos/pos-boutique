@@ -12,6 +12,7 @@ import { baseAvecDemo } from './aide'
 const PATRON = { id: 1, nom: 'Patron', role: 'admin' as const }
 const AFI = 2
 const KOSSI = 3
+const GERANT = { id: KOSSI, nom: 'Kossi', role: 'gerant' as const }
 
 function aujourdhui(db: Db): string {
   return une<{ j: string }>(db, "SELECT date('now','localtime') AS j")!.j
@@ -121,7 +122,7 @@ describe('Journal : lecture (admin)', () => {
       db,
       "SELECT id FROM categories_depense WHERE nom = 'Transport'"
     )!.id
-    const d = enregistrerDepense(db, KOSSI, {
+    const d = enregistrerDepense(db, GERANT, {
       categorieId,
       libelle: 'Taxi-moto',
       montant: 1000,

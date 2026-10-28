@@ -151,7 +151,19 @@ Ma Boutique POS — version 1.0.0-rc.1
 2. Vérifiez le papier et le câble, puis rallumez l'imprimante.
 3. Touchez « Réimprimer » dans le message, ou réimprimez le ticket (§ 9).
 
-## 15. Fermer la caisse (le soir)
+## 15. Payer une dépense depuis le tiroir
+
+Exemple : un taxi-moto pour une livraison.
+
+1. Menu **Dépenses** → « Nouvelle dépense ».
+2. Catégorie, à quoi sert la dépense (ex. : « taxi-moto »), montant, numéro du reçu s'il y en a un.
+3. Touchez « Enregistrer la dépense ». Le montant sort des espèces de votre caisse et apparaît sur le
+   rapport X et le Z.
+
+**Bon à savoir** : votre caisse doit être ouverte. Vous ne pouvez pas sortir plus que ce qu'il y a dans le
+tiroir. En cas d'erreur, demandez au gérant de l'annuler **avant** de fermer la caisse.
+
+## 16. Fermer la caisse (le soir)
 
 1. Encaissez ou videz tous les tickets en attente.
 2. Menu **Clôture de caisse**.

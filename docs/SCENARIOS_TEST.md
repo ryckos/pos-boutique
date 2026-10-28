@@ -297,6 +297,18 @@ docs/SCENARIOS_TEST.docx "Scénarios de test — Ma Boutique POS"`).
   *Si d'autres tests ont été joués avant, recalculer avec la formule de `REGLES_METIER.md` § 6.9.*
 - **Résultat** : ☐ OK ☐ KO — remarque :
 
+### AFI-15 — Dépense payée au tiroir (puis annulée par le gérant)
+- **Pré-requis** : AFI-14 (caisse d'Afi clôturée). Afi rouvre sa caisse avec un fond de **10 000**.
+- **Étapes** : Afi, menu « Dépenses » : « Nouvelle dépense », Transport, « taxi-moto », **1 000** ;
+  puis une deuxième de **20 000** ; « Clôture de caisse », « Imprimer le rapport X ». Kossi, menu
+  « Dépenses » : annuler le taxi-moto (motif « erreur ») ; Afi réimprime le X.
+- **Attendu** : la page d'Afi s'appelle « Dépenses de ma caisse », sans filtres, catégories ni
+  annulation ; ni « Payée par » ni date dans la fenêtre. `DEP-…` ; 20 000 refusé (« Il n'y a que
+  9 000 F en caisse »). X : « Dépense (taxi-moto) » −1 000, espèces théoriques **9 000**. Chez Kossi,
+  « Payée par : Caisse (Afi) » ; après l'annulation, X à **10 000** (une entrée « Annulation… »). Après
+  la clôture d'Afi, l'icône d'annulation disparaît et la liste d'Afi est vide.
+- **Résultat** : ☐ OK ☐ KO — remarque :
+
 ---
 
 ## 3. Kossi — gérant
@@ -448,11 +460,11 @@ docs/SCENARIOS_TEST.docx "Scénarios de test — Ma Boutique POS"`).
 
 ### KOS-17 — Dépenses
 - **Étapes** : « Nouvelle dépense » : Transport, « taxi-moto », **1 000**, « Fonds propres » ;
-  puis Loyer **15 000** ; filtrer par catégorie ; annuler le loyer (motif) ; essayer la source
-  « Caisse » ; « Catégories » : créer « Gardiennage », désactiver « Eau ».
+  puis Loyer **15 000** ; filtrer par catégorie ; annuler le loyer (motif) ; choisir la source
+  « Caisse » sans caisse ouverte ; « Catégories » : créer « Gardiennage », désactiver « Eau ».
 - **Attendu** : `DEP-AAAA-NNNNNN` ; total 16 000 F, puis **1 000 F** après annulation (le loyer
-  reste visible, annulé). Date future refusée. Source « Caisse » refusée avec un message clair (en
-  attente, B13). Nom de catégorie déjà pris (même désactivée) refusé.
+  reste visible, annulé). Date future refusée. Source « Caisse » sans caisse ouverte : « Aucune caisse
+  n'est ouverte » (dépense au tiroir : AFI-15). Nom de catégorie déjà pris (même désactivée) refusé.
 - **Résultat** : ☐ OK ☐ KO — remarque :
 
 ### KOS-18 — Rapports de gestion
@@ -715,7 +727,6 @@ Ces fonctions ne sont pas livrées : un test qui échoue dessus n'est pas un dé
 | Rapports de ventes, marge et résultat chiffrés | A14 (`caisse:ventesPeriode`) |
 | Tableau de bord d'accueil | A15 |
 | Promotions programmées (bouton « Promo » des péremptions) | A16 |
-| Dépense payée au tiroir (source « Caisse ») | fin de B13 |
 | Écran client définitif | A13 |
 | Envoi de la sauvegarde à distance | D-A4 |
 | Démarrage automatique et mode kiosque | Phase 5 (B-P5) ; provisoire : raccourci au démarrage de Windows |

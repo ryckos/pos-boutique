@@ -3,9 +3,13 @@
  * Propriétaire : Dev B.
  * Gérant. Jamais de suppression : une dépense s'annule avec un motif et reste visible
  * (REGLES_METIER § 10). Les règles sont revérifiées par le processus principal.
+ * Caissière : vue restreinte (choix de Dev A) — les dépenses payées au tiroir de sa caisse ouverte,
+ * sans catégories, sans période ni annulation.
  */
 import { useCallback, useEffect, useState } from 'react'
 import type { CategorieDepense, Depense, ListeDepenses, SourceDepense } from '@shared/ipc/depenses'
+import type { SessionOuverteResume } from '@shared/ipc/caisse'
+import { useUtilisateur } from '@renderer/app/contexte'
 import { formaterDate, formaterFCFA } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
@@ -14,9 +18,10 @@ import { suffixePeriode } from '@renderer/lib/exportExcel'
 import type { DemandeExport } from '@shared/ipc/exports'
 import {
   LIBELLES_SOURCE,
-  SOURCES_OUVERTES,
   aujourdhuiLocal,
+  depenseAnnulable,
   etatDepense,
+  libellePayeePar,
   lireMontant,
   manqueDepense
 } from './saisieDepense'
@@ -33,6 +38,7 @@ type Action =
   | null
 
 export function PageDepenses(): React.JSX.Element {
+  const caissiere = useUtilisateur().role === 'caissier'
   const [du, setDu] = useState('')
   const [au, setAu] = useState('')
   const [categorieId, setCategorieId] = useState('')
@@ -56,10 +62,10 @@ export function PageDepenses(): React.JSX.Element {
   }, [du, au, categorieId])
 
   const chargerCategories = useCallback(() => {
-    appel('depenses:categories', { inclureInactives: true })
+    appel('depenses:categories', { inclureInactives: !caissiere })
       .then(setCategories)
       .catch((e: Error) => setErreur(e.message))
-  }, [])
+  }, [caissiere])
 
   useEffect(charger, [charger])
   useEffect(chargerCategories, [chargerCategories])
@@ -101,7 +107,7 @@ export function PageDepenses(): React.JSX.Element {
             d.categorie,
             d.libelle,
             d.reference,
-            LIBELLES_SOURCE[d.source],
+            libellePayeePar(d),
             d.montant,
             d.annuleLe ? 'Annulée' : 'Enregistrée',
             d.utilisateur,
@@ -127,27 +133,36 @@ export function PageDepenses(): React.JSX.Element {
   return (
     <div className="page">
       <header className="page-entete">
-        <h1>Dépenses</h1>
+        <h1>{caissiere ? 'Dépenses de ma caisse' : 'Dépenses'}</h1>
         <AideIcones
-          entrees={[
-            ['ajouter', 'Nouvelle dépense'],
-            'categories',
-            'exporter',
-            ['annuler', 'Annuler la dépense, avec un motif']
-          ]}
+          entrees={
+            caissiere
+              ? [['ajouter', 'Nouvelle dépense payée au tiroir']]
+              : [
+                  ['ajouter', 'Nouvelle dépense'],
+                  'categories',
+                  'exporter',
+                  ['annuler', 'Annuler la dépense, avec un motif']
+                ]
+          }
           pagination
         />
         <div className="page-entete-actions">
           {liste && (
             <span className="chiffre-cle">
-              Total de la période : <span className="montant">{formaterFCFA(liste.total)}</span>
+              {caissiere ? 'Total payé au tiroir' : 'Total de la période'} :{' '}
+              <span className="montant">{formaterFCFA(liste.total)}</span>
             </span>
           )}
-          <BoutonExporter demande={demandeExport} desactive={!liste || liste.depenses.length === 0} />
-          <button className="btn btn-secondaire" onClick={() => ouvrir({ type: 'categories' })}>
-            <Icone nom="categories" />
-            Catégories
-          </button>
+          {!caissiere && (
+            <>
+              <BoutonExporter demande={demandeExport} desactive={!liste || liste.depenses.length === 0} />
+              <button className="btn btn-secondaire" onClick={() => ouvrir({ type: 'categories' })}>
+                <Icone nom="categories" />
+                Catégories
+              </button>
+            </>
+          )}
           <button className="btn" onClick={() => ouvrir({ type: 'nouvelle' })}>
             <Icone nom="ajouter" />
             Nouvelle dépense
@@ -163,6 +178,7 @@ export function PageDepenses(): React.JSX.Element {
 
       {action?.type === 'nouvelle' && (
         <FormulaireDepense
+          caissiere={caissiere}
           categories={actives}
           onFermer={() => ouvrir(null)}
           onValider={async (s) => {
@@ -180,7 +196,13 @@ export function PageDepenses(): React.JSX.Element {
           onValider={async (motif) => {
             await appel('depenses:annuler', { id: action.depense.id, motif })
             setAction(null)
-            setSucces(`Dépense ${action.depense.numero} annulée : elle ne compte plus dans les totaux.`)
+            setSucces(
+              `Dépense ${action.depense.numero} annulée : elle ne compte plus dans les totaux${
+                action.depense.source === 'caisse'
+                  ? ', et l’argent est revenu dans les espèces du tiroir'
+                  : ''
+              }.`
+            )
             charger()
           }}
         />
@@ -218,38 +240,40 @@ export function PageDepenses(): React.JSX.Element {
         </FenetreFormulaire>
       )}
 
-      <div className="filtres">
-        <label className="champ">
-          Du
-          <input
-            type="date"
-            value={du || liste?.du || ''}
-            max={au || liste?.au}
-            onChange={(e) => setDu(e.target.value)}
-          />
-        </label>
-        <label className="champ">
-          Au
-          <input
-            type="date"
-            value={au || liste?.au || ''}
-            min={du || liste?.du}
-            onChange={(e) => setAu(e.target.value)}
-          />
-        </label>
-        <label className="champ">
-          Catégorie
-          <select value={categorieId} onChange={(e) => setCategorieId(e.target.value)}>
-            <option value="">Toutes</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nom}
-                {c.actif ? '' : ' (désactivée)'}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+      {!caissiere && (
+        <div className="filtres">
+          <label className="champ">
+            Du
+            <input
+              type="date"
+              value={du || liste?.du || ''}
+              max={au || liste?.au}
+              onChange={(e) => setDu(e.target.value)}
+            />
+          </label>
+          <label className="champ">
+            Au
+            <input
+              type="date"
+              value={au || liste?.au || ''}
+              min={du || liste?.du}
+              onChange={(e) => setAu(e.target.value)}
+            />
+          </label>
+          <label className="champ">
+            Catégorie
+            <select value={categorieId} onChange={(e) => setCategorieId(e.target.value)}>
+              <option value="">Toutes</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nom}
+                  {c.actif ? '' : ' (désactivée)'}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
 
       {erreur && (
         <p className="alerte page-message" role="alert">
@@ -269,8 +293,10 @@ export function PageDepenses(): React.JSX.Element {
 
       {liste && liste.depenses.length === 0 ? (
         <p className="vide">
-          Aucune dépense du {formaterDate(liste.du)} au {formaterDate(liste.au)}. Enregistrez la première avec
-          « Nouvelle dépense ».
+          {caissiere
+            ? 'Aucune dépense payée au tiroir de votre caisse.'
+            : `Aucune dépense du ${formaterDate(liste.du)} au ${formaterDate(liste.au)}.`}{' '}
+          Enregistrez la première avec « Nouvelle dépense ».
         </p>
       ) : (
         liste && (
@@ -305,7 +331,7 @@ export function PageDepenses(): React.JSX.Element {
                         {d.libelle}
                         {d.reference && <div className="detail">Justificatif : {d.reference}</div>}
                       </td>
-                      <td>{LIBELLES_SOURCE[d.source]}</td>
+                      <td>{libellePayeePar(d)}</td>
                       <td className="nombre montant">{formaterFCFA(d.montant)}</td>
                       <td>
                         <span className={`pastille ${etat.classe}`}>{etat.texte}</span>
@@ -316,7 +342,7 @@ export function PageDepenses(): React.JSX.Element {
                         )}
                       </td>
                       <td className="colonne-actions">
-                        {!d.annuleLe && d.source === 'fonds_propres' && (
+                        {!caissiere && depenseAnnulable(d) && (
                           <BoutonIcone
                             icone="annuler"
                             variante="attention"
@@ -335,14 +361,16 @@ export function PageDepenses(): React.JSX.Element {
       )}
       <Pagination pages={pages} />
       <p className="vide note-bas">
-        Une dépense saisie par erreur s’annule avec un motif, puis se ressaisit. Les dépenses payées au tiroir
-        arriveront avec les mouvements de caisse.
+        {caissiere
+          ? 'Une dépense payée au tiroir sort des espèces de votre caisse. En cas d’erreur, demandez au gérant de l’annuler avant la clôture.'
+          : 'Une dépense saisie par erreur s’annule avec un motif, puis se ressaisit. Payée au tiroir, elle ne s’annule plus une fois la caisse clôturée.'}
       </p>
     </div>
   )
 }
 
 function FormulaireDepense(props: {
+  caissiere: boolean
   categories: CategorieDepense[]
   onValider: (s: {
     categorieId: number
@@ -351,6 +379,7 @@ function FormulaireDepense(props: {
     source: SourceDepense
     date: string
     reference: string
+    sessionId: number | null
   }) => Promise<void>
   onFermer: () => void
 }): React.JSX.Element {
@@ -358,14 +387,37 @@ function FormulaireDepense(props: {
   const [categorieId, setCategorieId] = useState('')
   const [libelle, setLibelle] = useState('')
   const [montantTexte, setMontantTexte] = useState('')
-  const [source, setSource] = useState<SourceDepense>('fonds_propres')
+  const [source, setSource] = useState<SourceDepense>(props.caissiere ? 'caisse' : 'fonds_propres')
   const [date, setDate] = useState(aujourdhui)
   const [reference, setReference] = useState('')
+  // Gérant : caisses ouvertes, pour savoir de quel tiroir sort l'argent.
+  const [caisses, setCaisses] = useState<SessionOuverteResume[] | null>(null)
+  const [sessionId, setSessionId] = useState('')
+  const [erreurCaisses, setErreurCaisses] = useState<string | null>(null)
+  useEffect(() => {
+    if (props.caissiere || source !== 'caisse' || caisses) return
+    appel('caisse:sessionsOuvertes')
+      .then(setCaisses)
+      .catch((e: Error) => setErreurCaisses(e.message))
+  }, [props.caissiere, source, caisses])
+
   const montant = lireMontant(montantTexte)
-  const manque = manqueDepense(
-    { categorieId: categorieId ? Number(categorieId) : null, libelle, montant, source, date },
-    aujourdhui
-  )
+  const manque =
+    erreurCaisses ??
+    manqueDepense(
+      {
+        categorieId: categorieId ? Number(categorieId) : null,
+        libelle,
+        montant,
+        source,
+        date,
+        caissesOuvertes: props.caissiere ? undefined : (caisses?.length ?? 0),
+        sessionId: sessionId ? Number(sessionId) : null
+      },
+      aujourdhui
+    ) ??
+    (!props.caissiere && source === 'caisse' && !caisses ? 'Recherche des caisses ouvertes…' : null)
+  const caisseUnique = caisses?.length === 1 ? caisses[0] : null
 
   return (
     <FenetreFormulaire
@@ -379,7 +431,8 @@ function FormulaireDepense(props: {
           montant: montant!,
           source,
           date,
-          reference
+          reference,
+          sessionId: source === 'caisse' && sessionId ? Number(sessionId) : null
         })
       }
       onFermer={props.onFermer}
@@ -408,22 +461,48 @@ function FormulaireDepense(props: {
         <input inputMode="numeric" value={montantTexte} onChange={(e) => setMontantTexte(e.target.value)} />
         <span className="champ-aide">{manque ?? formaterFCFA(montant ?? 0)}</span>
       </label>
-      <label className="champ">
-        Payée par
-        <select value={source} onChange={(e) => setSource(e.target.value as SourceDepense)}>
-          {(Object.keys(LIBELLES_SOURCE) as SourceDepense[]).map((s) => (
-            <option key={s} value={s} disabled={!SOURCES_OUVERTES.includes(s)}>
-              {LIBELLES_SOURCE[s]}
-              {SOURCES_OUVERTES.includes(s) ? '' : ' — bientôt disponible'}
-            </option>
-          ))}
-        </select>
-        <span className="champ-aide">Fonds propres : l’argent ne sort pas du tiroir.</span>
-      </label>
-      <label className="champ">
-        Date
-        <input type="date" value={date} max={aujourdhui} onChange={(e) => setDate(e.target.value)} />
-      </label>
+      {props.caissiere ? (
+        <p className="champ-aide formulaire-bloc">
+          Payée par le tiroir de votre caisse, datée d’aujourd’hui : le montant sort de vos espèces.
+        </p>
+      ) : (
+        <label className="champ">
+          Payée par
+          <select value={source} onChange={(e) => setSource(e.target.value as SourceDepense)}>
+            {(Object.keys(LIBELLES_SOURCE) as SourceDepense[]).map((s) => (
+              <option key={s} value={s}>
+                {LIBELLES_SOURCE[s]}
+              </option>
+            ))}
+          </select>
+          <span className="champ-aide">
+            {source === 'caisse'
+              ? caisseUnique
+                ? `Sort des espèces de la caisse de ${caisseUnique.caissier}, datée d’aujourd’hui.`
+                : 'Sort des espèces du tiroir, datée d’aujourd’hui.'
+              : 'Fonds propres : l’argent ne sort pas du tiroir.'}
+          </span>
+        </label>
+      )}
+      {!props.caissiere && source === 'caisse' && caisses && caisses.length > 1 && (
+        <label className="champ">
+          Caisse
+          <select value={sessionId} onChange={(e) => setSessionId(e.target.value)}>
+            <option value="">Choisir…</option>
+            {caisses.map((c) => (
+              <option key={c.id} value={c.id}>
+                Caisse de {c.caissier}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {source === 'fonds_propres' && (
+        <label className="champ">
+          Date
+          <input type="date" value={date} max={aujourdhui} onChange={(e) => setDate(e.target.value)} />
+        </label>
+      )}
       <label className="champ">
         Justificatif (facultatif)
         <input
@@ -454,7 +533,10 @@ function FormulaireAnnulation(props: {
     >
       <p className="vide formulaire-bloc">
         {d.libelle} ({d.categorie}), {formaterFCFA(d.montant)} du {formaterDate(d.date)}. Elle restera
-        visible, marquée annulée, et ne comptera plus dans les totaux. L’annulation est définitive.
+        visible, marquée annulée, et ne comptera plus dans les totaux.
+        {d.source === 'caisse' &&
+          ` Les ${formaterFCFA(d.montant)} reviennent dans les espèces de la caisse de ${d.caissier}.`}{' '}
+        L’annulation est définitive.
       </p>
       <label className="champ champ-large">
         Motif
@@ -479,9 +561,7 @@ function FenetreCategories(props: {
   return (
     <FenetreFormulaire
       titre="Catégories de dépenses"
-      aide={[
-        ['desactiver', 'Désactiver la catégorie (une au moins reste active)']
-      ]}
+      aide={[['desactiver', 'Désactiver la catégorie (une au moins reste active)']]}
       libelleValider="Créer la catégorie"
       valide={nom.trim() !== ''}
       onValider={async () => {

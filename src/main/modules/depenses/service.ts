@@ -2,7 +2,8 @@
  * Dépenses (tâche B13). Propriétaire : Dev B.
  * Règles (REGLES_METIER § 10) : catégorie active, montant en francs entiers, numéro DEP,
  * date passée acceptée mais jamais future ; correction par annulation avec motif, journalisée.
- * Source « caisse » : attend `enregistrerMouvementCaisse()` de Dev A (A8), refusée d'ici là.
+ * Source « caisse » : sortie d'espèces par `enregistrerMouvementCaisse()` de Dev A (A8), dans la
+ * même transaction que la dépense ; annulation par contre-mouvement, tant que la caisse est ouverte.
  */
 import type {
   CategorieDepense,
@@ -11,11 +12,15 @@ import type {
   SaisieDepense,
   SourceDepense
 } from '@shared/ipc/depenses'
+import type { UtilisateurConnecte } from '@shared/types'
 import type { Db } from '../../db/connexion'
 import { avecTransaction, executer, toutes, une } from '../../db/requetes'
 import { ErreurMetier } from '../../core/erreurs'
 import { journaliser } from '../../core/audit'
 import { prochainNumero } from '../../core/numerotation'
+import { sessionsOuvertes } from '../caisse/service-cloture'
+import { annulerMouvementCaisse, enregistrerMouvementCaisse } from '../caisse/service-mouvements'
+import { sessionOuverte } from '../caisse/service-session'
 
 const DATE_ISO = /^\d{4}-\d{2}-\d{2}$/
 const SOURCES: SourceDepense[] = ['caisse', 'fonds_propres']
@@ -88,29 +93,67 @@ export function desactiverCategorie(db: Db, id: number): void {
 const SELECT_DEPENSE = `
   SELECT d.id, d.numero, d.date_depense AS date, d.categorie_id AS categorieId, c.nom AS categorie,
          d.libelle, d.montant, d.source, d.reference, u.nom AS utilisateur,
-         d.annule_le AS annuleLe, a.nom AS annulePar, d.motif_annulation AS motifAnnulation
+         d.annule_le AS annuleLe, a.nom AS annulePar, d.motif_annulation AS motifAnnulation,
+         d.session_caisse_id AS sessionId, cs.nom AS caissier, (s.statut = 'fermee') AS sessionCloturee
   FROM depenses d
   JOIN categories_depense c ON c.id = d.categorie_id
   JOIN utilisateurs u ON u.id = d.utilisateur_id
-  LEFT JOIN utilisateurs a ON a.id = d.annule_par`
+  LEFT JOIN utilisateurs a ON a.id = d.annule_par
+  LEFT JOIN sessions_caisse s ON s.id = d.session_caisse_id
+  LEFT JOIN utilisateurs cs ON cs.id = s.utilisateur_id`
 
-function depense(db: Db, id: number): Depense {
-  return une<Depense>(db, `${SELECT_DEPENSE} WHERE d.id = ?`, id)!
+type DepenseEnBase = Omit<Depense, 'sessionCloturee'> & { sessionCloturee: number | null }
+
+const versDepense = (d: DepenseEnBase): Depense => ({ ...d, sessionCloturee: d.sessionCloturee === 1 })
+
+function lireDepense(db: Db, id: number): Depense | null {
+  const d = une<DepenseEnBase>(db, `${SELECT_DEPENSE} WHERE d.id = ?`, id)
+  return d ? versDepense(d) : null
 }
 
-export function enregistrerDepense(db: Db, utilisateurId: number, s: SaisieDepense): Depense {
+function depense(db: Db, id: number): Depense {
+  return lireDepense(db, id)!
+}
+
+/**
+ * Caisse d'une dépense payée au tiroir (validé par Dev B le 2026-10-28) : la caissière paie sur sa
+ * propre caisse ouverte ; le gérant sur la caisse choisie, sinon la sienne, sinon la seule ouverte.
+ */
+function caisseDeLaDepense(db: Db, u: UtilisateurConnecte, sessionId?: number | null): number {
+  if (u.role === 'caissier') {
+    const s = sessionOuverte(db, u.id)
+    if (!s) throw new ErreurMetier('Ouvrez votre caisse avant de payer une dépense au tiroir')
+    if (sessionId != null && sessionId !== s.id) {
+      throw new ErreurMetier('Vous ne pouvez payer une dépense que depuis votre propre caisse')
+    }
+    return s.id
+  }
+  const ouvertes = sessionsOuvertes(db)
+  if (sessionId != null) {
+    if (!ouvertes.some((s) => s.id === sessionId)) {
+      throw new ErreurMetier('Cette caisse est clôturée : choisissez une caisse ouverte')
+    }
+    return sessionId
+  }
+  const sienne = ouvertes.find((s) => s.utilisateurId === u.id)
+  if (sienne) return sienne.id
+  if (ouvertes.length === 1) return ouvertes[0].id
+  if (ouvertes.length === 0) {
+    throw new ErreurMetier('Aucune caisse n’est ouverte : choisissez « Fonds propres » ou ouvrez la caisse')
+  }
+  throw new ErreurMetier('Plusieurs caisses sont ouvertes : choisissez celle du tiroir')
+}
+
+export function enregistrerDepense(db: Db, u: UtilisateurConnecte, s: SaisieDepense): Depense {
   const libelle = nettoyer(s.libelle)
   if (!libelle) throw new ErreurMetier('Indiquez à quoi correspond la dépense (ex. : taxi-moto)')
   if (!Number.isInteger(s.montant) || s.montant <= 0) {
     throw new ErreurMetier('Le montant est un nombre de francs, sans virgule, supérieur à zéro')
   }
   if (!SOURCES.includes(s.source)) throw new ErreurMetier('Indiquez d’où vient l’argent')
-  if (s.source === 'caisse') {
-    // En attente de `enregistrerMouvementCaisse()` (Dev A, A8) : sans lui, l'argent sortirait du
-    // tiroir sans apparaître dans les espèces théoriques de la clôture.
-    throw new ErreurMetier(
-      'Les dépenses payées au tiroir arriveront avec les mouvements de caisse : choisissez « Fonds propres »'
-    )
+  // La caissière ne dépense que l'argent de son tiroir : le reste regarde le gérant.
+  if (u.role === 'caissier' && s.source !== 'caisse') {
+    throw new ErreurMetier('Vous ne pouvez enregistrer qu’une dépense payée au tiroir de votre caisse')
   }
 
   return avecTransaction(db, () => {
@@ -123,24 +166,41 @@ export function enregistrerDepense(db: Db, utilisateurId: number, s: SaisieDepen
     if (!c.actif) throw new ErreurMetier(`La catégorie « ${c.nom} » est désactivée : choisissez-en une autre`)
 
     const jour = aujourdhui(db)
-    const date = s.date?.trim() || jour
+    const caisse = s.source === 'caisse' ? caisseDeLaDepense(db, u, s.sessionId) : null
+    // L'argent du tiroir sort aujourd'hui : une dépense « caisse » est toujours datée du jour.
+    const date = caisse !== null ? jour : s.date?.trim() || jour
     if (!dateValide(date)) throw new ErreurMetier('Indiquez la date de la dépense')
     if (date > jour) throw new ErreurMetier('La date de la dépense ne peut pas être dans le futur')
 
     const numero = prochainNumero(db, 'DEP')
     const { id } = executer(
       db,
-      `INSERT INTO depenses (numero, categorie_id, libelle, montant, source, reference, utilisateur_id, date_depense)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO depenses (numero, categorie_id, libelle, montant, source, session_caisse_id, reference,
+                             utilisateur_id, date_depense)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       numero,
       s.categorieId,
       libelle,
       s.montant,
       s.source,
+      caisse,
       nettoyer(s.reference) || null,
-      utilisateurId,
+      u.id,
       date
     )
+    if (caisse !== null) {
+      // Même transaction : si le tiroir n'a pas assez d'espèces, la dépense et son numéro disparaissent.
+      enregistrerMouvementCaisse(db, {
+        sessionId: caisse,
+        utilisateurId: u.id,
+        sens: 'sortie',
+        motif: 'depense',
+        montant: s.montant,
+        commentaire: libelle,
+        documentType: 'depense',
+        documentId: id
+      })
+    }
     return depense(db, id)
   })
 }
@@ -150,12 +210,26 @@ export function annulerDepense(db: Db, utilisateurId: number, id: number, motif:
   const m = nettoyer(motif)
   if (!m) throw new ErreurMetier('Indiquez le motif de l’annulation')
   avecTransaction(db, () => {
-    const d = une<Depense>(db, `${SELECT_DEPENSE} WHERE d.id = ?`, id)
+    const d = lireDepense(db, id)
     if (!d) throw new ErreurMetier('Dépense introuvable : rechargez la liste')
     if (d.annuleLe) throw new ErreurMetier(`La dépense ${d.numero} est déjà annulée`)
-    // Une dépense de caisse s'annulera par une entrée compensatoire au tiroir (après A8).
     if (d.source === 'caisse') {
-      throw new ErreurMetier('Une dépense payée au tiroir ne peut pas encore être annulée')
+      // Le Z d'une caisse clôturée est figé : les espèces sorties ne peuvent plus y revenir.
+      if (d.sessionCloturee) throw new ErreurMetier('Cette caisse est clôturée : la dépense ne s’annule plus')
+      const mouvement = une<{ id: number }>(
+        db,
+        `SELECT id FROM mouvements_caisse
+         WHERE document_type = 'depense' AND document_id = ? AND mouvement_origine_id IS NULL`,
+        id
+      )
+      // Les espèces reviennent au tiroir par une entrée compensatoire, liée à la sortie.
+      if (mouvement) {
+        annulerMouvementCaisse(db, {
+          mouvementId: mouvement.id,
+          utilisateurId,
+          motif: `Annulation de la dépense ${d.numero} : ${m}`
+        })
+      }
     }
     executer(
       db,
@@ -183,9 +257,11 @@ export function annulerDepense(db: Db, utilisateurId: number, id: number, motif:
   })
 }
 
+/** `caissiereId` : la caissière ne voit que les dépenses de sa caisse ouverte, quelle que soit la période. */
 export function listerDepenses(
   db: Db,
-  filtre: { du?: string | null; au?: string | null; categorieId?: number | null } = {}
+  filtre: { du?: string | null; au?: string | null; categorieId?: number | null } = {},
+  caissiereId?: number
 ): ListeDepenses {
   const jour = aujourdhui(db)
   const au = filtre.au?.trim() || jour
@@ -196,16 +272,20 @@ export function listerDepenses(
   if (du > au) throw new ErreurMetier('Le début de la période doit précéder sa fin')
 
   const categorieId = filtre.categorieId ?? null
-  const depenses = toutes<Depense>(
+  // Sans caisse ouverte, la caissière ne voit rien (aucune session n'a l'id 0).
+  const caisse = caissiereId !== undefined ? (sessionOuverte(db, caissiereId)?.id ?? 0) : null
+  const depenses = toutes<DepenseEnBase>(
     db,
-    `${SELECT_DEPENSE}
-     WHERE d.date_depense BETWEEN ? AND ? AND (? IS NULL OR d.categorie_id = ?)
-     ORDER BY d.date_depense DESC, d.id DESC`,
-    du,
-    au,
+    caisse !== null
+      ? `${SELECT_DEPENSE} WHERE d.session_caisse_id = ? AND (? IS NULL OR d.categorie_id = ?)
+         ORDER BY d.date_depense DESC, d.id DESC`
+      : `${SELECT_DEPENSE}
+         WHERE d.date_depense BETWEEN ? AND ? AND (? IS NULL OR d.categorie_id = ?)
+         ORDER BY d.date_depense DESC, d.id DESC`,
+    ...(caisse !== null ? [caisse] : [du, au]),
     categorieId,
     categorieId
-  )
+  ).map(versDepense)
   const valables = depenses.filter((d) => !d.annuleLe)
   const parCategorie = new Map<number, { categorieId: number; categorie: string; total: number }>()
   for (const d of valables) {

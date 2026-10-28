@@ -641,17 +641,24 @@ commande ». Un prix saisi différent du prix prévu affiche la pastille « prix
 6 000 F », sans bloquer. Changer de fournisseur détache la commande. Le détail d'une réception
 indique la commande livrée.
 
-### 5.19 Dépenses (Dev B — B13, gérant)
+### 5.19 Dépenses (Dev B — B13, gérant ; caissière en vue restreinte)
 Page « Dépenses » du menu (`modules/depenses/PageDepenses.tsx`), après « Fournisseurs ». En-tête : « Total
 de la période », boutons « Catégories » et « Nouvelle dépense ». Filtres Du / Au (30 derniers jours par
 défaut) et Catégorie ; une pastille par catégorie avec son total quand il y en a plusieurs. Tableau
 Numéro (et auteur) / Date / Catégorie / Libellé (et justificatif) / Payée par / Montant / État : pastille
 « Enregistrée » en vert, « Annulée » en gris avec la date, l'auteur et le motif ; ligne annulée grisée.
-- **Nouvelle dépense** (fenêtre) : Catégorie, Libellé, Montant (F), Payée par (« Fonds propres » ;
-  « Caisse (tiroir) — bientôt disponible » grisé jusqu'à A8), Date (aujourd'hui, jamais future),
+- **Nouvelle dépense** (fenêtre) : Catégorie, Libellé, Montant (F), Payée par (« Fonds propres » ou
+  « Caisse (tiroir) » ; l'aide dit de quelle caisse sort l'argent), Caisse (seulement si plusieurs sont
+  ouvertes), Date (fonds propres seulement : aujourd'hui, jamais future ; au tiroir, toujours le jour),
   Justificatif (n° du reçu, facultatif). Le bouton « Enregistrer la dépense » reste grisé et l'aide dit
-  ce qui manque. Le message de succès donne le numéro `DEP`.
-- **Annuler** (fenêtre rouge) : rappel de la dépense, motif obligatoire, « Annuler la dépense ».
+  ce qui manque. Le message de succès donne le numéro `DEP`. Colonne « Payée par » : « Fonds propres »
+  ou « Caisse (Afi) ».
+- **Caissière** : page « Dépenses de ma caisse » — les dépenses de sa caisse ouverte, « Total payé au
+  tiroir », bouton « Nouvelle dépense » (source caisse imposée, pas de date ni de choix de caisse) ; ni
+  filtres, ni catégories, ni export, ni annulation (« demandez au gérant avant la clôture »).
+- **Annuler** (fenêtre rouge) : rappel de la dépense (au tiroir : « les … F reviennent dans les espèces de
+  la caisse d'Afi »), motif obligatoire, « Annuler la dépense ». Pas d'icône sur une dépense au tiroir
+  dont la caisse est clôturée.
 - **Catégories** (fenêtre) : champ « Nouvelle catégorie » et « Créer la catégorie », liste avec pastille
   Active / Désactivée et « Désactiver » (confirmation en fenêtre rouge ; la dernière active ne se
   désactive pas).
