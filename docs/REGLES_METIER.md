@@ -923,6 +923,18 @@ repart à 1 chaque année.
   marge brute = Σ total_ligne − Σ (quantite × cout_unitaire)
   ```
   Elle se calcule sur les lignes, donc avec les coûts photocopiés au moment de la vente.
+- **Précisions de réalisation (A14, validées par Dev A le 2026-10-28)**, canal `caisse:ventesPeriode`
+  et fonction `ventesPeriode(db, { du, au })` de `modules/caisse/service-rapports.ts` :
+  - **chiffre d'affaires = Σ `ventes.total_ttc`** des tickets et des retours au statut `terminee` (et
+    non Σ `total_ligne`) : la remise sur le ticket n'est pas dans les lignes d'un ticket ; elle l'est
+    dans celles d'un retour, au prorata. Un ticket annulé, une facture, une proforma ne comptent pas ;
+  - **un retour rend son coût** : coût = Σ `quantite × cout_unitaire` des lignes de tickets **moins**
+    celles des retours. Une boîte détruite au retour est déjà comptée en casse dans les pertes (§ 11.1) ;
+  - chaque document compte **à sa propre date** (un retour du jour sur un ticket d'hier compte aujourd'hui) ;
+  - le coût (à virgule, CUMP) est arrondi au franc **une seule fois**, sur le total ;
+  - `marge` suit la règle ci-dessus (sur le **TTC**) ; `margeHt` (HT − coût) est donnée pour
+    information, la question TTC / HT reste à poser à la cliente ;
+  - période comme les rapports de gestion (§ 11.1) : mois en cours par défaut, fin jamais future ; gérant.
 - **Top et flop produits** : on agrège **par produit**, tous conditionnements confondus, avec
   `quantite_base_totale`.
 - **Résultat de la période** : marge brute − dépenses de la période.

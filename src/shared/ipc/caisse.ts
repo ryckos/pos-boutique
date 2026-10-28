@@ -2,11 +2,12 @@
  * Propriétaire : Dev A.
  *
  * Canaux de la caisse : session, vente, ticket (A2, A3), clôture et rapports X / Z (A4),
- * mouvements de caisse (A8). Voir docs/DEV_A_COMPTOIR.md.
+ * mouvements de caisse (A8), ventes d'une période (A14). Voir docs/DEV_A_COMPTOIR.md.
  */
 import type { MotifMouvementCaisse, MotifSaisiAuTiroir, SensMouvementCaisse } from '../caisse'
 import type { LigneRetournable, ModeRemboursement, MotifRetour, SortRetour } from '../retour'
 import type { ArticleCatalogue } from '../types'
+import type { PeriodeRapport } from './rapports-gestion'
 
 /** Modes acceptés à la caisse pour l'instant. Le crédit arrive avec la fiche client (A11). */
 export type ModePaiementCaisse = 'especes' | 'tmoney' | 'flooz'
@@ -325,6 +326,31 @@ export interface RequeteCloture {
   commentaire?: string
 }
 
+/**
+ * Ventes d'une période (A14, REGLES_METIER § 11), dates incluses. Tickets et retours au statut
+ * `terminee`, chacun à sa propre date ; les montants des retours sont négatifs et viennent en moins.
+ */
+export interface VentesPeriode {
+  du: string
+  au: string
+  nbTickets: number
+  nbRetours: number
+  /** TTC des tickets, remises déduites, FCFA. */
+  ventesTtc: number
+  /** TTC rendu par les retours, négatif, FCFA. */
+  retoursTtc: number
+  /** Ventes + retours, TTC, FCFA. */
+  chiffreAffaires: number
+  chiffreAffairesHt: number
+  tva: number
+  /** Coût des marchandises vendues, moins celui des retours, FCFA (arrondi une seule fois). */
+  cout: number
+  /** Marge brute = chiffre d'affaires TTC − coût (règle § 11). */
+  marge: number
+  /** La même sur le HT, pour information. */
+  margeHt: number
+}
+
 export interface ContratCaisse {
   'caisse:sessionCourante': { requete: void; reponse: SessionCaisse | null }
   'caisse:ouvrirSession': { requete: { fondOuverture: number }; reponse: SessionCaisse }
@@ -420,4 +446,6 @@ export interface ContratCaisse {
     requete: { proformaId: number; sortie: SortieDocument }
     reponse: { fait: boolean }
   }
+  /** Chiffre d'affaires et marge d'une période (gérant). Mois en cours par défaut. */
+  'caisse:ventesPeriode': { requete: PeriodeRapport; reponse: VentesPeriode }
 }

@@ -3,7 +3,7 @@
  * Canaux caisse:* — minces : droits, puis appel du service. Organisation du module :
  *   service-session.ts · service-vente.ts · service-ticket.ts · service-cloture.ts ·
  *   service-mouvements.ts · service-annulation.ts · service-retour.ts · service-facture.ts ·
- *   service-proforma.ts ·
+ *   service-proforma.ts · service-rapports.ts ·
  *   calculs.ts (TVA, totaux — testés) · ipc.ts. Documents A4 (facture, proforma) : ../../documents/.
  */
 import type { MouvementCaisse, MouvementEnregistre } from '@shared/ipc/caisse'
@@ -45,6 +45,7 @@ import {
   verifierEdition
 } from './service-facture'
 import { creerProforma, donneesProforma, lireProforma } from './service-proforma'
+import { ventesPeriode } from './service-rapports'
 import { htmlFacture } from '../../documents/facture'
 import { htmlProforma } from '../../documents/proforma'
 import { sortirDocument } from '../../documents/pdf'
@@ -251,5 +252,9 @@ export function enregistrerIpcCaisse(): void {
     const p = donneesProforma(db, proformaId, lireParametres(db))
     // PDF ou impression hors de toute transaction ; un devis n'a ni original ni copie.
     return { fait: await sortirDocument(htmlProforma(p), `Proforma ${p.numero}.pdf`, sortie) }
+  })
+  gerer('caisse:ventesPeriode', (periode) => {
+    session.exiger(['gerant'])
+    return ventesPeriode(base(), periode)
   })
 }
