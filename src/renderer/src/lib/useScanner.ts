@@ -7,6 +7,7 @@
  * Les champs de saisie sont ignorés, sauf s'ils portent l'attribut data-scan.
  */
 import { useEffect, useRef } from 'react'
+import { caractereDeTouche } from './douchette'
 
 interface OptionsScanner {
   actif?: boolean
@@ -39,9 +40,11 @@ export function useScanner(surScan: (code: string) => void, options: OptionsScan
         tampon = ''
         return
       }
-      if (e.key.length !== 1) return
+      // Chiffre de la touche physique : la douchette en QWERTY sur un Windows en AZERTY (voir douchette.ts).
+      const caractere = caractereDeTouche(e)
+      if (caractere.length !== 1) return
       if (tampon && maintenant - derniere > delaiMaxMs) tampon = ''
-      tampon += e.key
+      tampon += caractere
       derniere = maintenant
     }
 
