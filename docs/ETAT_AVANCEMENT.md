@@ -25,7 +25,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 | Stock initial de démarrage                                | B         | A (recette) | fin S7   | ✅     | PR #21 — écran « Stock initial » (gérant), à utiliser sur des produits importés par Excel pour la recette Phase 1 |
 | `stock/allouerFefo(db, produitId, qteBase)`               | B         | A           | fin S10  | ✅     | PR #35 — `allouerFefo` de `modules/stock/fefo.ts` → `{ lotId: number \| null; quantite }[]`, somme = `qteBase`, un mouvement par part ; lots périmés jamais servis ; reste sans lot (REGLES_METIER § 5.1) ; débloque A9 |
 | `caisse/sessionOuverte()`, `enregistrerMouvementCaisse()` | A         | B           | fin S10  | ✅     | PR #55 — débloque B13 (source caisse) et le règlement fournisseur au tiroir : `sessionOuverte(db)` (seule caisse ouverte, sinon `null`), `enregistrerMouvementCaisse(db, { sessionId, utilisateurId, sens, motif, montant, commentaire, documentType?, documentId? })` et `annulerMouvementCaisse` dans `modules/caisse/service-mouvements.ts`, à appeler dans la transaction du document ; sortie ≤ tiroir ; motif `reglement_fournisseur` ajouté |
-| `caisse:ventesPeriode`                                    | A         | B           | fin S16  | ⏳     | B14 |
+| `caisse:ventesPeriode`                                    | A         | B           | fin S16  | 🔄     | livré en avance, branche `a/caisse-ventes-periode` (PR à fusionner) : `ventesPeriode(db, { du, au })` de `modules/caisse/service-rapports.ts` → `VentesPeriode` (`chiffreAffaires`, `cout`, `marge`, `margeHt`…), à appeler directement dans `rapports-gestion/resultat.ts` (REGLES_METIER § 11) ; débloque la marge de B14 |
 | Alertes rupture et péremption (lecture)                   | B         | A           | fin S17  | ⏳     | A15 |
 
 ## Phase 0 — Validation matérielle ✅
@@ -95,7 +95,7 @@ Le socle comprend :
 ## Phase 4 — Pilotage (S16–S18)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
 |-------|-------------------------------------------|-----|--------|--------------------------|
-| A14   | Rapports ventes et caisse                 | A   | ⏳     |   |
+| A14   | Rapports ventes et caisse                 | A   | 🔄     | Partie 1 avancée (avant A11–A13) : canal `caisse:ventesPeriode` pour la marge de B14, branche `a/caisse-ventes-periode`. Reste : ventes par heure, par caissier, top / flop produits, historique des sessions, écran `/rapports` |
 | A15   | Tableau de bord d'accueil                 | A   | ⏳     |   |
 | A16   | Promotions programmées                    | A   | ⏳     |   |
 | B14   | Rapports de gestion, journal d'audit      | B   | 🔄     | PR #47 (serveur : pertes par cause, valeur du stock par rayon, achats par fournisseur, résultat sans marge), #48 (menu « Rapports de gestion », quatre onglets) et #49 (journal des opérations, admin, `audit:journal` / `audit:choix`) ; testé à la main. **Reste la marge**, en attente de `caisse:ventesPeriode` (A14) |
