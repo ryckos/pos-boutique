@@ -9,9 +9,6 @@ export const LIBELLES_SOURCE: Record<SourceDepense, string> = {
   caisse: 'Caisse (tiroir)'
 }
 
-/** Tant que les mouvements de caisse (A8, Dev A) ne sont pas livrés, seule cette source est ouverte. */
-export const SOURCES_OUVERTES: SourceDepense[] = ['fonds_propres']
-
 /** Date du jour du poste, AAAA-MM-JJ. */
 export function aujourdhuiLocal(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -30,6 +27,12 @@ export interface SaisieEcranDepense {
   montant: number | null
   source: SourceDepense
   date: string
+  /**
+   * Gérant, source « caisse » : nombre de caisses ouvertes (au-delà d'une, il choisit). Absent pour la
+   * caissière, qui paie toujours sur sa propre caisse.
+   */
+  caissesOuvertes?: number
+  sessionId?: number | null
 }
 
 /** Ce qui empêche d'enregistrer, ou null si la saisie est bonne. */
@@ -38,11 +41,25 @@ export function manqueDepense(s: SaisieEcranDepense, aujourdhui: string): string
   if (s.libelle.trim() === '') return 'Indiquez à quoi correspond la dépense'
   if (s.montant === null) return 'Indiquez le montant'
   if (Number.isNaN(s.montant) || s.montant <= 0) return 'Le montant est un nombre de francs, sans virgule'
-  if (!SOURCES_OUVERTES.includes(s.source))
-    return 'Les dépenses payées au tiroir ne sont pas encore disponibles'
+  if (s.source === 'caisse') {
+    // Payée au tiroir : toujours datée du jour, la date saisie ne compte pas.
+    if (s.caissesOuvertes === 0) return 'Aucune caisse n’est ouverte : choisissez « Fonds propres »'
+    if ((s.caissesOuvertes ?? 0) > 1 && s.sessionId == null) return 'Choisissez la caisse du tiroir'
+    return null
+  }
   if (s.date === '') return 'Indiquez la date de la dépense'
   if (s.date > aujourdhui) return 'La date ne peut pas être dans le futur'
   return null
+}
+
+/** Colonne « Payée par » : le tiroir de quelle caisse, ou les fonds propres. */
+export function libellePayeePar(d: Pick<Depense, 'source' | 'caissier'>): string {
+  return d.source === 'caisse' && d.caissier ? `Caisse (${d.caissier})` : LIBELLES_SOURCE[d.source]
+}
+
+/** Le gérant annule tant que l'argent peut revenir au tiroir : jamais sur une caisse clôturée. */
+export function depenseAnnulable(d: Pick<Depense, 'annuleLe' | 'sessionCloturee'>): boolean {
+  return !d.annuleLe && !d.sessionCloturee
 }
 
 /** Texte de la colonne « État ». */

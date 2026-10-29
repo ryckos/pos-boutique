@@ -1,6 +1,6 @@
 /** Propriétaire : Dev B. Dépenses de la boutique (B13, REGLES_METIER § 10). */
 
-/** `caisse` = payée au tiroir (après A8 de Dev A) ; `fonds_propres` = sans effet sur la caisse. */
+/** `caisse` = payée au tiroir (mouvement de caisse « Dépense ») ; `fonds_propres` = sans effet sur la caisse. */
 export type SourceDepense = 'caisse' | 'fonds_propres'
 
 export interface CategorieDepense {
@@ -28,6 +28,12 @@ export interface Depense {
   annuleLe: string | null
   annulePar: string | null
   motifAnnulation: string | null
+  /** Caisse dont le tiroir a payé (source « caisse ») ; null en fonds propres. */
+  sessionId: number | null
+  /** Titulaire de cette caisse ; null en fonds propres. */
+  caissier: string | null
+  /** Caisse clôturée : la dépense ne s'annule plus. Toujours false en fonds propres. */
+  sessionCloturee: boolean
 }
 
 export interface SaisieDepense {
@@ -39,6 +45,11 @@ export interface SaisieDepense {
   /** AAAA-MM-JJ ; aujourd'hui par défaut ; jamais dans le futur. */
   date?: string | null
   reference?: string | null
+  /**
+   * Source « caisse », gérant : caisse choisie quand plusieurs sont ouvertes (`caisse:sessionsOuvertes`).
+   * Sinon la sienne, sinon la seule ouverte. La caissière paie toujours sur sa propre caisse.
+   */
+  sessionId?: number | null
 }
 
 export interface ListeDepenses {
@@ -54,18 +65,25 @@ export interface ListeDepenses {
 }
 
 export interface ContratDepenses {
-  /** Actives par ordre alphabétique (« Autre » en dernier), puis les désactivées si demandé. Gérant. */
+  /** Actives par ordre alphabétique (« Autre » en dernier), puis les désactivées si demandé. Gérant ; caissière (actives). */
   'depenses:categories': { requete: { inclureInactives?: boolean }; reponse: CategorieDepense[] }
   /** Nom unique parmi toutes les catégories (majuscules et espaces ignorés). Gérant. */
   'depenses:creerCategorie': { requete: { nom: string }; reponse: CategorieDepense }
   /** Les dépenses déjà saisies gardent leur catégorie. Gérant. */
   'depenses:desactiverCategorie': { requete: { id: number }; reponse: void }
+  /** Gérant ; caissière : les dépenses de sa caisse ouverte seulement. */
   'depenses:liste': {
     requete: { du?: string | null; au?: string | null; categorieId?: number | null }
     reponse: ListeDepenses
   }
-  /** Numéro DEP attribué ici. Source « caisse » refusée tant que A8 n'est pas livré. Gérant. */
+  /**
+   * Numéro DEP attribué ici. Source « caisse » : datée du jour, sortie d'espèces dans la même transaction,
+   * au plus les espèces du tiroir. Gérant ; caissière pour la source « caisse » de sa caisse.
+   */
   'depenses:enregistrer': { requete: SaisieDepense; reponse: Depense }
-  /** Motif obligatoire, journalisé ; la dépense reste visible mais ne compte plus. Gérant. */
+  /**
+   * Motif obligatoire, journalisé ; la dépense reste visible mais ne compte plus. Source « caisse » :
+   * les espèces reviennent au tiroir, refusé si la caisse est clôturée. Gérant.
+   */
   'depenses:annuler': { requete: { id: number; motif: string }; reponse: void }
 }

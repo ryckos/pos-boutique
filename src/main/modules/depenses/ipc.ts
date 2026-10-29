@@ -11,12 +11,12 @@ import {
   listerDepenses
 } from './service'
 
-// Gérant pour tout tant que la source « caisse » attend A8. Ensuite, la caissière pourra
-// enregistrer une dépense payée au tiroir de sa session (matrice : « Depuis la caisse »).
+// Gérant pour tout. La caissière enregistre une dépense payée au tiroir de sa caisse ouverte
+// (matrice : « Depuis la caisse ») ; le service lui refuse les fonds propres.
 export function enregistrerIpcDepenses(): void {
   gerer('depenses:categories', (requete) => {
-    session.exiger(['gerant'])
-    return listerCategories(base(), requete?.inclureInactives ?? false)
+    const u = session.exiger(['gerant', 'caissier'])
+    return listerCategories(base(), u.role !== 'caissier' && (requete?.inclureInactives ?? false))
   })
   gerer('depenses:creerCategorie', ({ nom }) => {
     session.exiger(['gerant'])
@@ -27,12 +27,12 @@ export function enregistrerIpcDepenses(): void {
     desactiverCategorie(base(), id)
   })
   gerer('depenses:liste', (filtre) => {
-    session.exiger(['gerant'])
-    return listerDepenses(base(), filtre)
+    const u = session.exiger(['gerant', 'caissier'])
+    return listerDepenses(base(), filtre, u.role === 'caissier' ? u.id : undefined)
   })
   gerer('depenses:enregistrer', (saisie) => {
-    const u = session.exiger(['gerant'])
-    return enregistrerDepense(base(), u.id, saisie)
+    const u = session.exiger(['gerant', 'caissier'])
+    return enregistrerDepense(base(), u, saisie)
   })
   gerer('depenses:annuler', ({ id, motif }) => {
     const u = session.exiger(['gerant'])

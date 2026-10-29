@@ -144,10 +144,18 @@ Ma Boutique POS — version 1.0.0-rc.1
 ## 13. Dépenses
 
 1. Menu **Dépenses** → « Nouvelle dépense ».
-2. Catégorie, libellé, montant, « Fonds propres », date, référence du reçu.
-3. Enregistrez.
-4. Erreur : icône **flèche retour** (avec un motif), puis ressaisissez.
-5. Nouvelle catégorie : bouton « Catégories ».
+2. Catégorie, libellé, montant, référence du reçu.
+3. Payée par :
+   - « Fonds propres » : l'argent ne sort pas du tiroir ; choisissez la date ;
+   - « Caisse (tiroir) » : l'argent sort des espèces de la caisse ouverte, daté d'aujourd'hui. Si
+     plusieurs caisses sont ouvertes, choisissez laquelle.
+4. Enregistrez.
+5. Erreur : icône **flèche retour** (avec un motif), puis ressaisissez. Une dépense payée au tiroir
+   s'annule seulement **avant la clôture** de sa caisse : l'argent revient alors dans le tiroir.
+6. Nouvelle catégorie : bouton « Catégories ».
+
+**Bon à savoir** : la caissière peut aussi payer une petite dépense depuis son tiroir (menu
+« Dépenses »). Elle ne peut pas l'annuler : c'est vous qui le faites, avant sa clôture.
 
 ## 14. Rapports
 
