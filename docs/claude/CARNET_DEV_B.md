@@ -18,6 +18,66 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-28 / 29 — b/depenses-caisse, b/rapports-marge — B13 terminée, marge de B14
+**Fait** :
+- **UX1 / 1.0.0-rc.1 fusionnée** (PR #71) : `test` est la base commune ; la cliente teste la rc.1.
+- **B13 — dépense payée au tiroir : ✅** (PR #74 code, #75 état). Règles validées par Dev B le 28/10,
+  `REGLES_METIER.md` § 10.2 :
+  - la caissière paie seulement sur **sa** caisse ouverte, jamais en « fonds propres » ; page restreinte
+    « Dépenses de ma caisse » (sans période, catégories ni annulation ; vide après sa clôture) ;
+  - le gérant paie sur la caisse choisie, sinon la sienne, sinon la seule ouverte ; plusieurs → choisir ;
+  - dépense datée du jour + mouvement de caisse `sortie` motif `depense` (`enregistrerMouvementCaisse`
+    de Dev A) **dans la même transaction**, plafonné aux espèces du tiroir (sinon rien n'est écrit, pas
+    de numéro DEP consommé) ; X / Z : « Dépense (libellé) » ;
+  - annulation par le gérant, contre-mouvement, refusée après la clôture.
+  - Test AFI-15 (`SCENARIOS_TEST.md`) **joué à la main par Dev B** : OK.
+- **B14 — marge du résultat** (branche `b/rapports-marge`, commit `966083e`, poussée, rebasée sur
+  `test` après #75) : `rapports-gestion/resultat.ts` appelle `ventesPeriode(db, { du, au })` de Dev A
+  (A14, PR #73) → marge = chiffre d'affaires TTC − coût (retours déduits), résultat = marge − dépenses ;
+  onglet « Résultat » et export détaillés (CA, coût, marge, dépenses, résultat, pertes pour info).
+  Tests : vente 8 200 + retour 350 + dépense 1 000 → CA **7 850**, coût **6 250**, marge **1 600**,
+  résultat **600** ; sans vente → résultat −16 000. **Testé à la main par Dev B** : OK.
+  Docs : `REGLES_METIER` § 11.1, `UI_UX` § 5.20, `SCENARIOS_TEST` KOS-18 (+ `.docx` régénéré), nouvelle
+  décision en attente **D-A6** (marge TTC ou HT).
+- 718 tests verts, typecheck OK. Aucune migration.
+
+**En cours** : PR `b/rapports-marge` → `test` à ouvrir (texte fourni à Dev B dans la session ; `gh`
+absent de ce poste) : https://github.com/ryckos/pos-boutique/compare/test...b/rapports-marge?expand=1
+Ce carnet est commité sur cette branche. B14 reste 🔄 jusqu'à la fusion.
+
+**Prochaine étape** :
+1. Après la fusion de `b/rapports-marge` : B14 → ✅ dans `ETAT_AVANCEMENT.md` et une ligne au journal
+   des fusions (petite PR `b/docs-b14-fusion`, ou dans la prochaine branche). Supprimer
+   `b/depenses-caisse` et `b/rapports-marge` (local et GitHub).
+2. Choisir avec Dev B la suite (question posée en fin de session, sans réponse) :
+   - **Lecture des alertes rupture et péremption pour A15** (rendez-vous Dev A, fin S17) : déclarer tôt
+     le contrat (ex. `stock:alertesAccueil` → nombre de ruptures, stocks bas, lots à ≤ 3 j / sous le seuil,
+     valeur en jeu), à partir de `v_alertes_stock` et de `stock/peremptions.ts` ; annoncer à Dev A ;
+   - **B16** : essai de restauration sur le terminal OMA POS (préparer une procédure pas à pas), puis
+     B16 → ✅ hors envoi distant (D-A4) ;
+   - **B-P5** : démarrage automatique, mode kiosque, icône, `author` dans `package.json`.
+3. Suivre les retours de la cliente sur la 1.0.0-rc.1 (`docs/fiches-test/`) ; une correction = branche
+   `b/…`, puis rc.2 selon `DEPLOIEMENT.md` § 6.
+
+**Questions ouvertes** :
+- **D-A6** (nouvelle) : marge TTC ou HT dans les rapports ? Pour la cliente. `margeHt` est déjà calculée
+  par `ventesPeriode`, prête à être affichée.
+- D-A1, D-A3, D-A4 (bloque la fin de B16), D-A5 : toujours en attente.
+- Retours de la cliente sur les fiches de test et les guides.
+
+**Contrats** :
+- Modifiés (ajouts seuls, sans impact pour la caisse) : `SaisieDepense.sessionId`, `Depense.sessionId`,
+  `caissier`, `sessionCloturee` (B13) ; `RapportResultat.chiffreAffaires`, `cout` (B14).
+  `depenses:enregistrer` est ouvert à la caissière pour la source « caisse ».
+- **Reçus de Dev A** : `enregistrerMouvementCaisse` (A8) utilisé par B13 ; `ventesPeriode` (A14,
+  **livré en avance**) utilisé par B14, en lecture, sans modification de ses fichiers.
+- **Pour Dev A** : le résultat de B14 suit `ventesPeriode` ; si sa règle change, rien à toucher chez
+  Dev B. Dans `SCENARIOS_TEST`, la ligne « non livré » d'A14 vise désormais l'écran des rapports de
+  ventes (partie 2).
+- À livrer : lecture des alertes rupture et péremption (A15, fin S17).
+
+---
+
 ## 2026-10-19 → 26 — feature/sk/ergonomie — UX1 refonte ergonomique, déploiement, version 1.0.0-rc.1
 **Fait** :
 - **UX1 — refonte ergonomique** (décision D-19, `UI_UX.md` § 2, 4.1, 4.2, 5.12, 6), sur **tous** les écrans,
@@ -706,81 +766,3 @@ https://github.com/ryckos/pos-boutique/compare/test...b/docs-b8-fusion?expand=1
   `.apercu` (texte à copier) ; menu « Commandes » ajouté par `modules/achats/routes.tsx`.
 - Prochain rendez-vous à livrer : `allouerFefo()` (fin S10, B9). Attendus : `sessionOuverte()` existe
   déjà ; `enregistrerMouvementCaisse()` (Dev A, A8, fin S10) pas encore livré.
-
----
-
-## 2026-09-30 (suite) — b/receptions, b/receptions-ecran, b/fournisseurs-achats — B8 parties 1 et 2, B7 partie 2
-**Fait** :
-- **B7 partie 1 fusionnée** (PR #24), inscrite au journal des fusions. `b/fournisseurs` est supprimée en
-  local ; **sur GitHub, sa suppression reste à faire par Dev B** (refusée à Claude par les permissions).
-- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 4.2 (réception) :
-  - le brouillon ne vit que dans l'écran, gardé sur le poste ; **numéro RC attribué à la validation** ;
-  - prix proposé = dernier prix payé pour ce conditionnement, sinon prix indicatif × quantité, sinon vide ;
-  - prix en francs entiers > 0 ; alerte non bloquante si coût par unité ≥ prix de vente de l'Unité ;
-  - quantité entière, décimales seulement au poids ou au volume (kg, g, litre, ml) ;
-  - lot et date obligatoires si périssable ; date passée refusée ; date sous le seuil = alerte ;
-  - échéance figée à la validation (jour + délai du fournisseur) ;
-  - **une réception validée ne se modifie ni ne s'annule** (correction par retour fournisseur ou
-    inventaire) ; pas de journal d'audit ;
-  - scanner deux fois le même article = **deux lignes** (`UI_UX.md` § 5.6).
-- Règles de l'historique des achats (`REGLES_METIER.md` § 4.6) :
-  - livraisons sur 90 jours par défaut ;
-  - prix sur toute l'histoire, écart avec la livraison précédente du **même** fournisseur ;
-  - pas de comparaison entre fournisseurs (renvoyée à B14).
-- **Trois branches empilées, poussées, testées à la main par Dev B** (sauf la PR 1, sans écran) :
-  1. `b/receptions` (commit `7db755b`) : migration `20260930_1400_echeance_reception.sql`
-     (`receptions.date_echeance`), service `modules/achats/receptions.ts`, contrat `src/shared/ipc/achats.ts`,
-     règles pures `src/shared/achats.ts` (`convertirLigne`, `nouveauCump`). Une transaction : lignes, lots,
-     mouvements `reception` (`document_type = 'reception'`), CUMP ligne après ligne, dette, RC.
-     Tests : 250 ; 262,8 ; stock ≤ 0 ; 43 200 ; panne simulée en pleine écriture → tout annulé.
-  2. `b/receptions-ecran` (commits `8495aed`, `9824d72`) : menu « Réceptions » (gérant),
-     `modules/achats/PageReceptions.tsx`, `saisieReception.ts` (logique pure testée),
-     `FenetreDetailReception.tsx`, canal `achats:listeReceptions`, `FenetreProduit` accepte
-     `libelleValider`, style commun `.tableau-saisie select`.
-  3. `b/fournisseurs-achats` (commit `9c90068`) : canal `fournisseurs:achats`, `fournisseurs/achats.ts`,
-     fenêtre `FenetreAchats.tsx` (bouton « Achats » sur la page Fournisseurs).
-- 334 tests verts ; typecheck OK.
-
-**En cours** : trois PR à ouvrir sur GitHub (`gh` absent de ce poste), **dans l'ordre**, chacune après la
-fusion de la précédente. Le texte de chacune a été fourni à Dev B dans la session.
-1. PR 1 `b/receptions` → `test` : https://github.com/ryckos/pos-boutique/compare/test...b/receptions?expand=1
-2. PR 2 `b/receptions-ecran` → `test`, après la fusion de la PR 1.
-   Si la PR 1 est fusionnée en squash :
-   `git switch b/receptions-ecran && git fetch && git rebase --onto origin/test 7db755b && git push --force-with-lease`.
-3. PR 3 `b/fournisseurs-achats` → `test`, après la fusion de la PR 2.
-   Si la PR 2 est fusionnée en squash : `git rebase --onto origin/test 9824d72`.
-   Ce carnet est commité sur cette branche.
-
-**Prochaine étape** :
-1. Suivre les fusions :
-   - à chaque fusion, une ligne au journal des fusions de `ETAT_AVANCEMENT.md` ;
-   - après la PR 3, B7 → ✅ ;
-   - supprimer les branches fusionnées.
-2. **B8 partie 3 : commandes fournisseur** (branche depuis `test` une fois les PR fusionnées, ou
-   empilée). Avant tout code, obtenir les réponses de Dev B :
-   - quantité commandée en conditionnements ou en unités de base ? `lignes_commande_achat` n'a pas de
-     `conditionnement_id`, donc commander en cartons demande une migration ;
-   - calcul de la quantité suggérée depuis les alertes de stock (`v_alertes_stock`) ;
-   - passage à `recue` : quantités atteintes, ou décision du gérant ?
-   - numéro `CA` via `prochainNumero` ; réception liée : `receptions.commande_id` ; `recue_partiel`.
-3. Puis **B9** : `allouerFefo(db, produitId, qteBase)` pour Dev A, **rendez-vous fin S10** ; et le
-   tableau des péremptions. Les lots créés par la réception portent `reception_id` et le coût par unité
-   arrondi au franc.
-
-**Questions ouvertes** :
-- Commandes (ci-dessus) : à poser à Dev B.
-- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
-- Plafond de remise caissier (D-A3) : en attente de la cliente.
-- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photo des produits : reportée.
-
-**Contrats** :
-- Ajoutés (gérant, **sans impact pour la caisse**) : `achats:articleReception`, `achats:validerReception`,
-  `achats:reception`, `achats:listeReceptions`, `fournisseurs:achats`. Nouveau module `achats` enregistré
-  dans `src/main/ipc/index.ts` et `src/shared/ipc/index.ts` ; menu « Réceptions » dans `app/routes.tsx`.
-- **Pour Dev A** :
-  - le CUMP bouge désormais à chaque réception : `coutConditionnement` de `ArticleCatalogue`
-    le reflète sans changement de contrat ;
-  - l'historique d'un produit affiche « Réception RC-… » ;
-  - nouvelle classe commune `.tableau-saisie select`.
-- Prochain rendez-vous à livrer : `allouerFefo()` (fin S10, B9). Attendus inchangés : `sessionOuverte()` et
-  `enregistrerMouvementCaisse()` (Dev A, fin S10).
