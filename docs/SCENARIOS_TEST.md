@@ -476,7 +476,9 @@ docs/SCENARIOS_TEST.docx "Scénarios de test — Ma Boutique POS"`).
     surplus d'inventaire affichés à part ; une sortie annulée ne compte pas ;
   - **Valeur du stock** par rayon = le total de l'écran Stock ;
   - **Achats** par fournisseur : livré, avoirs reçus, réglé, reste dû ;
-  - **Résultat** : marge « en attente des rapports de ventes » (A14), dépenses (1 000 F).
+  - **Résultat** : chiffre d'affaires et coût des marchandises vendues de la période (retours
+    déduits), marge brute = chiffre d'affaires − coût, puis − dépenses (1 000 F) = résultat ; le
+    chiffre d'affaires est le même que celui des ventes de la période (A14).
   - Date de fin dans le futur refusée.
 - **Résultat** : ☐ OK ☐ KO — remarque :
 
@@ -724,7 +726,7 @@ Ces fonctions ne sont pas livrées : un test qui échoue dessus n'est pas un dé
 | Fonction | En attente de |
 |----------|---------------|
 | Vente à crédit, fiche client, avoir en boutique, recouvrement, balance âgée | A11, A12 (Dev A) |
-| Rapports de ventes, marge et résultat chiffrés | A14 (`caisse:ventesPeriode`) |
+| Écran des rapports de ventes (par heure, par caissier, top / flop produits) | A14 (partie 2) |
 | Tableau de bord d'accueil | A15 |
 | Promotions programmées (bouton « Promo » des péremptions) | A16 |
 | Écran client définitif | A13 |

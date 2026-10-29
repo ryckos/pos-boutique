@@ -111,4 +111,25 @@ describe('Export des rapports de gestion', () => {
       ['Pertes de la période (pour information)', 1_250]
     ])
   })
+
+  it('résultat chiffré : chiffre d’affaires, coût en négatif, marge, dépenses, résultat', () => {
+    const d = exportResultat({
+      du: '2026-10-01',
+      au: '2026-10-09',
+      chiffreAffaires: 7_850,
+      cout: 6_250,
+      depenses: 1_000,
+      pertes: 250,
+      marge: 1_600,
+      resultat: 600
+    })
+    expect(d.feuilles[0].lignes).toEqual([
+      ['Chiffre d’affaires (TTC, remises et retours déduits)', 7_850],
+      ['Coût des marchandises vendues', -6_250],
+      ['Marge brute des ventes', 1_600],
+      ['Dépenses', -1_000],
+      ['Résultat', 600],
+      ['Pertes de la période (pour information)', 250]
+    ])
+  })
 })

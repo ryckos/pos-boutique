@@ -675,9 +675,9 @@ mois en cours ») sauf pour la valeur du stock, qui est celle d'aujourd'hui. Rè
 - **Valeur du stock** : total au coût moyen, tableau Rayon / Produits / Valeur (« Non classé » sans rayon).
 - **Achats** : tableau Fournisseur (pastille « Désactivé ») / Réceptions / Livré / Avoirs reçus / Réglé /
   Reste dû (d'aujourd'hui ; « Avoir à valoir … » si négatif), ligne Total.
-- **Résultat** : Marge brute des ventes, − Dépenses, Résultat ; tant que les rapports de ventes (Dev A)
-  ne sont pas livrés, marge et résultat affichent « Disponible avec les rapports de ventes ». Les pertes
-  de la période sont rappelées pour information.
+- **Résultat** : Chiffre d'affaires (TTC, remises et retours déduits), − Coût des marchandises vendues,
+  Marge brute des ventes, − Dépenses, Résultat (montants de `caisse:ventesPeriode`, A14). Les pertes de
+  la période sont rappelées pour information. L'export Excel reprend les mêmes lignes.
 
 ### 5.21 Journal des opérations (Dev B — B14, admin)
 Page « Journal des opérations » du menu (`modules/audit/PageJournal.tsx`), après « Comptes

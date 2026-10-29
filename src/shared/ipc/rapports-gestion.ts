@@ -91,9 +91,13 @@ export interface RapportResultat {
   depenses: number
   /** Pertes de la période (même total que `rapports:pertes`), FCFA ; pour information. */
   pertes: number
-  /** Marge brute des ventes ; null tant que `caisse:ventesPeriode` (Dev A) n'est pas livré. */
+  /** Chiffre d'affaires TTC de la période, retours déduits (`caisse:ventesPeriode`), FCFA. */
+  chiffreAffaires?: number
+  /** Coût des marchandises vendues, retours déduits, FCFA. */
+  cout?: number
+  /** Marge brute des ventes (chiffre d'affaires TTC − coût). Toujours renseignée depuis A14. */
   marge: number | null
-  /** Marge − dépenses (REGLES_METIER § 11) ; null tant que la marge est inconnue. */
+  /** Marge − dépenses (REGLES_METIER § 11). Toujours renseigné depuis A14. */
   resultat: number | null
 }
 
