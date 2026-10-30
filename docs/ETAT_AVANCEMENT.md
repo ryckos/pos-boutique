@@ -98,7 +98,7 @@ Le socle comprend :
 | A14   | Rapports ventes et caisse                 | A   | 🔄     | Partie 1 avancée (avant A11–A13) : canal `caisse:ventesPeriode` pour la marge de B14, branche `a/caisse-ventes-periode`. Reste : ventes par heure, par caissier, top / flop produits, historique des sessions, écran `/rapports` |
 | A15   | Tableau de bord d'accueil                 | A   | ⏳     |   |
 | A16   | Promotions programmées                    | A   | ⏳     |   |
-| B14   | Rapports de gestion, journal d'audit      | B   | 🔄     | PR #47 (serveur : pertes par cause, valeur du stock par rayon, achats par fournisseur, résultat), #48 (menu « Rapports de gestion », quatre onglets) et #49 (journal des opérations, admin, `audit:journal` / `audit:choix`) ; testé à la main. **Marge** branchée sur `ventesPeriode` (A14) sur `b/rapports-marge` : chiffre d'affaires, coût, marge TTC, résultat ; PR vers `test` à fusionner, puis B14 → ✅ (marge HT : D-A6) |
+| B14   | Rapports de gestion, journal d'audit      | B   | ✅     | PR #47 (serveur : pertes par cause, valeur du stock par rayon, achats par fournisseur, résultat), #48 (menu « Rapports de gestion », quatre onglets), #49 (journal des opérations, admin, `audit:journal` / `audit:choix`) et #76 (marge branchée sur `ventesPeriode` d'A14 : chiffre d'affaires, coût, marge TTC, résultat) ; testé à la main. Marge HT prête à afficher selon D-A6 |
 | B15   | Exports Excel                             | B   | ✅     | PR #50 (canal générique `exports:excel`, `BoutonExporter`, Stock, Dépenses, Rapports de gestion) et #51 (Produits, Péremptions, Sorties, Réceptions, Commandes, Fournisseurs, détail d'un inventaire, Journal en entier) ; testé à la main |
 | B16   | Sauvegardes et restauration               | B   | 🔄     | PR #53 (sauvegarde : clôture, démarrage, avant mise à jour, manuelle ; rotation ; clé USB) et #54 (écran Sauvegardes, restauration admin) fusionnées ; sauvegarde après clôture branchée par A (PR #56). **Reste** l'essai de restauration sur le terminal, et l'envoi distant (D-A4) |
 
@@ -111,7 +111,7 @@ Le socle comprend :
 ## Transverse
 | Tâche | Intitulé                                            | Dev | Statut | Notes (branche, blocage) |
 |-------|-----------------------------------------------------|-----|--------|--------------------------|
-| UX1   | Refonte ergonomique : palette, icônes, pagination, aide « ? » (D-19) | B (+ écrans de A, avec son accord) | 🔄 | `feature/sk/ergonomie` terminée, **PR vers `test` à fusionner** (merge commit, tag `v1.0.0-rc.1`) ; `UI_UX.md` § 2, 4.1, 4.2, 5.12, 6 ; testée avec `docs/SCENARIOS_TEST.md` et chez la cliente (1.0.0-rc.1) |
+| UX1   | Refonte ergonomique : palette, icônes, pagination, aide « ? » (D-19) | B (+ écrans de A, avec son accord) | ✅ | PR #71 (`feature/sk/ergonomie`, merge commit, tag `v1.0.0-rc.1`) ; `UI_UX.md` § 2, 4.1, 4.2, 5.12, 6 ; testée avec `docs/SCENARIOS_TEST.md` et chez la cliente (1.0.0-rc.1) |
 
 ## Journal des fusions notables
 <!-- Une ligne par PR importante : date · tâche · résumé · contrat ajouté/modifié -->
@@ -171,3 +171,4 @@ Le socle comprend :
 | 2026-10-16 | A10   | Parties 1 et 2 : facture A4 d'un ticket (F, PDF, original puis COPIE) et proforma (PF, 30 jours, reprise aux prix du jour) ; migration `20261015_1000_factures_proformas.sql` (PR #65, #66) |
 | 2026-10-19 | A10   | Parties 3 et 4 : fenêtre « Faire une facture » (PR #68), « Proforma » et « Reprendre une proforma » (PR #70) |
 | 2026-10-29 | B13   | Partie 3 : dépense payée au tiroir (source « caisse »), sortie de caisse dans la même transaction, page « Dépenses de ma caisse » pour la caissière (PR #74) |
+| 2026-10-29 | B14   | Partie 4 : marge et résultat chiffrés depuis `ventesPeriode` (A14) : chiffre d'affaires TTC, coût, marge, résultat ; onglet « Résultat » et export détaillés (PR #76) |
