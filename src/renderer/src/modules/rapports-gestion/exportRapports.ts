@@ -129,6 +129,12 @@ export function exportResultat(r: RapportResultat): DemandeExport {
           { titre: 'Montant', type: 'montant' }
         ],
         lignes: [
+          ...(r.chiffreAffaires !== undefined && r.cout !== undefined
+            ? [
+                ['Chiffre d’affaires (TTC, remises et retours déduits)', r.chiffreAffaires],
+                ['Coût des marchandises vendues', -r.cout]
+              ]
+            : []),
           ['Marge brute des ventes', r.marge ?? EN_ATTENTE_VENTES],
           ['Dépenses', -r.depenses],
           ['Résultat', r.resultat ?? EN_ATTENTE_VENTES],

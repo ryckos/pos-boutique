@@ -363,6 +363,24 @@ function OngletResultat({ periode, cle }: ProprietesPeriode): React.JSX.Element 
       <div className="tableau-cadre">
         <table className="tableau">
           <tbody>
+            {r.chiffreAffaires !== undefined && r.cout !== undefined && (
+              <>
+                <tr>
+                  <td>
+                    Chiffre d’affaires
+                    <span className="detail">Ventes TTC, remises et retours déduits</span>
+                  </td>
+                  <td className="nombre montant">{formaterFCFA(r.chiffreAffaires)}</td>
+                </tr>
+                <tr>
+                  <td>
+                    Coût des marchandises vendues
+                    <span className="detail">Au prix d’achat du jour de la vente</span>
+                  </td>
+                  <td className="nombre montant">− {formaterFCFA(r.cout)}</td>
+                </tr>
+              </>
+            )}
             <tr>
               <td>Marge brute des ventes</td>
               <td className="nombre montant">

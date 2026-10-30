@@ -26,6 +26,13 @@ cliente ou entre les deux développeurs.
 - **Question** : quel service utiliser pour la sauvegarde distante chiffrée (Phase 4, B16) ?
 - **Qui décide** : la cliente et Dev B.
 
+### D-A6 — Marge affichée : TTC ou HT
+- **Question** : la marge brute des rapports se calcule-t-elle sur le chiffre d'affaires TTC (règle
+  actuelle, § 11) ou HT ? Sur le TTC, la TVA collectée (à reverser) gonfle la marge.
+- **En attendant** : seule la marge TTC est affichée (rapport de résultat, B14) ; `ventesPeriode`
+  calcule déjà `margeHt`, prête à être affichée.
+- **Qui décide** : la cliente.
+
 ### D-A5 — Signature du cahier des charges
 - **Statut** : le cahier des charges v1.0 a été rédigé et soumis à la cliente.
 - **À faire** : noter ici la date de signature et les éventuels avenants.

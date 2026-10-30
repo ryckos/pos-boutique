@@ -17,6 +17,10 @@ import { executer, toutes, une } from '../src/main/db/requetes'
 import type { Db } from '../src/main/db/connexion'
 import { manqueAvoir } from '../src/shared/rapports-gestion'
 import type { CausePerte } from '../src/shared/ipc/rapports-gestion'
+import { rechercherParCode } from '../src/main/modules/catalogue/service'
+import { ouvrirSession } from '../src/main/modules/caisse/service-session'
+import { enregistrerVente } from '../src/main/modules/caisse/service-vente'
+import { consulterRetour, enregistrerRetour } from '../src/main/modules/caisse/service-retour'
 import { baseAvecDemo } from './aide'
 
 // Démo : Kossi = 3 (gérant) ; Grossiste Hédzranawoé = fournisseur 1 ; riz = 1 (20, sans lot),
@@ -28,6 +32,7 @@ const RIZ = 1
 const TOMATE = 3
 const SAVON = 7
 const CARTON_TOMATE = '16181000000049'
+const UNITE_TOMATE = '6181000000042'
 
 function aujourdhui(db: Db): string {
   return une<{ j: string }>(db, "SELECT date('now','localtime') AS j")!.j
@@ -292,7 +297,7 @@ describe('Rapports : achats par fournisseur', () => {
 })
 
 describe('Rapports : résultat de la période', () => {
-  it('dépenses 1 000 + 15 000 = 16 000 (une annulée ne compte pas) ; marge en attente des ventes', () => {
+  it('dépenses 1 000 + 15 000 = 16 000 (une annulée ne compte pas) ; sans vente, résultat = −16 000', () => {
     const db = baseAvecDemo()
     const categorie = (nom: string) =>
       une<{ id: number }>(db, 'SELECT id FROM categories_depense WHERE nom = ?', nom)!.id
@@ -307,6 +312,52 @@ describe('Rapports : résultat de la période', () => {
     depense('Loyer', 15000)
     annulerDepense(db, KOSSI, depense('Eau', 2000).id, 'doublon')
     sortie(db, TOMATE, 2, 'casse')
-    expect(rapportResultat(db)).toMatchObject({ depenses: 16000, pertes: 500, marge: null, resultat: null })
+    expect(rapportResultat(db)).toMatchObject({
+      chiffreAffaires: 0,
+      cout: 0,
+      depenses: 16000,
+      pertes: 500,
+      marge: 0,
+      resultat: -16000
+    })
+  })
+
+  it('marge de `ventesPeriode` (A14) − dépenses : 7 850 − 6 250 = 1 600, − 1 000 = 600', () => {
+    const db = baseAvecDemo()
+    const code = (c: string) => rechercherParCode(db, c)!.conditionnementId
+    ouvrirSession(db, KOSSI, 10000)
+    // 1 carton (7 500, coût 6 000) + 2 unités (2 × 350, coût 2 × 250) = 8 200, coût 6 500.
+    const ticket = enregistrerVente(db, KOSSI, {
+      lignes: [
+        { conditionnementId: code(CARTON_TOMATE), quantite: 1 },
+        { conditionnementId: code(UNITE_TOMATE), quantite: 2 }
+      ],
+      remiseGlobale: 0,
+      paiements: [{ mode: 'especes', montant: 8200 }]
+    })
+    // Une unité rendue (350 F, coût 250) : elle compte en moins dans la marge.
+    const ligneUnite = consulterRetour(db, GERANT, ticket.numeroTicket).lignes.find(
+      (l) => !l.designation.includes('Carton')
+    )!
+    enregistrerRetour(db, GERANT, {
+      numeroTicket: ticket.numeroTicket,
+      lignes: [{ ligneId: ligneUnite.ligneId, quantite: 1 }],
+      motif: 'defectueux',
+      sort: 'detruire',
+      remboursement: { mode: 'especes' }
+    })
+    enregistrerDepense(db, GERANT, {
+      categorieId: une<{ id: number }>(db, "SELECT id FROM categories_depense WHERE nom = 'Transport'")!.id,
+      libelle: 'taxi-moto',
+      montant: 1000,
+      source: 'fonds_propres'
+    })
+    expect(rapportResultat(db)).toMatchObject({
+      chiffreAffaires: 7850,
+      cout: 6250,
+      marge: 1600,
+      depenses: 1000,
+      resultat: 600
+    })
   })
 })

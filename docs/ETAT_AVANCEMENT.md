@@ -90,7 +90,7 @@ Le socle comprend :
 | A13   | Écran client définitif                    | A   | ⏳     |   |
 | B11   | Sorties de stock, retours fournisseur     | B   | ✅     | PR #39 (serveur : sorties, retours, avoirs déduits de la dette, migration `retours_fournisseur`) et #40 (écran Sorties de stock, avoirs reçus ou refusés dans « Dettes », avoir à valoir sur la page Fournisseurs) |
 | B12   | Inventaires                               | B   | ✅     | PR #42 (serveur : inventaire total ou par rayon, comptage par conditionnement, validation au CUMP, démarque, migration `20261007_0900_inventaires.sql`) et #43 (menu « Inventaires », comptage en fenêtre, rapport de démarque) ; testé à la main |
-| B13   | Dépenses                                  | B   | 🔄     | PR #44 (serveur : catégories, numéro DEP, annulation avec motif, source « fonds propres », migration `20261008_0900_depenses.sql`) et #45 (menu « Dépenses », fenêtres nouvelle dépense, annulation, catégories) ; testé à la main. Source « caisse » sur `b/depenses-caisse` (REGLES_METIER § 10.2 : sortie de tiroir dans la même transaction, caissière sur sa caisse, annulation avant clôture) : testée à la main (AFI-15), PR vers `test` à fusionner ; B13 → ✅ à la fusion |
+| B13   | Dépenses                                  | B   | ✅     | PR #44 (serveur : catégories, numéro DEP, annulation avec motif, source « fonds propres », migration `20261008_0900_depenses.sql`), #45 (menu « Dépenses », fenêtres nouvelle dépense, annulation, catégories) et #74 (source « caisse » : sortie de tiroir dans la même transaction, caissière sur sa caisse, annulation avant clôture, REGLES_METIER § 10.2) ; testé à la main |
 
 ## Phase 4 — Pilotage (S16–S18)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
@@ -98,7 +98,7 @@ Le socle comprend :
 | A14   | Rapports ventes et caisse                 | A   | 🔄     | Partie 1 avancée (avant A11–A13) : canal `caisse:ventesPeriode` pour la marge de B14, branche `a/caisse-ventes-periode`. Reste : ventes par heure, par caissier, top / flop produits, historique des sessions, écran `/rapports` |
 | A15   | Tableau de bord d'accueil                 | A   | ⏳     |   |
 | A16   | Promotions programmées                    | A   | ⏳     |   |
-| B14   | Rapports de gestion, journal d'audit      | B   | 🔄     | PR #47 (serveur : pertes par cause, valeur du stock par rayon, achats par fournisseur, résultat sans marge), #48 (menu « Rapports de gestion », quatre onglets) et #49 (journal des opérations, admin, `audit:journal` / `audit:choix`) ; testé à la main. **Reste la marge**, en attente de `caisse:ventesPeriode` (A14) |
+| B14   | Rapports de gestion, journal d'audit      | B   | 🔄     | PR #47 (serveur : pertes par cause, valeur du stock par rayon, achats par fournisseur, résultat), #48 (menu « Rapports de gestion », quatre onglets) et #49 (journal des opérations, admin, `audit:journal` / `audit:choix`) ; testé à la main. **Marge** branchée sur `ventesPeriode` (A14) sur `b/rapports-marge` : chiffre d'affaires, coût, marge TTC, résultat ; PR vers `test` à fusionner, puis B14 → ✅ (marge HT : D-A6) |
 | B15   | Exports Excel                             | B   | ✅     | PR #50 (canal générique `exports:excel`, `BoutonExporter`, Stock, Dépenses, Rapports de gestion) et #51 (Produits, Péremptions, Sorties, Réceptions, Commandes, Fournisseurs, détail d'un inventaire, Journal en entier) ; testé à la main |
 | B16   | Sauvegardes et restauration               | B   | 🔄     | PR #53 (sauvegarde : clôture, démarrage, avant mise à jour, manuelle ; rotation ; clé USB) et #54 (écran Sauvegardes, restauration admin) fusionnées ; sauvegarde après clôture branchée par A (PR #56). **Reste** l'essai de restauration sur le terminal, et l'envoi distant (D-A4) |
 
@@ -170,3 +170,4 @@ Le socle comprend :
 | 2026-10-16 | A7    | Partie 2 : fenêtre « Retour client » dans la caisse (lignes à cocher, motif, sort, remboursement, code du gérant) (PR #64) |
 | 2026-10-16 | A10   | Parties 1 et 2 : facture A4 d'un ticket (F, PDF, original puis COPIE) et proforma (PF, 30 jours, reprise aux prix du jour) ; migration `20261015_1000_factures_proformas.sql` (PR #65, #66) |
 | 2026-10-19 | A10   | Parties 3 et 4 : fenêtre « Faire une facture » (PR #68), « Proforma » et « Reprendre une proforma » (PR #70) |
+| 2026-10-29 | B13   | Partie 3 : dépense payée au tiroir (source « caisse »), sortie de caisse dans la même transaction, page « Dépenses de ma caisse » pour la caissière (PR #74) |

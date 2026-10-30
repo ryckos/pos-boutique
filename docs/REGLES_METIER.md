@@ -972,9 +972,11 @@ repart à 1 chaque année.
 - **Achats par fournisseur** : livré (réceptions de la période), avoirs reçus et règlements non
   annulés de la période, reste dû d'aujourd'hui. Un fournisseur apparaît s'il a une opération dans
   la période ou un solde non nul.
-- **Résultat** : marge brute − dépenses non annulées. Tant que `caisse:ventesPeriode` (Dev A) n'est
-  pas livré, la marge et le résultat sont « en attente des rapports de ventes ». Les pertes sont
-  rappelées pour information, sans être déduites (elles ne font pas partie de la règle).
+- **Résultat** : marge brute − dépenses non annulées. La marge est celle de `ventesPeriode` (A14,
+  § 11 ci-dessus) sur la même période : chiffre d'affaires TTC − coût des marchandises vendues,
+  retours déduits ; l'écran détaille ces deux montants. Seule la marge **TTC** est affichée (marge HT :
+  D-A6 en attente). Les pertes sont rappelées pour information, sans être déduites (elles ne font pas
+  partie de la règle).
 
 ### 11.2 Exports Excel (validé par Dev B le 2026-10-09, B15)
 - On exporte **ce que l'écran affiche, filtres compris** ; mêmes droits que l'écran.
