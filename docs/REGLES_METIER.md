@@ -1090,6 +1090,25 @@ repart à 1 chaque année.
 - Le journal des opérations s'exporte en entier pour le filtre choisi, pas seulement les lignes
   affichées.
 
+### 11.3 Rapports de ventes et de caisse (validé par Dev A le 2026-11-01, A14)
+- **Droits** : gérant (et admin), lecture seule. **Période** : comme § 11.1 (mois en cours par défaut, fin
+  jamais future). Chaque document compte à sa date et **au nom de celui qui l'a saisi**.
+- **Par heure** : tranches d'une heure (heure locale), additionnées sur toute la période ; tickets terminés
+  seulement (ni retour, ni ticket annulé) ; seules les tranches ayant des ventes sont listées. Panier moyen =
+  chiffre d'affaires / tickets, arrondi au franc.
+- **Par caissier** : tickets, ventes, retours (au nom de la personne qui les saisit), chiffre d'affaires **net des
+  retours** (la somme des caissiers égale `ventesPeriode`), panier moyen sur les ventes, remises accordées
+  (remise du ticket + remises de ligne des tickets terminés), tickets annulés (nombre et montant, à la date du
+  ticket). Cela ne tranche pas la ligne « tickets annulés » du X et du Z (question ouverte pour la cliente).
+- **Top et flop** : par produit, tous conditionnements confondus, en unités de base, retours déduits. Classement
+  au choix par chiffre d'affaires (défaut), marge ou quantité ; 10 lignes par défaut (1 à 100). Seuls les produits
+  **vendus au moins une fois** dans la période sont classés (un produit seulement retourné ne l'est pas) ; le flop
+  est l'ordre inverse parmi eux, les produits dormants relevant du stock (B). **Le chiffre d'affaires d'un produit
+  est la somme de ses lignes** : la remise faite sur le ticket entier n'est pas répartie par produit, la somme des
+  produits dépasse donc le chiffre d'affaires de `ventesPeriode` de ces remises (50 F dans le cas de test).
+- **Historique des sessions** : sessions ouvertes dans la période (date d'ouverture), avec les valeurs figées à la
+  clôture (attendu, compté, écart, commentaire) ; une session en cours n'a pas d'écart. Total des écarts des
+  sessions clôturées en tête.
 ---
 
 ## 12. Utilisateurs et sécurité (Dev B)
