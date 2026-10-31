@@ -64,6 +64,7 @@ describe('Annulation d’un ticket (A6)', () => {
       numeroTicket: numero,
       especesARendre: 3500,
       autresARendre: [{ mode: 'tmoney', montant: 5000, reference: 'TM-0042' }],
+      creditAnnule: 0,
       tiroirOuvert: false
     })
     expect(une(db, 'SELECT statut, motif_annulation AS motif FROM ventes WHERE id = ?', venteId)).toEqual({

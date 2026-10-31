@@ -25,6 +25,7 @@ const resultat: ResultatAnnulation = {
   numeroTicket: 'T-2026-000007',
   especesARendre: 3500,
   autresARendre: [{ mode: 'tmoney', montant: 5000, reference: 'TM-0042' }],
+  creditAnnule: 0,
   tiroirOuvert: true
 }
 

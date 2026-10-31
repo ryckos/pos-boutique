@@ -53,6 +53,7 @@ interface VenteOrigine {
   caissier: string
   totalTtc: number
   remiseGlobale: number
+  estCredit: number
 }
 
 /** Une ligne vendue, avec ce qu'il faut pour la rendre. */
@@ -70,7 +71,7 @@ function lireOrigine(db: Db, venteId: number): VenteOrigine {
   return une<VenteOrigine>(
     db,
     `SELECT v.id, v.numero_ticket AS numeroTicket, v.type, v.statut, v.horodatage, u.nom AS caissier,
-            v.total_ttc AS totalTtc, v.remise_globale AS remiseGlobale
+            v.total_ttc AS totalTtc, v.remise_globale AS remiseGlobale, v.est_credit AS estCredit
      FROM ventes v JOIN utilisateurs u ON u.id = v.utilisateur_id WHERE v.id = ?`,
     venteId
   )!
@@ -141,6 +142,10 @@ function raisonRefus(db: Db, u: UtilisateurConnecte, v: VenteOrigine, lignes: Li
   }
   if (v.statut === 'annulee') return `Le ticket ${v.numeroTicket} est annulé : il n’y a rien à retourner.`
   if (v.statut !== 'terminee') return `Le ticket ${v.numeroTicket} n’est pas encaissé.`
+  // Le rendu devrait d'abord réduire la créance : réglé avec le recouvrement (A12, validé le 2026-10-28).
+  if (v.estCredit) {
+    return `Le ticket ${v.numeroTicket} est à crédit : son retour n’est pas encore possible, voyez le gérant.`
+  }
   if (lignes.every((l) => quantiteRetournable(l) <= 0)) {
     return `Tous les articles du ticket ${v.numeroTicket} ont déjà été retournés.`
   }

@@ -50,6 +50,8 @@ export interface TicketAImprimer {
    * d'origine, motif et sort du produit.
    */
   retour?: { ticketOrigine: string; motif: string; sort: string } | null
+  /** Part laissée à crédit (A11) : client, montant, échéance 'AAAA-MM-JJ'. */
+  credit?: { client: string; telephone: string | null; montant: number; echeance: string } | null
 }
 
 export interface EnteteTicket {
@@ -134,11 +136,33 @@ function lignesRetour(r: NonNullable<TicketAImprimer['retour']>): LigneImprimee[
   ]
 }
 
+/**
+ * Bloc d'une vente à crédit (A11, REGLES_METIER § 7.1) : client, reste dû, échéance. Deux exemplaires ;
+ * celui de la boutique porte la ligne de signature que le client remplit (la boutique le garde).
+ */
+function lignesCredit(
+  c: NonNullable<TicketAImprimer['credit']>,
+  exemplaire: 'client' | 'boutique'
+): LigneImprimee[] {
+  const l: LigneImprimee[] = [SEPARATEUR]
+  l.push({ texte: 'VENTE À CRÉDIT', centre: true, gras: true })
+  for (const t of couper(`Client : ${c.client}`)) l.push({ texte: t })
+  if (c.telephone) l.push({ texte: `Tél.   : ${c.telephone}` })
+  l.push({ texte: colonnes('Reste dû', montantTicket(c.montant)), gras: true })
+  l.push({ texte: `À payer avant le ${dateTicket(c.echeance).slice(0, 10)}` })
+  if (exemplaire === 'boutique') {
+    l.push({ texte: '' }, { texte: 'Signature du client :' }, { texte: '' }, { texte: '' })
+    l.push({ texte: '_'.repeat(LARGEUR) })
+  }
+  l.push({ texte: `Exemplaire ${exemplaire}`, centre: true })
+  return l
+}
+
 /** Le ticket en lignes de texte, sans aucun octet de commande. */
 export function lignesTicket(
   ticket: TicketAImprimer,
   entete: EnteteTicket,
-  options: { duplicata: boolean }
+  options: { duplicata: boolean; exemplaire?: 'client' | 'boutique' }
 ): LigneImprimee[] {
   const l: LigneImprimee[] = []
 
@@ -209,6 +233,7 @@ export function lignesTicket(
   }
 
   if (ticket.annulation) l.push({ texte: 'Ticket annulé : remboursé au client.', centre: true, gras: true })
+  if (ticket.credit) l.push(...lignesCredit(ticket.credit, options.exemplaire ?? 'boutique'))
 
   l.push({ texte: '' })
   for (const t of couper(entete.pied)) l.push({ texte: t, centre: true })
@@ -226,6 +251,16 @@ export function mettreEnPageTicket(
   pageDeCodes: PageDeCodes,
   options: { duplicata: boolean; tiroir: boolean }
 ): Buffer {
+  // Vente à crédit (A11) : l'original sort en deux exemplaires dans le même envoi, le client d'abord ;
+  // un duplicata reprend seulement celui de la boutique, avec la signature.
+  if (ticket.credit && !options.duplicata) {
+    return Buffer.concat([
+      mettreEnPage(lignesTicket(ticket, entete, { ...options, exemplaire: 'client' }), pageDeCodes, {
+        tiroir: options.tiroir
+      }),
+      mettreEnPage(lignesTicket(ticket, entete, { ...options, exemplaire: 'boutique' }), pageDeCodes)
+    ])
+  }
   return mettreEnPage(lignesTicket(ticket, entete, options), pageDeCodes, { tiroir: options.tiroir })
 }
 

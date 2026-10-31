@@ -251,12 +251,15 @@ describe('Refus et rollback', () => {
     rienEcrit(db)
   })
 
-  it('refuse le crédit tant que la fiche client n’existe pas', () => {
+  it('refuse un mode inconnu, et le crédit sans client (A11)', () => {
     const db = caisseOuverte()
-    for (const mode of ['credit', 'constructor']) {
-      const paiements = [{ mode, montant: 8500 }] as unknown as RequeteVente['paiements']
-      expect(() => enregistrerVente(db, AFI, { lignes: venteDemo(db), paiements })).toThrow(/non accepté/)
-    }
+    const forge = [{ mode: 'constructor', montant: 8500 }] as unknown as RequeteVente['paiements']
+    expect(() => enregistrerVente(db, AFI, { lignes: venteDemo(db), paiements: forge })).toThrow(
+      /non accepté/
+    )
+    expect(() =>
+      enregistrerVente(db, AFI, { lignes: venteDemo(db), paiements: [{ mode: 'credit', montant: 8500 }] })
+    ).toThrow(/Choisissez le client/)
     rienEcrit(db)
   })
 

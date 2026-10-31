@@ -27,7 +27,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 | `caisse/sessionOuverte()`, `enregistrerMouvementCaisse()` | A         | B           | fin S10  | ✅     | PR #55 — débloque B13 (source caisse) et le règlement fournisseur au tiroir : `sessionOuverte(db)` (seule caisse ouverte, sinon `null`), `enregistrerMouvementCaisse(db, { sessionId, utilisateurId, sens, motif, montant, commentaire, documentType?, documentId? })` et `annulerMouvementCaisse` dans `modules/caisse/service-mouvements.ts`, à appeler dans la transaction du document ; sortie ≤ tiroir ; motif `reglement_fournisseur` ajouté |
 | `caisse:ventesPeriode`                                    | A         | B           | fin S16  | ✅     | PR #73, livré en avance : `ventesPeriode(db, { du, au })` de `modules/caisse/service-rapports.ts` → `VentesPeriode` (`chiffreAffaires`, `cout`, `marge`, `margeHt`…), à appeler directement dans `rapports-gestion/resultat.ts` (REGLES_METIER § 11) ; débloque la marge de B14 |
 | Alertes rupture et péremption (lecture)                   | B         | A           | fin S17  | 🔄     | A15 ; canal `stock:alertesAccueil` (gérant) → `AlertesAccueil` (ruptures, stocks bas, périmés, urgents, proches, valeur en jeu, 5 premiers de chaque) sur `b/alertes-accueil`, PR vers `test` à fusionner (REGLES_METIER § 3.3) |
-| Libellés du journal des clients (`src/shared/audit.ts`) — demandé le 2026-10-31 | B | A | avec A11 | ⏳ | `creation_client`, `modification_client` (nom, téléphone, adresse, NIF), `plafond_credit` (`client`, `plafond`), `desactivation_client` (`client`, `motif`) ; sinon le journal les affiche en code brut |
+| Libellés du journal des clients (`src/shared/audit.ts`) — demandé le 2026-10-31 | B | A | avec A11 | ⏳ | `creation_client`, `modification_client` (nom, téléphone, adresse, NIF), `plafond_credit` (`client`, `plafond`), `desactivation_client` (`client`, `motif`), `vente_credit` (`numeroTicket`, `client`, `montant`, `echeance`) ; sinon le journal les affiche en code brut |
 
 ## Phase 0 — Validation matérielle ✅
 | Test | Objet                              | Résultat                                                |
@@ -86,7 +86,7 @@ Le socle comprend :
 ## Phase 3 — Suivi financier (S13–S15)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
 |-------|-------------------------------------------|-----|--------|--------------------------|
-| A11   | Clients et vente à crédit                 | A   | 🔄     | PR 1/5 `a/clients-fiche` : fiches clients, plafond (gérant), encours, migration `20261031_1000_clients_credit.sql`. Suivent : vente à crédit (serveur), écran Clients, crédit à la caisse, avoir en boutique |
+| A11   | Clients et vente à crédit                 | A   | 🔄     | PR 1/5 `a/clients-fiche` (PR #79) : fiches clients, plafond (gérant), encours, migration `20261031_1000_clients_credit.sql` ; PR 2/5 `a/clients-credit-vente` : vente à crédit (plafond strict, créance à 30 jours, annulation de la créance, retour refusé, ticket en deux exemplaires). Suivent : écran Clients, crédit à la caisse, avoir en boutique |
 | A12   | Recouvrement                              | A   | ⏳     |   |
 | A13   | Écran client définitif                    | A   | ⏳     |   |
 | B11   | Sorties de stock, retours fournisseur     | B   | ✅     | PR #39 (serveur : sorties, retours, avoirs déduits de la dette, migration `retours_fournisseur`) et #40 (écran Sorties de stock, avoirs reçus ou refusés dans « Dettes », avoir à valoir sur la page Fournisseurs) |
