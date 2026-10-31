@@ -18,6 +18,60 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-30 / 31 — b/docs-b14-fusion, b/alertes-accueil — B14 close, contrat des alertes pour A15
+**Fait** :
+- **PR #76 fusionnée** (marge de B14) puis **PR #77** (`b/docs-b14-fusion`) : B14 → ✅ et UX1 → ✅
+  (PR #71) dans `ETAT_AVANCEMENT.md`, ligne B14 partie 4 au journal des fusions. Branches
+  `b/depenses-caisse` et `b/rapports-marge` supprimées (local et GitHub).
+- **Contrat des alertes pour A15** (rendez-vous Dev A, fin S17), branche `b/alertes-accueil`, commit
+  `65b3817`, poussée :
+  - canal `stock:alertesAccueil` (gérant) → `AlertesAccueil` dans `src/shared/ipc/stock.ts` :
+    `stock { nbRuptures, nbStockBas, produits }` et `peremptions { horizonJours, nbPerimes, nbUrgents,
+    nbProches, valeurEnJeu, lots }` ; `NB_ALERTES_ACCUEIL = 5` exportée ;
+  - service `src/main/modules/stock/alertes.ts` : lit `v_alertes_stock` et réutilise
+    `tableauPeremptions()` (mêmes chiffres que les pages Stock et Péremptions ; ni répartition ni
+    dormants, pour rester léger) ;
+  - règles décidées par Claude **sur délégation explicite de Dev B**, écrites dans `REGLES_METIER.md`
+    § 3.3 : gérant seul ; compteurs + 5 premiers de chaque sorte (ruptures d'abord puis stock le plus
+    bas ; lots du plus proche au plus lointain, périmés d'abord) ; règle § 3.3 inchangée (un produit
+    jamais approvisionné, à stock 0, est une rupture, comme sur la page Stock) ; urgents = 0 à 3 j
+    (périmés comptés à part), proches = au-delà de 3 j dans l'horizon ;
+  - 5 tests (`tests/alertes-accueil.test.ts`), **723 tests verts**, typecheck OK ; **testé à la main par
+    Dev B** depuis la console (`await window.pos.invoke('stock:alertesAccueil')`). Aucune migration.
+
+**En cours** : PR `b/alertes-accueil` → `test` à ouvrir (`gh` absent ; texte fourni à Dev B dans la
+session) : https://github.com/ryckos/pos-boutique/compare/test...b/alertes-accueil?expand=1
+Ce carnet est commité sur cette branche. Le rendez-vous « Alertes » est 🔄 dans `ETAT_AVANCEMENT.md`.
+
+**Prochaine étape** :
+1. Après la fusion : rendez-vous « Alertes rupture et péremption » → ✅ (avec le n° de PR) et une ligne
+   au journal des fusions de `ETAT_AVANCEMENT.md` (à mettre dans la prochaine branche) ; supprimer
+   `b/docs-b14-fusion` et `b/alertes-accueil` (local et GitHub).
+2. Choisir avec Dev B la suite :
+   - **B16** : préparer une procédure pas à pas d'essai de restauration sur le terminal OMA POS (copie de
+     la base, restauration depuis la liste et depuis la clé, vérification des chiffres, retour arrière),
+     la faire jouer, puis B16 → ✅ hors envoi distant (D-A4) ;
+   - **B-P5** : démarrage automatique (raccourci `shell:startup` ou option de l'installateur), mode
+     kiosque, icône de l'application, champ `author` de `package.json` ;
+   - suivre les retours de la cliente sur la 1.0.0-rc.1 (`docs/fiches-test/`) ; une correction = branche
+     `b/…`, puis rc.2 selon `DEPLOIEMENT.md` § 6.
+
+**Questions ouvertes** :
+- D-A1, D-A3, D-A4 (bloque la fin de B16), D-A5, D-A6 (marge TTC ou HT) : toujours en attente.
+- Après l'import du vrai catalogue, l'accueil peut afficher beaucoup de ruptures (produits sans stock
+  initial) : la règle est gardée ; à revoir seulement si la cliente s'en plaint.
+- Journal des fusions : #72 (douchette) et #73 (A14 partie 1) de Dev A n'y figurent pas ; à lui de les
+  ajouter.
+
+**Contrats** :
+- **Livré à Dev A (en relecture)** : `stock:alertesAccueil` pour l'accueil A15 — `session` gérant
+  exigée ; appeler depuis l'écran par `appel('stock:alertesAccueil')` ; afficher les compteurs et les
+  5 éléments, avec des liens vers `/stock` et la page Péremptions pour le reste. Ajout seul : aucun
+  contrat consommé par la caisse ne change.
+- Modifiés : aucun. Attendus de Dev A : rien.
+
+---
+
 ## 2026-10-28 / 29 — b/depenses-caisse, b/rapports-marge — B13 terminée, marge de B14
 **Fait** :
 - **UX1 / 1.0.0-rc.1 fusionnée** (PR #71) : `test` est la base commune ; la cliente teste la rc.1.
@@ -698,71 +752,3 @@ chacune a été fourni à Dev B dans la session :
 - **Pour Dev A** : le bouton « Promo −20 % » du tableau attend les promotions programmées (A16) ;
   nouvelles classes communes `.tableau tr.ligne-urgente` / `tr.ligne-proche`.
 - Attendus : `enregistrerMouvementCaisse()` (Dev A, A8, fin S10) pas encore livré.
-
----
-
-## 2026-10-01 — b/commandes, b/commandes-ecran — B8 partie 3 : commandes fournisseur (fusionnées, B8 ✅)
-**Fait** :
-- **PR #25, #26, #27 fusionnées** (réceptions serveur, écran Réceptions, achats d'un fournisseur) :
-  B7 → ✅ dans `ETAT_AVANCEMENT.md`, trois lignes au journal des fusions. Branches `b/receptions`,
-  `b/receptions-ecran`, `b/fournisseurs-achats` supprimées **en local** ; sur GitHub, à supprimer par
-  Dev B (refusé à Claude par les permissions).
-- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 4.7 :
-  - on commande **dans le conditionnement** (3 cartons) ; comparaison avec le reçu en unités de base ;
-  - « Proposer depuis les alertes » liste les produits en rupture / stock bas, **sans quantité
-    calculée** : le gérant coche et saisit (variante simple choisie par Dev B) ;
-  - états : brouillon → « Marquer comme envoyée » (aperçu à copier pour WhatsApp, pas d'envoi
-    automatique) ; à chaque réception liée, automatiquement `recue` ou `recue_partiel` ;
-    « Clôturer » (reste qui ne viendra pas) et « Annuler » (non livrée) avec motif journalisé ;
-  - commande reçue en partie : reste ouverte, reste à recevoir pré-rempli à la réception ; le prix
-    payé à la réception l'emporte (écart affiché) ; article non commandé accepté ;
-  - numéro `CA` dès le brouillon (gardé si annulé) ; **seul le brouillon se modifie** ;
-  - une ligne par produit ; prix prévu facultatif ; liaison seulement à une commande envoyée ou reçue
-    en partie du même fournisseur ; « Clôturer » seulement si reçue en partie.
-  - Nouvelles actions au journal (§ 1.4) : `annulation_commande`, `cloture_commande`.
-- **PR 1 `b/commandes`** (commit `e6b81e2`, poussée) : migration
-  `20261001_0833_commande_conditionnement.sql` (`lignes_commande_achat.conditionnement_id`),
-  service `modules/achats/commandes.ts`, 9 canaux gérant, `commandeId` facultatif sur
-  `achats:validerReception` (statut de la commande recalculé dans la même transaction), numéro de
-  commande dans le détail d'une réception. 11 tests (`tests/commandes.test.ts`).
-- **PR 2 `b/commandes-ecran`** (commit `ae27ab3`, empilée sur la PR 1, poussée) : menu « Commandes »
-  (`PageCommandes.tsx`), logique pure `saisieCommande.ts` (10 tests), bandeau « Livrer CA-… » sur
-  l'écran Réceptions (`livrerCommande`, `changerFournisseur` dans `saisieReception.ts`), champ `unite`
-  sur les lignes de commande, classe commune `.apercu`, `UI_UX.md` § 5.18.
-- 376 tests verts, typecheck OK ; **scénario complet testé à la main par Dev B** (alertes, brouillon,
-  envoi et copie, réception partielle avec écart de prix, clôture, annulation).
-
-**En cours** : rien. Les deux PR ont été fusionnées pendant la clôture : **#31** (`b/commandes`) et
-**#33** (`b/commandes-ecran`). **B8 → ✅** et deux lignes au journal des fusions, dans la petite PR de
-documentation `b/docs-b8-fusion` → `test`, qui porte aussi ce carnet :
-https://github.com/ryckos/pos-boutique/compare/test...b/docs-b8-fusion?expand=1
-
-**Prochaine étape** :
-1. Faire fusionner `b/docs-b8-fusion`. Supprimer `b/commandes`, `b/commandes-ecran` et
-   `b/docs-b8-fusion`, en local et sur GitHub.
-2. **B9 Lots, FEFO, tableau des péremptions** (`/tache B9`, branche `b/fefo` depuis `test` à jour) :
-   - d'abord **`allouerFefo(db, produitId, qteBase)`** pour Dev A (**rendez-vous fin S10**, A9) :
-     répartition par lots, date la plus proche d'abord, depuis `v_stock_lots` ; à placer dans
-     `modules/stock/` ; demander à Dev B le comportement quand les lots ne suffisent pas (stock
-     négatif : D-A1 en attente, ne jamais bloquer une vente) ;
-   - puis le tableau des péremptions (`UI_UX.md` § 5.8, horizon `peremption_seuil_jours`, valeur en
-     jeu = restant × prix d'achat du lot, actions Promo / Retirer = `perte_peremption`).
-   - Relire `REGLES_METIER.md` § 5 et `SCENARIO_REFERENCE.md` avant le plan. Les lots créés par la
-     réception portent `reception_id` et le coût par unité arrondi au franc.
-
-**Questions ouvertes** :
-- B9 : que renvoie `allouerFefo` quand la quantité dépasse les lots disponibles ? À poser à Dev B
-  (et à accorder avec Dev A, A9).
-- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
-- Plafond de remise caissier (D-A3) : en attente de la cliente.
-- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photo des produits : reportée.
-
-**Contrats** :
-- Ajoutés (gérant, **sans impact pour la caisse**) : `achats:creerCommande`, `modifierCommande`,
-  `envoyerCommande`, `annulerCommande`, `cloturerCommande`, `commande`, `listeCommandes`,
-  `commandesOuvertes`, `produitsEnAlerte` ; champ facultatif `commandeId` sur
-  `achats:validerReception` ; `Reception.commande` (numéro, facultatif).
-- **Pour Dev A** : nouvelle migration (aucune table de la caisse touchée) ; nouvelle classe commune
-  `.apercu` (texte à copier) ; menu « Commandes » ajouté par `modules/achats/routes.tsx`.
-- Prochain rendez-vous à livrer : `allouerFefo()` (fin S10, B9). Attendus : `sessionOuverte()` existe
-  déjà ; `enregistrerMouvementCaisse()` (Dev A, A8, fin S10) pas encore livré.

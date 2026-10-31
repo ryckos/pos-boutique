@@ -248,6 +248,14 @@ Précisions validées par Dev B le 2026-09-28 (écran stock, B4) :
   et finit sur le stock actuel. Document lisible : n° de ticket pour une vente, « Stock initial »,
   « Stock de démonstration », « Annulation » avec le motif ; n° RC ou INV dès que B8 et B12 existent.
 
+- **Alertes de l'écran d'accueil** (validé par Dev B le 2026-10-30, rendez-vous A15) : l'accueil du
+  gérant résume les pages Stock et Péremptions **avec les mêmes règles et les mêmes chiffres** : nombre
+  de ruptures et de stocks bas (§ 3.3, produits actifs seulement ; un produit jamais approvisionné, à
+  stock 0, est une rupture comme sur la page Stock), nombre de lots périmés, à 3 jours ou moins, et plus
+  lointains dans l'horizon `peremption_seuil_jours`, valeur en jeu totale (§ 5.1). Seuls les **5
+  premiers** de chaque sorte sont détaillés (ruptures d'abord puis du stock le plus bas ; lots du plus
+  proche au plus lointain) ; le reste se consulte sur les pages. **Gérant seul**, comme ces pages.
+
 ### 3.4 Stock négatif — ⚠ DÉCISION EN ATTENTE
 Le schéma autorise un stock négatif, par exemple quand on vend une baguette avant que la réception
 du matin soit saisie. La politique reste à valider avec la cliente (voir `DECISIONS.md`). **D'ici

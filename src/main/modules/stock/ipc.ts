@@ -2,6 +2,7 @@
 import { base } from '../../db/connexion'
 import { gerer } from '../../ipc/gerer'
 import { session } from '../../core/session'
+import { alertesAccueil } from './alertes'
 import { etatStock } from './etat'
 import { historiqueProduit } from './historique'
 import { retirerLot, tableauPeremptions } from './peremptions'
@@ -22,6 +23,12 @@ export function enregistrerIpcStock(): void {
   gerer('stock:historiqueProduit', ({ produitId, du, au }) => {
     session.exiger(['gerant'])
     return historiqueProduit(base(), produitId, { du, au })
+  })
+
+  // Alertes de l'accueil : gérant, comme les pages Stock et Péremptions qu'elles résument.
+  gerer('stock:alertesAccueil', () => {
+    session.exiger(['gerant'])
+    return alertesAccueil(base())
   })
 
   // Péremptions : gérant (valeur en jeu au prix d'achat, retrait = perte chiffrée).
