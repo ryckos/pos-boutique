@@ -1734,6 +1734,7 @@ select {
 }
 .ecran-client-lignes {
   flex: 1;
+  min-height: 0;
   list-style: none;
   overflow: hidden;
   padding: 16px 0;
@@ -1744,6 +1745,45 @@ select {
   gap: 12px;
   font-size: 24px;
   padding: 8px 0;
+}
+.ecran-client-total small {
+  font-size: 18px;
+  margin-left: 12px;
+  opacity: 0.75;
+}
+.ecran-client-fin {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+}
+.ecran-client-merci {
+  font-size: 40px;
+  text-align: center;
+}
+.ecran-client-fin dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 16px;
+  font-size: 28px;
+}
+.ecran-client-monnaie {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 16px;
+  border-top: 2px solid rgba(255, 255, 255, 0.4);
+  font-size: 28px;
+}
+.ecran-client-monnaie .montant {
+  font-size: 56px;
+  font-weight: 700;
+}
+.ecran-client-credit {
+  font-size: 24px;
+  text-align: center;
+  opacity: 0.9;
 }
 .ecran-client-remise {
   grid-column: 2 / -1;

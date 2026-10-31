@@ -57,8 +57,6 @@ export interface ArticleCatalogue {
 /** Ce que l'écran client (11,6″) affiche. */
 export interface LignePanierClient {
   designation: string
-  /** Conditionnement quand ce n'est pas l'unité (« Carton de 24 »), affiché sous la désignation. */
-  conditionnement?: string
   quantite: number
   /** Remise déduite. */
   total: number
