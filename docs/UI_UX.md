@@ -708,6 +708,9 @@ sauvegardée d'abord, le redémarrage ; case « J'ai compris » obligatoire. Pui
 redémarre… » (`REGLES_METIER.md` § 14).
 
 ### 5.23 Facture et proforma (Dev A — A10)
+Le formulaire client (facture et proforma) propose **« Choisir un client enregistré »** (A11) : la fenêtre
+de recherche (la même que pour le crédit, sans condition de plafond) remplit nom, téléphone, adresse et NIF,
+qui restent modifiables. Les coordonnées sont recopiées sur le document : la fiche n'y est pas liée.
 Boutons dans les actions de la caisse ouverte, pour tous (`REGLES_METIER.md` § 6.12 et 6.13) ;
 douchette et raccourcis coupés pendant les fenêtres.
 - **« Faire une facture »** (`FenetreFacture.tsx`) : numéro du ticket (le dernier ticket est proposé et
