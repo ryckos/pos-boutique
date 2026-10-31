@@ -11,8 +11,9 @@
  *   `mouvements_caisse` : le X et le Z lisent les remboursements dans ces paiements ;
  * - montant rendu = ce que le client a payé (net de la remise de ligne et de sa part de la remise du
  *   ticket), au prorata, le dernier retour d'une ligne prenant le reste (`montantRetourLigne`) ;
- * - espèces, TMoney ou Flooz (référence obligatoire) ; en espèces, pas plus que le tiroir. L'avoir en
- *   boutique attend la fiche client (A11) ;
+ * - espèces, TMoney ou Flooz (référence obligatoire) ; en espèces, pas plus que le tiroir. Avoir en
+ *   boutique (A11, § 7.2) : crédit nominatif créé avec le retour, paiement négatif `avoir`, rien ne
+ *   sort du tiroir. Un ticket payé en partie par avoir ne se rembourse qu'en avoir, au même client ;
  * - stock : un `retour_client` (+) sur les lots servis à la vente, le dernier servi d'abord, au coût de
  *   la sortie d'origine ; « Détruire » ajoute un `casse` (−) sur le même lot. Le CUMP ne bouge pas ;
  * - journal `retour_client`. Le tiroir s'ouvre ensuite (ipc.ts) si le remboursement est en espèces.
@@ -38,11 +39,17 @@ import { journaliser } from '../../core/audit'
 import { ErreurMetier } from '../../core/erreurs'
 import { repartirRemise, ventilerTva } from './calculs'
 import { autoriseParGerant } from './service-annulation'
+import { creerAvoir } from '../clients/service-avoir'
 import { rapportSession } from './service-cloture'
 import { sessionOuverte } from './service-session'
 import { venteParNumero } from './service-ticket'
 
-const MODES: Record<ModeRemboursement, string> = { especes: 'Espèces', tmoney: 'TMoney', flooz: 'Flooz' }
+const MODES: Record<ModeRemboursement, string> = {
+  especes: 'Espèces',
+  tmoney: 'TMoney',
+  flooz: 'Flooz',
+  avoir: 'Avoir en boutique'
+}
 
 interface VenteOrigine {
   id: number
@@ -54,6 +61,7 @@ interface VenteOrigine {
   totalTtc: number
   remiseGlobale: number
   estCredit: number
+  clientId: number | null
 }
 
 /** Une ligne vendue, avec ce qu'il faut pour la rendre. */
@@ -71,7 +79,8 @@ function lireOrigine(db: Db, venteId: number): VenteOrigine {
   return une<VenteOrigine>(
     db,
     `SELECT v.id, v.numero_ticket AS numeroTicket, v.type, v.statut, v.horodatage, u.nom AS caissier,
-            v.total_ttc AS totalTtc, v.remise_globale AS remiseGlobale, v.est_credit AS estCredit
+            v.total_ttc AS totalTtc, v.remise_globale AS remiseGlobale, v.est_credit AS estCredit,
+            v.client_id AS clientId
      FROM ventes v JOIN utilisateurs u ON u.id = v.utilisateur_id WHERE v.id = ?`,
     venteId
   )!
@@ -189,8 +198,20 @@ export function consulterRetour(db: Db, u: UtilisateurConnecte, numeroTicket: st
        WHERE vente_origine_id = ? AND type = 'retour' AND statut = 'terminee' ORDER BY id`,
       v.id
     ).map((r) => r.numero),
-    raisonRefus: raisonRefus(db, u, v, lignes)
+    raisonRefus: raisonRefus(db, u, v, lignes),
+    clientAvoir: payeParAvoir(db, v)
   }
+}
+
+/** Le client dont l'avoir a payé une part du ticket (il faut alors rembourser en avoir), sinon null. */
+function payeParAvoir(db: Db, v: VenteOrigine): { id: number; nom: string } | null {
+  const paye = une<{ n: number }>(
+    db,
+    "SELECT COUNT(*) AS n FROM paiements WHERE vente_id = ? AND mode = 'avoir' AND montant > 0",
+    v.id
+  )!.n
+  if (paye === 0 || v.clientId === null) return null
+  return une<{ id: number; nom: string }>(db, 'SELECT id, nom FROM clients WHERE id = ?', v.clientId) ?? null
 }
 
 /** Contrôles qui ne dépendent pas de la base : motif, sort, remboursement, forme des lignes. */
@@ -208,7 +229,10 @@ function controlerDemande(demande: RequeteRetour): { motif: string; reference: s
     throw new ErreurMetier('Remboursement : choisissez espèces, TMoney ou Flooz.')
   }
   const reference = demande.remboursement.reference?.trim() || null
-  if (mode !== 'especes' && !reference) {
+  if (mode === 'avoir' && !Number.isInteger(demande.clientId)) {
+    throw new ErreurMetier('Avoir en boutique : choisissez le client à qui il est destiné.')
+  }
+  if (mode !== 'especes' && mode !== 'avoir' && !reference) {
     throw new ErreurMetier(`Saisissez la référence du transfert ${MODES[mode]} fait au client.`)
   }
   const lignes = demande.lignes ?? []
@@ -288,6 +312,12 @@ export function enregistrerRetour(db: Db, u: UtilisateurConnecte, demande: Reque
     const refusTardif = raisonRefus(db, u, v, lignesOrigine)
     if (refusTardif) throw new ErreurMetier(refusTardif)
     const session = sessionOuverte(db, u.id)!
+    const clientAvoir = payeParAvoir(db, v)
+    if (clientAvoir && (mode !== 'avoir' || demande.clientId !== clientAvoir.id)) {
+      throw new ErreurMetier(
+        `Le ticket ${v.numeroTicket} a été payé en partie par avoir : remboursez en avoir en boutique, au nom de ${clientAvoir.nom}.`
+      )
+    }
 
     const lignes = demande.lignes.map((d) => {
       const l = lignesOrigine.find((x) => x.ligneId === d.ligneId)
@@ -386,6 +416,16 @@ export function enregistrerRetour(db: Db, u: UtilisateurConnecte, demande: Reque
         reference
       )
     }
+    const creation =
+      mode === 'avoir' && montant > 0
+        ? creerAvoir(db, { clientId: demande.clientId!, retourId, montant, utilisateurId: u.id })
+        : null
+    const avoir = creation && {
+      numero: creation.numero,
+      montant: creation.montant,
+      client: creation.client,
+      soldeClient: creation.soldeClient
+    }
 
     journaliser(db, {
       utilisateurId: u.id,
@@ -397,6 +437,7 @@ export function enregistrerRetour(db: Db, u: UtilisateurConnecte, demande: Reque
         ticketOrigine: v.numeroTicket,
         montant,
         mode,
+        ...(avoir && { avoir: avoir.numero, client: avoir.client }),
         motif,
         sort: demande.sort,
         ...(gerantId !== u.id && { autoriseeParId: gerantId })
@@ -409,6 +450,7 @@ export function enregistrerRetour(db: Db, u: UtilisateurConnecte, demande: Reque
       numeroTicketOrigine: v.numeroTicket,
       montant,
       mode,
+      avoir,
       tiroirOuvert: false
     }
   })

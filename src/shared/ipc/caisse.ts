@@ -237,6 +237,8 @@ export interface TicketRetour {
   retoursPrecedents: string[]
   /** Pourquoi on ne peut rien retourner sur ce ticket ; null si on le peut. */
   raisonRefus: string | null
+  /** Ticket payé en partie par avoir : le client à créditer, le remboursement ne se fait alors qu'en avoir. */
+  clientAvoir: { id: number; nom: string } | null
 }
 
 export interface RequeteRetour {
@@ -249,6 +251,8 @@ export interface RequeteRetour {
   precision?: string
   sort: SortRetour
   remboursement: { mode: ModeRemboursement; reference?: string }
+  /** Remboursement en avoir : le client à qui il est destiné (A11, REGLES_METIER § 7.2). */
+  clientId?: number
   /** Caissière : le code du gérant. Absent pour un gérant connecté. */
   autorisation?: AutorisationGerant
 }
@@ -261,6 +265,8 @@ export interface RetourEnregistre {
   /** Montant rendu au client, positif. */
   montant: number
   mode: ModeRemboursement
+  /** L'avoir créé (remboursement en avoir), null sinon. */
+  avoir: { numero: string; montant: number; client: string; soldeClient: number } | null
   /** Le tiroir s'est-il ouvert (seulement pour un remboursement en espèces) ? */
   tiroirOuvert: boolean
 }

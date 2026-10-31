@@ -56,7 +56,8 @@ const TICKET: TicketRetour = {
     { mode: 'especes', montant: 350, reference: null }
   ],
   retoursPrecedents: ['R-2026-000001'],
-  raisonRefus: null
+  raisonRefus: null,
+  clientAvoir: null
 }
 
 const saisie = (autres: Partial<SaisieRetour> = {}): SaisieRetour => ({
@@ -137,6 +138,7 @@ describe('Fenêtre « Retour client » (A7)', () => {
       numeroTicketOrigine: 'T-2026-000158',
       montant: 600,
       mode: 'especes' as const,
+      avoir: null,
       tiroirOuvert: true
     }
     expect(messageRetour(r)).toMatch(

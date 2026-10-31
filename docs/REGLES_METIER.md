@@ -716,6 +716,7 @@ Exemple de référence :
 | `R`     | Retour client            | caisse | Dev A       |
 | `F`     | Facture                  | caisse | Dev A       |
 | `PF`    | Proforma                 | caisse | Dev A       |
+| `AV`    | Avoir en boutique        | clients | Dev A      |
 | `RC`    | Réception                | achats | Dev B       |
 | `CA`    | Commande d'achat         | achats | Dev B       |
 | `INV`   | Inventaire               | inventaires | Dev B  |
@@ -810,6 +811,25 @@ repart à 1 chaque année.
   (`ventes.client_id`). La part à crédit compte dans « Ventes crédit » du X / Z et dans le chiffre
   d'affaires (§ 11), jamais dans les espèces théoriques. À l'annulation, rien n'est rendu pour la part
   à crédit : la créance est annulée. Un duplicata du ticket à crédit ne sort qu'en exemplaire boutique.
+
+### 7.2 Avoir en boutique (validé par Dev A, 2026-11-01)
+- Un **avoir** est un crédit **nominatif** (toujours au nom d'un client actif) né d'un retour client
+  remboursé « en avoir ». Numéro **`AV-AAAA-NNNNNN`**. Il ne se rembourse pas en argent ensuite, n'expire
+  pas, et se dépense à la caisse **en une ou plusieurs fois** (une part du ticket, le solde est gardé).
+- **Création** (retour client, § 6.8) : mêmes droits que tout retour (gérant, ou caissière avec le code du
+  gérant). Le retour garde son paiement négatif, de mode `avoir` : **rien ne sort du tiroir ni du mobile
+  money**. Le ticket de retour porte le numéro de l'avoir et le solde du client.
+- **Solde** = montant − utilisations, calculé (vue `v_avoirs_clients`), jamais stocké. Les avoirs d'un client
+  se dépensent **du plus ancien au plus récent**.
+- **Dépense** : mode de paiement « Avoir » à la caisse, après le choix du client, jamais au-delà du solde
+  (le service relit le solde dans la transaction). La caissière peut l'utiliser. La part payée par avoir
+  n'entre ni dans les espèces théoriques ni dans TMoney / Flooz : le X et le Z la montrent à part.
+- **Annulation d'un ticket** payé en partie par avoir : l'avoir est rétabli par une ligne négative liée
+  (`utilisation_origine_id`), une seule fois ; rien n'est effacé.
+- **Retour sur un ticket payé en partie par avoir** : il se rembourse **uniquement en avoir**, au nom du client
+  du ticket (le remboursement ne peut pas sortir en argent ce que le client a payé en avoir).
+- **Un client qui a un solde d'avoir ne se désactive pas.**
+- Journal : le `retour_client` porte `avoir` (numéro) et `client` ; la dépense se lit dans le paiement du ticket.
 
 ---
 

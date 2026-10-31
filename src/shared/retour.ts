@@ -5,7 +5,7 @@
 
 export type MotifRetour = 'defectueux' | 'erreur_article' | 'autre'
 export type SortRetour = 'detruire' | 'remettre_en_stock'
-export type ModeRemboursement = 'especes' | 'tmoney' | 'flooz'
+export type ModeRemboursement = 'especes' | 'tmoney' | 'flooz' | 'avoir'
 
 export const LIBELLES_MOTIF_RETOUR: Record<MotifRetour, string> = {
   defectueux: 'Produit défectueux',
