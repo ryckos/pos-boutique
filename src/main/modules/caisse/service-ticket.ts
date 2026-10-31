@@ -89,7 +89,18 @@ export function lireTicket(db: Db, venteId: number): TicketAImprimer {
     lignes.map((l) => ({ totalTtc: signe * l.totalLigne, tauxTva: l.tauxTva })),
     v.remiseGlobale
   ).parTaux.map((t) => ({ taux: t.taux, ttc: signe * t.ttc, ht: signe * t.ht, tva: signe * t.tva }))
+  // Part à crédit (A11) : la créance et son client, recopiés tels qu'aujourd'hui (une créance annulée
+  // ne s'imprime plus : le ticket porte déjà TICKET ANNULÉ).
+  const credit =
+    une<{ client: string; telephone: string | null; montant: number; echeance: string }>(
+      db,
+      `SELECT cl.nom AS client, cl.telephone, c.montant_initial AS montant, c.date_echeance AS echeance
+       FROM creances c JOIN clients cl ON cl.id = c.client_id
+       WHERE c.vente_id = ? AND c.annulee_le IS NULL`,
+      venteId
+    ) ?? null
   return {
+    credit,
     numeroTicket: v.numeroTicket,
     horodatage: v.horodatage,
     caissier: v.caissier,

@@ -802,7 +802,14 @@ repart à 1 chaque année.
 - **Retour sur un ticket à crédit** (§ 6.8) : refusé jusqu'au recouvrement (A12), « Ce ticket est à
   crédit : voyez le gérant ».
 - **Avoir en boutique** (reporté depuis A7) : dernière partie d'A11.
-- Journal : `creation_client`, `modification_client`, `plafond_credit`, `desactivation_client`.
+- Journal : `creation_client`, `modification_client`, `plafond_credit`, `desactivation_client`,
+  `vente_credit` (`numeroTicket`, `client`, `montant`, `echeance`).
+- Précisions de réalisation (PR 2) : **une seule part à crédit** par ticket ; le plafond est relu dans la
+  transaction de la vente (deux ventes simultanées ne le dépassent pas à elles deux) ; l'encours exact au
+  plafond passe ; échéance dans le passé refusée ; un client peut être joint à une vente sans crédit
+  (`ventes.client_id`). La part à crédit compte dans « Ventes crédit » du X / Z et dans le chiffre
+  d'affaires (§ 11), jamais dans les espèces théoriques. À l'annulation, rien n'est rendu pour la part
+  à crédit : la créance est annulée. Un duplicata du ticket à crédit ne sort qu'en exemplaire boutique.
 
 ---
 

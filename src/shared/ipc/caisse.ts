@@ -9,8 +9,11 @@ import type { LigneRetournable, ModeRemboursement, MotifRetour, SortRetour } fro
 import type { ArticleCatalogue } from '../types'
 import type { PeriodeRapport } from './rapports-gestion'
 
-/** Modes acceptés à la caisse pour l'instant. Le crédit arrive avec la fiche client (A11). */
+/** Modes encaissés au comptoir (argent reçu). */
 export type ModePaiementCaisse = 'especes' | 'tmoney' | 'flooz'
+
+/** Modes d'une vente : ceux du comptoir, plus la part laissée à crédit à un client (A11). */
+export type ModePaiementVente = ModePaiementCaisse | 'credit'
 
 export interface SessionCaisse {
   id: number
@@ -26,9 +29,13 @@ export interface RequeteVente {
   lignes: { conditionnementId: number; quantite: number; remise?: number }[]
   /** Remise sur le ticket entier en FCFA, absente = 0. */
   remiseGlobale?: number
-  paiements: { mode: ModePaiementCaisse; montant: number; reference?: string }[]
+  paiements: { mode: ModePaiementVente; montant: number; reference?: string }[]
   /** Espèces données par le client (≥ la part payée en espèces). Absent : montant exact. */
   montantRecu?: number
+  /** Client de la vente ; obligatoire avec un paiement `credit` (A11). */
+  clientId?: number
+  /** Échéance de la part à crédit, 'AAAA-MM-JJ' ; absente = dans 30 jours (DELAI_CREDIT_JOURS). */
+  echeance?: string
   /**
    * Remises au-delà du plafond de la caissière : jeton remis par `caisse:autoriserRemise`. La vente
    * reste au nom de la caissière ; le journal note le gérant.
@@ -75,6 +82,8 @@ export interface VenteEnregistree {
    * stock (A9) : la boîte vendue vient peut-être de ce lot. Jamais bloquant ; l'écran le signale.
    */
   alertesPeremption: { produitId: number; designation: string; lots: string[] }[]
+  /** Part laissée à crédit (A11), null sans crédit. */
+  credit: { client: string; montant: number; echeance: string; encoursApres: number } | null
 }
 
 /** Une session ouverte, vue par le gérant qui choisit laquelle clôturer. */
@@ -198,6 +207,8 @@ export interface ResultatAnnulation {
   especesARendre: number
   /** Mobile money à renvoyer au client, avec la référence d'origine. */
   autresARendre: { mode: string; montant: number; reference: string | null }[]
+  /** Part à crédit effacée : la créance du client est annulée (A11) ; 0 sans crédit. */
+  creditAnnule: number
   /** Le tiroir s'est-il ouvert (seulement s'il y a des espèces à rendre) ? */
   tiroirOuvert: boolean
 }

@@ -81,6 +81,16 @@ function raisonRefus(db: Db, u: UtilisateurConnecte, v: VenteAnnulable): string 
   if (u.role === 'caissier' && sessionOuverte(db, u.id)?.id !== v.sessionId) {
     return `Le ticket ${v.numeroTicket} n’est pas de votre caisse : demandez au gérant de l’annuler.`
   }
+  // Une créance déjà en partie payée ne s'efface pas : l'argent encaissé est dans une caisse (A11).
+  const encaisse = une<{ n: number }>(
+    db,
+    `SELECT COUNT(*) AS n FROM encaissements_creances e JOIN creances c ON c.id = e.creance_id
+     WHERE c.vente_id = ?`,
+    v.id
+  )!.n
+  if (encaisse > 0) {
+    return `Le client a déjà payé une partie du crédit du ticket ${v.numeroTicket} : demandez au gérant.`
+  }
   return null
 }
 
@@ -183,6 +193,18 @@ export function annulerTicket(
       )
     }
     const especesARendre = paiements.filter((p) => p.mode === 'especes').reduce((s, p) => s + p.montant, 0)
+    // La part à crédit n'a jamais été payée : rien à rendre, la créance est effacée (A11).
+    const creditAnnule = paiements.filter((p) => p.mode === 'credit').reduce((s, p) => s + p.montant, 0)
+    if (creditAnnule > 0) {
+      executer(
+        db,
+        `UPDATE creances SET annulee_le = datetime('now','localtime'), annulee_par = ?, motif_annulation = ?
+         WHERE vente_id = ?`,
+        u.id,
+        `Annulation du ticket ${v.numeroTicket} : ${motif}`,
+        venteId
+      )
+    }
 
     journaliser(db, {
       utilisateurId: u.id,
@@ -202,8 +224,9 @@ export function annulerTicket(
       numeroTicket: v.numeroTicket,
       especesARendre,
       autresARendre: paiements
-        .filter((p) => p.mode !== 'especes')
+        .filter((p) => p.mode !== 'especes' && p.mode !== 'credit')
         .map((p) => ({ mode: p.mode, montant: p.montant, reference: p.reference })),
+      creditAnnule,
       tiroirOuvert: false
     }
   })
