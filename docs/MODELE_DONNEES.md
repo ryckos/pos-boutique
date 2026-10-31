@@ -39,7 +39,7 @@ document à jour.
 | `factures`          | Facture A4 d'un ticket encaissé (A10) : `numero` (F), `vente_id` (unique), client recopié (`client_nom`, `client_telephone`, `client_adresse`, `client_nif`), `client_id` (A11). Ni modification ni suppression |
 | `proformas`, `lignes_proforma` | Devis (A10) : `numero` (PF), client facultatif, totaux HT/TVA/TTC, `valide_jusqu_au` ; lignes avec prix, remise, TVA recopiés. Sans effet sur le stock ni la caisse. Ni modification ni suppression |
 | `lignes_vente`      | Photocopie au moment T : `conditionnement_id`, `designation`, `quantite`, `prix_unitaire`, `cout_unitaire` (d'un conditionnement), `quantite_base_totale`, `taux_tva`, `lot_id`. **Suppression interdite**. Sur un retour : quantités positives, `total_ligne` négatif (le rendu), `ligne_origine_id` |
-| `paiements`         | Un ou plusieurs par vente : `mode`, `montant` (négatif pour un remboursement), `reference` |
+| `paiements`         | Un ou plusieurs par vente : `mode` (dont `credit` et `avoir`), `montant` (négatif pour un remboursement), `reference` |
 | `mouvements_caisse` | Entrées et sorties d'espèces hors vente, rattachées à une session **ouverte** : `sens`, `motif` (apport, retrait, dépense, encaissement de créance, remboursement, règlement fournisseur, autre), `montant` > 0, document d'origine, `mouvement_origine_id` sur un contre-mouvement d'annulation (un seul par mouvement). **Ni modification ni suppression** |
 | `promotions`        | Remises programmées (Phase 4)                                        |
 
@@ -59,6 +59,8 @@ document à jour.
 |--------------------------|------------------------------------------------------------------|
 | `clients`                | Fiche (`nom`, `telephone`, `adresse`, `nif`), `plafond_credit` (0 = pas de crédit), `actif` ; jamais supprimé (trigger) |
 | `creances`               | Née d'une vente à crédit, `montant_initial`, `date_echeance`, `statut` ; annulation par `annulee_le`, `annulee_par`, `motif_annulation` (A11 : statut `annulee` exposé par la vue) ; ni suppression, ni changement de montant, vente ou client, annulation définitive (triggers) |
+| `avoirs`                 | Avoir en boutique (A11, § 7.2) : `numero` AV-…, `client_id`, `montant`, `retour_id` (unique : un avoir par retour) ; ni modification ni suppression (triggers) |
+| `utilisations_avoir`     | Dépense d'un avoir (`montant` > 0, `vente_id`) ou son rétablissement (`montant` < 0, `utilisation_origine_id` unique) ; ni modification ni suppression ; un trigger refuse de dépasser le solde |
 | `encaissements_creances` | Paiements de créances, rattachés à une session de caisse ; ni modification ni suppression (triggers) |
 
 ### Dépenses et inventaires — Dev B
@@ -79,6 +81,7 @@ document à jour.
 | `v_peremptions`        | Lots en stock, avec jours restants et valeur en jeu           | B            |
 | `v_dettes_fournisseurs`| Achats, règlements non annulés, avoirs reçus et solde dû par fournisseur (négatif = avoir à valoir) | B |
 | `v_creances_clients`   | Encaissé et restant dû par créance                            | A            |
+| `v_avoirs_clients`     | Utilisé et solde par avoir en boutique                        | A            |
 
 ## Triggers de protection
 | Trigger                     | Effet                                    |

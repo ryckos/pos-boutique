@@ -48,6 +48,15 @@ export interface PartCredit {
   echeance: string
 }
 
+/** Le client dont on dépense l'avoir en boutique (A11, REGLES_METIER § 7.2). */
+export type ClientAvoir = Pick<Client, 'id' | 'nom' | 'soldeAvoir'>
+
+/** Part payée par avoir : un montant, jamais au-delà du solde du client. */
+export interface PartAvoir {
+  client: ClientAvoir
+  montant: number
+}
+
 export interface EtatPaiement {
   total: number
   /** Les espèces font partie du paiement ; leur montant est toujours le reste. */
@@ -57,6 +66,8 @@ export interface EtatPaiement {
   recu: number | null
   /** Part à crédit ; null = pas de crédit. */
   credit: PartCredit | null
+  /** Part payée par avoir ; null = pas d'avoir. */
+  avoir: PartAvoir | null
 }
 
 /** Montant saisi au clavier → entier FCFA ≥ 0 (tout ce qui n'est pas un chiffre est ignoré). */
@@ -65,25 +76,50 @@ export function lireMontant(saisie: string): number {
   return chiffres ? Number.parseInt(chiffres, 10) : 0
 }
 
-/** Ouvre le paiement ; un crédit demande le client et l'échéance, et commence par tout le total. */
+/**
+ * Ouvre le paiement. Un crédit demande le client et l'échéance et commence par tout le total. Un avoir
+ * commence par le plus que le solde permet ; s'il ne couvre pas tout, les espèces prennent le reste.
+ */
 export function ouvrirPaiement(
   total: number,
   mode: ModePaiementCaisse,
-  credit: Omit<PartCredit, 'montant'> | null = null
+  credit: Omit<PartCredit, 'montant'> | null = null,
+  clientAvoir: ClientAvoir | null = null
 ): EtatPaiement {
-  if (credit) return { total, especes: false, mobiles: [], recu: null, credit: { ...credit, montant: total } }
+  if (credit) {
+    return { total, especes: false, mobiles: [], recu: null, credit: { ...credit, montant: total }, avoir: null }
+  }
+  if (clientAvoir) {
+    const montant = Math.min(total, clientAvoir.soldeAvoir)
+    return {
+      total,
+      especes: montant < total,
+      mobiles: [],
+      recu: null,
+      credit: null,
+      avoir: { client: clientAvoir, montant }
+    }
+  }
   return mode === 'especes'
-    ? { total, especes: true, mobiles: [], recu: null, credit: null }
-    : { total, especes: false, mobiles: [{ mode, montant: total, reference: '' }], recu: null, credit: null }
+    ? { total, especes: true, mobiles: [], recu: null, credit: null, avoir: null }
+    : {
+        total,
+        especes: false,
+        mobiles: [{ mode, montant: total, reference: '' }],
+        recu: null,
+        credit: null,
+        avoir: null
+      }
 }
 
 const totalMobiles = (etat: EtatPaiement): number => etat.mobiles.reduce((s, m) => s + m.montant, 0)
 
-/** Ce que TMoney, Flooz et le crédit couvrent déjà : les espèces prennent le reste. */
-const dejaCouvert = (etat: EtatPaiement): number => totalMobiles(etat) + (etat.credit?.montant ?? 0)
+/** Ce que TMoney, Flooz, le crédit et l'avoir couvrent déjà : les espèces prennent le reste. */
+const dejaCouvert = (etat: EtatPaiement): number =>
+  totalMobiles(etat) + (etat.credit?.montant ?? 0) + (etat.avoir?.montant ?? 0)
 
 export function nombreDeModes(etat: EtatPaiement): number {
-  return etat.mobiles.length + (etat.especes ? 1 : 0) + (etat.credit ? 1 : 0)
+  return etat.mobiles.length + (etat.especes ? 1 : 0) + (etat.credit ? 1 : 0) + (etat.avoir ? 1 : 0)
 }
 
 /** Part payée en espèces : ce que TMoney, Flooz et le crédit ne couvrent pas. */
@@ -124,13 +160,19 @@ function limiterCredit(etat: EtatPaiement): EtatPaiement {
  * Retire un mode ; il en reste toujours un. Un mode mobile resté seul, sans espèces, reprend tout
  * le total (son montant n'est plus modifiable à l'écran).
  */
-export function retirerMode(etat: EtatPaiement, mode: ModePaiementCaisse | 'credit'): EtatPaiement {
+export function retirerMode(etat: EtatPaiement, mode: ModePaiementCaisse | 'credit' | 'avoir'): EtatPaiement {
   if (nombreDeModes(etat) <= 1) return etat
   const especes = mode === 'especes' ? false : etat.especes
   const credit = mode === 'credit' ? null : etat.credit
+  const avoir = mode === 'avoir' ? null : etat.avoir
   let mobiles = etat.mobiles.filter((m) => m.mode !== mode)
-  if (!especes && !credit && mobiles.length === 1) mobiles = [{ ...mobiles[0], montant: etat.total }]
-  return { ...etat, especes, mobiles, credit, recu: especes ? etat.recu : null }
+  if (!especes && !credit && !avoir && mobiles.length === 1) mobiles = [{ ...mobiles[0], montant: etat.total }]
+  return { ...etat, especes, mobiles, credit, avoir, recu: especes ? etat.recu : null }
+}
+
+export function changerAvoir(etat: EtatPaiement, montant: number): EtatPaiement {
+  if (!etat.avoir) return etat
+  return { ...etat, avoir: { ...etat.avoir, montant: Math.max(Math.trunc(montant), 0) } }
 }
 
 export function changerCredit(etat: EtatPaiement, montant: number): EtatPaiement {
@@ -145,7 +187,7 @@ export function changerEcheance(etat: EtatPaiement, echeance: string): EtatPaiem
 /** Sans espèces, avec deux modes mobiles, l'autre prend le reste : 3 500 en TMoney → 5 000 en Flooz. */
 export function changerMontant(etat: EtatPaiement, mode: ModeMobile, montant: number): EtatPaiement {
   const m = Math.max(Math.trunc(montant), 0)
-  const equilibrer = !etat.especes && !etat.credit && etat.mobiles.length === 2
+  const equilibrer = !etat.especes && !etat.credit && !etat.avoir && etat.mobiles.length === 2
   const mobiles = etat.mobiles.map((p) => {
     if (p.mode === mode) return { ...p, montant: m }
     return equilibrer ? { ...p, montant: Math.max(etat.total - m, 0) } : p
@@ -190,6 +232,13 @@ export function blocage(etat: EtatPaiement): string | null {
     }
     if (!c.echeance) return 'Choisissez la date d’échéance du crédit.'
   }
+  const a = etat.avoir
+  if (a) {
+    if (a.montant === 0) return 'Saisissez le montant payé par avoir, ou retirez l’avoir.'
+    if (a.montant > a.client.soldeAvoir) {
+      return `L’avoir de ${a.client.nom} est de ${formaterFCFA(a.client.soldeAvoir)} : baissez le montant payé par avoir.`
+    }
+  }
   for (const m of etat.mobiles) {
     // Une ligne à 0 F ferait croire à un paiement TMoney ou Flooz qui n'existe pas.
     if (m.montant === 0)
@@ -212,6 +261,7 @@ export function versRequete(etat: EtatPaiement, lignes: RequeteVente['lignes']):
   const paiements: RequeteVente['paiements'] = [
     ...(especes > 0 ? [{ mode: 'especes' as const, montant: especes }] : []),
     ...(etat.credit ? [{ mode: 'credit' as const, montant: etat.credit.montant }] : []),
+    ...(etat.avoir ? [{ mode: 'avoir' as const, montant: etat.avoir.montant }] : []),
     ...etat.mobiles
       .filter((m) => m.montant > 0)
       .map((m) => ({ mode: m.mode, montant: m.montant, reference: m.reference.trim() }))
@@ -220,6 +270,7 @@ export function versRequete(etat: EtatPaiement, lignes: RequeteVente['lignes']):
     lignes,
     paiements,
     ...(etat.credit ? { clientId: etat.credit.client.id, echeance: etat.credit.echeance } : {}),
+    ...(etat.avoir ? { clientId: etat.avoir.client.id } : {}),
     ...(especes > 0 && etat.recu !== null ? { montantRecu: etat.recu } : {})
   }
 }

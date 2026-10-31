@@ -25,7 +25,8 @@ const MODES: Record<string, string> = {
   especes: 'Espèces',
   tmoney: 'TMoney',
   flooz: 'Flooz',
-  credit: 'Crédit'
+  credit: 'Crédit',
+  avoir: 'Avoir en boutique'
 }
 
 export interface RetourFacture {

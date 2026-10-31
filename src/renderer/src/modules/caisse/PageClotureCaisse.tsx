@@ -216,7 +216,9 @@ export function PageClotureCaisse(): React.JSX.Element {
     ['Espèces', r.totauxParMode.especes],
     ['TMoney', r.totauxParMode.tmoney],
     ['Flooz', r.totauxParMode.flooz],
-    ['Ventes crédit', r.totauxParMode.credit]
+    ['Ventes crédit', r.totauxParMode.credit],
+    // Part payée par avoir en boutique (A11) : jamais dans le tiroir, montrée seulement s'il y en a eu.
+    ...(r.totauxParMode.avoir > 0 ? ([['Avoirs utilisés', r.totauxParMode.avoir]] as [string, number][]) : [])
   ]
 
   return (

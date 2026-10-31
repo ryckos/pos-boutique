@@ -56,7 +56,8 @@ const TICKET: TicketRetour = {
     { mode: 'especes', montant: 350, reference: null }
   ],
   retoursPrecedents: ['R-2026-000001'],
-  raisonRefus: null
+  raisonRefus: null,
+  clientAvoir: null
 }
 
 const saisie = (autres: Partial<SaisieRetour> = {}): SaisieRetour => ({
@@ -67,6 +68,7 @@ const saisie = (autres: Partial<SaisieRetour> = {}): SaisieRetour => ({
   sort: 'detruire',
   mode: 'especes',
   reference: '',
+  client: null,
   estCaissiere: false,
   gerantId: null,
   code: '',
@@ -137,6 +139,7 @@ describe('Fenêtre « Retour client » (A7)', () => {
       numeroTicketOrigine: 'T-2026-000158',
       montant: 600,
       mode: 'especes' as const,
+      avoir: null,
       tiroirOuvert: true
     }
     expect(messageRetour(r)).toMatch(
@@ -145,5 +148,32 @@ describe('Fenêtre « Retour client » (A7)', () => {
     expect(messageRetour({ ...r, tiroirOuvert: false })).toMatch(/ouvrez-le à la clé/)
     expect(messageRetour({ ...r, mode: 'tmoney' })).toMatch(/remboursés par TMoney\.$/)
     expect(messageRetour({ ...r, montant: 0 })).toMatch(/Rien à rembourser/)
+  })
+
+  it('remboursement en avoir : le client est obligatoire, pas de référence, clientId envoyé', () => {
+    expect(ceQuiManque(saisie({ mode: 'avoir' }))).toMatch(/client qui reçoit l’avoir/)
+    const avecClient = saisie({ mode: 'avoir', client: { id: 4, nom: 'Mme Abra' } })
+    expect(ceQuiManque(avecClient)).toBeNull()
+    const r = versRequete(avecClient)
+    expect(r.clientId).toBe(4)
+    expect(r.remboursement).toEqual({ mode: 'avoir' })
+  })
+
+  it('ticket payé par avoir : le mode proposé est l’avoir', () => {
+    expect(modeParDefaut({ ...TICKET, clientAvoir: { id: 4, nom: 'Mme Abra' } })).toBe('avoir')
+  })
+
+  it('message dans la caisse après un retour en avoir', () => {
+    const m = messageRetour({
+      venteId: 9,
+      numeroRetour: 'R-2026-000002',
+      numeroTicketOrigine: 'T-2026-000158',
+      montant: 600,
+      mode: 'avoir',
+      avoir: { numero: 'AV-2026-000001', montant: 600, client: 'Mme Abra', soldeClient: 600 },
+      tiroirOuvert: false
+    })
+    expect(m).toContain('en avoir AV-2026-000001 au nom de Mme Abra')
+    expect(m).not.toMatch(/tiroir/)
   })
 })

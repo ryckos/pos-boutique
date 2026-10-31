@@ -123,13 +123,15 @@ export function rapportSession(db: Db, sessionId: number): RapportCaisse {
     especes: rendu('especes'),
     tmoney: rendu('tmoney'),
     flooz: rendu('flooz'),
+    avoir: rendu('avoir'),
     total: 0 - retours.reduce((somme, p) => somme + p.total, 0)
   }
   const totauxParMode = {
     especes: total('especes'),
     tmoney: total('tmoney'),
     flooz: total('flooz'),
-    credit: total('credit')
+    credit: total('credit'),
+    avoir: total('avoir')
   }
   const { nombre } = une<{ nombre: number }>(
     db,
