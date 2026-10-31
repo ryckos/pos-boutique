@@ -33,7 +33,7 @@ export function ChampsClient({ saisie, onChange }: Props): React.JSX.Element {
       </div>
       {choixOuvert && (
         <FenetreChoixClient
-          exigerCredit={false}
+          usage="recopie"
           onChoisir={(c) => {
             onChange({ nom: c.nom, telephone: c.telephone ?? '', adresse: c.adresse ?? '', nif: c.nif ?? '' })
             setChoixOuvert(false)

@@ -302,6 +302,12 @@ le panier.
   à ce que le client peut encore emprunter, et le montant à crédit devient modifiable. « Encaisser » reste
   grisé tant que le crédit dépasse le plafond. Après la vente : « 5 000 F à crédit pour <nom>, à régler avant
   le … ». À l'annulation d'un ticket à crédit : « Le crédit de … est effacé ».
+- **Avoir en boutique (A11, § 7.2)** : le bouton **« Avoir »** ouvre « Paiement par avoir : quel client ? »
+  (seuls les clients qui ont un avoir à dépenser sont choisissables, avec « Avoir disponible : … »). La fenêtre
+  de paiement montre alors la ligne « Avoir : <nom> » : l'avoir prend le plus que son solde permet, les
+  espèces prennent le reste ; en paiement mixte, le montant payé par avoir est modifiable, jamais au-delà du
+  solde. Après la vente : « … payés par avoir (<nom>). Avoir restant : … ». À l'annulation d'un ticket payé
+  par avoir : « … d'avoir rendus au solde du client ».
 
 ### 5.4 Clôture de caisse (Dev A — A4)
 ```
@@ -466,8 +472,10 @@ fenêtre `FenetreRetour.tsx` (douchette et raccourcis coupés).
   cochée est grisée ; une ligne déjà rendue ne se coche pas.
 - Motif, sort et remboursement en boutons à choix unique ; aucun motif ni sort n'est choisi d'office.
   Précision facultative (obligatoire pour « Autre »). Le mode proposé est celui qui a payé le plus sur
-  le ticket ; « Avoir en boutique » est grisé jusqu'à la fiche client (A11). Mobile money : référence
-  du transfert déjà fait au client.
+  le ticket. Mobile money : référence du transfert déjà fait au client. **« Avoir en boutique »** (A11) :
+  ligne « Avoir au nom de : <client> » et bouton « Choisir le client » (fenêtre de recherche) ; si le ticket
+  a été payé en partie par avoir, c'est le seul remboursement proposé, au même client. Le message en caisse
+  donne le numéro de l'avoir et le solde du client ; le ticket de retour imprime les mêmes lignes.
 - « À rembourser » en grand, la note « Crée un ticket de type retour lié au T-… », et une phrase qui
   dit ce qui manque tant que le bouton est grisé. Caissière : choix du gérant et son code, comme
   pour l'annulation.
@@ -748,8 +756,10 @@ Page de gestion (§ 5.12) à l'adresse `/clients`, menu « Clients ».
   retard en rouge, Soldée, Annulée). Le champ **plafond est grisé pour la caissière** (« Seul le gérant fixe
   le plafond de crédit »). Les règles de saisie (téléphone de 8 chiffres au moins, obligatoire dès que le
   plafond dépasse 0) sont dites avant l'envoi ; le service les revérifie.
-- **Désactiver** (gérant) : motif obligatoire ; si le client doit encore de l'argent, le refus du service
-  s'affiche dans la fenêtre.
+- **Désactiver** (gérant) : motif obligatoire ; si le client doit encore de l'argent ou a un avoir à dépenser,
+  le refus du service s'affiche dans la fenêtre.
+- **Avoirs** (A11, § 7.2) : la liste dit « Avoir en boutique : … » sous le nom ; la fiche montre le solde et le
+  tableau des avoirs (numéro AV-…, date, retour d'origine, montant, dépensé, solde).
 
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.

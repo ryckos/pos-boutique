@@ -14,13 +14,16 @@ import { appel } from '@renderer/lib/api'
 import { resteDisponible, texteCredit } from '../clients/clients'
 
 interface Props {
-  /** Vente à crédit : seuls les clients à plafond > 0 sont choisissables. Faux = simple recopie. */
-  exigerCredit?: boolean
+  /**
+   * `credit` : seuls les clients à plafond > 0 sont choisissables. `avoir` : seuls ceux qui ont un avoir à
+   * dépenser. `recopie` : tout client actif (facture, proforma, destinataire d'un avoir).
+   */
+  usage?: 'credit' | 'avoir' | 'recopie'
   onChoisir: (client: Client) => void
   onFermer: () => void
 }
 
-export function FenetreChoixClient({ exigerCredit = true, onChoisir, onFermer }: Props): React.JSX.Element {
+export function FenetreChoixClient({ usage = 'credit', onChoisir, onFermer }: Props): React.JSX.Element {
   const [texte, setTexte] = useState('')
   const [clients, setClients] = useState<Client[]>([])
   const [erreur, setErreur] = useState<string | null>(null)
@@ -52,7 +55,13 @@ export function FenetreChoixClient({ exigerCredit = true, onChoisir, onFermer }:
   return (
     <div className="voile">
       <section className="fenetre" role="dialog" aria-modal="true" aria-label="Choisir le client">
-        <h2>{exigerCredit ? 'Vente à crédit : quel client ?' : 'Choisir un client enregistré'}</h2>
+        <h2>
+          {usage === 'credit'
+            ? 'Vente à crédit : quel client ?'
+            : usage === 'avoir'
+              ? 'Paiement par avoir : quel client ?'
+              : 'Choisir un client enregistré'}
+        </h2>
         <label className="champ champ-large">
           Nom ou téléphone
           <input
@@ -72,14 +81,17 @@ export function FenetreChoixClient({ exigerCredit = true, onChoisir, onFermer }:
 
         {clients.length === 0 ? (
           <p className="vide">
-            {exigerCredit
+            {usage === 'credit'
               ? 'Aucun client trouvé. Le gérant peut le créer et fixer son plafond dans la page « Clients ».'
-              : 'Aucun client trouvé. Créez-le dans la page « Clients », ou saisissez-le à la main.'}
+              : usage === 'avoir'
+                ? 'Aucun client avec un avoir ne correspond. L’avoir naît d’un retour client remboursé en avoir.'
+                : 'Aucun client trouvé. Créez-le dans la page « Clients », ou saisissez-le à la main.'}
           </p>
         ) : (
           <ul className="recherche-resultats">
             {clients.map((c) => {
-              const possible = !exigerCredit || c.plafondCredit > 0
+              const possible =
+                usage === 'recopie' || (usage === 'credit' ? c.plafondCredit > 0 : c.soldeAvoir > 0)
               return (
                 <li key={c.id}>
                   <button
@@ -91,16 +103,18 @@ export function FenetreChoixClient({ exigerCredit = true, onChoisir, onFermer }:
                     <span className="cellule-titre">{c.nom}</span>
                     <span className="detail">
                       {c.telephone ?? 'Sans téléphone'} ·{' '}
-                      {!exigerCredit
+                      {usage === 'recopie'
                         ? (c.adresse ?? 'Sans adresse')
-                        : possible
-                          ? `${texteCredit(c)} (encours ${formaterFCFA(c.encours)})`
-                          : 'Aucun crédit autorisé : voyez le gérant'}
+                        : usage === 'avoir'
+                          ? `Avoir disponible : ${formaterFCFA(c.soldeAvoir)}`
+                          : possible
+                            ? `${texteCredit(c)} (encours ${formaterFCFA(c.encours)})`
+                            : 'Aucun crédit autorisé : voyez le gérant'}
                     </span>
-                    {exigerCredit && possible && resteDisponible(c) === 0 && (
+                    {usage === 'credit' && possible && resteDisponible(c) === 0 && (
                       <span className="pastille pastille-alerte">Plafond atteint</span>
                     )}
-                    {exigerCredit && c.enRetard > 0 && (
+                    {usage === 'credit' && c.enRetard > 0 && (
                       <span className="pastille pastille-erreur">En retard : {formaterFCFA(c.enRetard)}</span>
                     )}
                   </button>

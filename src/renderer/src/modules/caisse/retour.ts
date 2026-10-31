@@ -62,8 +62,12 @@ export function montantARendre(ticket: TicketRetour, selection: Selection): numb
   return lignesChoisies(ticket, selection).reduce((s, l) => s + montantLigne(ticket, selection, l.ligneId), 0)
 }
 
-/** Le mode proposé : celui qui a payé le plus sur le ticket d'origine, espèces si aucun ne convient. */
+/**
+ * Le mode proposé : l'avoir si le ticket en a été payé en partie (c'est alors le seul remboursement
+ * possible), sinon celui qui a payé le plus sur le ticket d'origine, espèces si aucun ne convient.
+ */
 export function modeParDefaut(ticket: TicketRetour): ModeRemboursement {
+  if (ticket.clientAvoir) return 'avoir'
   const modes = new Set(['especes', 'tmoney', 'flooz'])
   const principal = [...ticket.paiements]
     .filter((p) => modes.has(p.mode))
@@ -79,6 +83,8 @@ export interface SaisieRetour {
   sort: SortRetour | null
   mode: ModeRemboursement
   reference: string
+  /** Client de l'avoir (remboursement en avoir). */
+  client: { id: number; nom: string } | null
   estCaissiere: boolean
   gerantId: number | null
   code: string
@@ -91,7 +97,8 @@ export function ceQuiManque(s: SaisieRetour): string | null {
   if (!s.motif) return 'Choisissez le motif.'
   if (!texteMotifRetour(s.motif, s.precision)) return 'Précisez la raison du retour.'
   if (!s.sort) return 'Choisissez le sort du produit.'
-  if (s.mode !== 'especes' && !s.reference.trim()) {
+  if (s.mode === 'avoir' && !s.client) return 'Choisissez le client qui reçoit l’avoir.'
+  if (s.mode !== 'especes' && s.mode !== 'avoir' && !s.reference.trim()) {
     return `Saisissez la référence du transfert ${libelleMode(s.mode)}.`
   }
   if (s.estCaissiere && (s.gerantId === null || !codeComplet(s.code))) return 'Le gérant tape son code.'
@@ -107,8 +114,9 @@ export function versRequete(s: SaisieRetour): RequeteRetour {
     sort: s.sort!,
     remboursement: {
       mode: s.mode,
-      ...(s.mode !== 'especes' && { reference: s.reference.trim() })
+      ...(s.mode !== 'especes' && s.mode !== 'avoir' && { reference: s.reference.trim() })
     },
+    ...(s.mode === 'avoir' && s.client && { clientId: s.client.id }),
     ...(s.estCaissiere && { autorisation: { utilisateurId: s.gerantId!, code: s.code } })
   }
 }
@@ -118,6 +126,9 @@ export function messageRetour(r: RetourEnregistre): string {
   const debut = `Retour ${r.numeroRetour} enregistré (ticket ${r.numeroTicketOrigine}).`
   if (r.montant === 0) return `${debut} Rien à rembourser.`
   // Le transfert mobile money est déjà fait : sa référence a été saisie dans la fenêtre.
+  if (r.avoir) {
+    return `${debut} ${formaterFCFA(r.montant)} versés en avoir ${r.avoir.numero} au nom de ${r.avoir.client} (solde : ${formaterFCFA(r.avoir.soldeClient)}).`
+  }
   if (r.mode !== 'especes')
     return `${debut} ${formaterFCFA(r.montant)} remboursés par ${libelleMode(r.mode)}.`
   const tiroir = r.tiroirOuvert ? '' : ' Le tiroir ne s’est pas ouvert : ouvrez-le à la clé.'
