@@ -178,4 +178,3 @@ Le socle comprend :
 | 2026-11-01 | A11   | Parties 3 à 6 : écran Clients (PR #81), crédit à la caisse (PR #82), client enregistré sur facture / proforma et **avoir en boutique** (PR #84, migration `20261101_0900_avoirs_boutique.sql`) : A11 terminée |
 | 2026-11-01 | B     | Libellés du journal des clients, du crédit et de la caisse (PR #83) ; test qui relit toutes les actions du code |
 | 2026-10-31 | B     | Alertes rupture et péremption pour l'accueil (`stock:alertesAccueil`) — contrat livré à A pour A15 (PR #78) |
-| 2026-10-31 | B     | Libellés du journal des clients, du crédit et de 6 actions de la caisse ; le test relit toutes les actions du code (PR #83) |
