@@ -5,7 +5,6 @@ import { lignesTicket, mettreEnPageTicket } from '../src/main/materiel/ticket'
 import { rechercherParCode } from '../src/main/modules/catalogue/service'
 import { annulerTicket } from '../src/main/modules/caisse/service-annulation'
 import { rapportSession } from '../src/main/modules/caisse/service-cloture'
-import { consulterRetour, enregistrerRetour } from '../src/main/modules/caisse/service-retour'
 import { ouvrirSession } from '../src/main/modules/caisse/service-session'
 import { lireTicket } from '../src/main/modules/caisse/service-ticket'
 import { enregistrerVente } from '../src/main/modules/caisse/service-vente'
@@ -195,22 +194,6 @@ describe('Annulation et retour d’un ticket à crédit (A11)', () => {
     expect(() => annulerTicket(db, KOSSI, { numeroTicket: v.numeroTicket, motif: 'x' })).toThrow(
       /déjà payé une partie du crédit/
     )
-  })
-
-  it('retour refusé sur un ticket à crédit (jusqu’au recouvrement, A12)', () => {
-    const { db, abra } = preparer()
-    const v = aCredit(db, abra, 700)
-    expect(consulterRetour(db, KOSSI, v.numeroTicket).raisonRefus).toMatch(/est à crédit/)
-    expect(() =>
-      enregistrerRetour(db, AFI, {
-        numeroTicket: v.numeroTicket,
-        lignes: [{ ligneId: 1, quantite: 1 }],
-        motif: 'defectueux',
-        sort: 'detruire',
-        remboursement: { mode: 'especes' },
-        autorisation: { utilisateurId: KOSSI.id, code: '5678' }
-      })
-    ).toThrow(/est à crédit/)
   })
 })
 

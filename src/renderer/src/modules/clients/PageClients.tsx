@@ -14,9 +14,19 @@ import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { BoutonIcone } from '@renderer/ui/BoutonIcone'
 import { Icone } from '@renderer/ui/Icone'
 import { Pagination } from '@renderer/ui/Pagination'
-import { etatCreance, lireMontant, manqueClient, resteDisponible, texteCredit } from './clients'
+import { FenetreEncaissement } from './FenetreEncaissement'
+import { FenetreHistorique } from './FenetreHistorique'
+import {
+  etatCreance,
+  lireMontant,
+  manqueClient,
+  messageEncaissement,
+  resteDisponible,
+  texteCredit
+} from './clients'
 
-type Action = { type: 'creer' } | { type: 'fiche' | 'desactiver'; client: Client } | null
+type Action =
+  { type: 'creer' } | { type: 'fiche' | 'desactiver' | 'encaisser' | 'historique'; client: Client } | null
 
 export function PageClients(): React.JSX.Element {
   const { role } = useUtilisateur()
@@ -127,6 +137,32 @@ export function PageClients(): React.JSX.Element {
           estGerant={estGerant}
           onFermer={() => ouvrir(null)}
           onEnregistre={(message) => executer(async () => undefined, message)}
+          onEncaisser={(client) => ouvrir({ type: 'encaisser', client })}
+          onHistorique={(client) => ouvrir({ type: 'historique', client })}
+        />
+      )}
+      {action?.type === 'encaisser' && (
+        <FenetreEncaissement
+          key={action.client.id}
+          clientId={action.client.id}
+          onFermer={() => ouvrir(null)}
+          onEncaisse={(r) => {
+            setAction(null)
+            setSucces(messageEncaissement(r))
+            charger()
+          }}
+        />
+      )}
+      {action?.type === 'historique' && (
+        <FenetreHistorique
+          key={action.client.id}
+          clientId={action.client.id}
+          nom={action.client.nom}
+          onFermer={() => ouvrir(null)}
+          onMessage={(message) => {
+            setSucces(message)
+            charger()
+          }}
         />
       )}
       {action?.type === 'desactiver' && (
@@ -180,7 +216,9 @@ export function PageClients(): React.JSX.Element {
                     {formaterFCFA(c.encours)}
                     {c.enRetard > 0 && (
                       <span className="detail">
-                        <span className="pastille pastille-erreur">En retard : {formaterFCFA(c.enRetard)}</span>
+                        <span className="pastille pastille-erreur">
+                          En retard : {formaterFCFA(c.enRetard)}
+                        </span>
                       </span>
                     )}
                   </td>
@@ -195,6 +233,18 @@ export function PageClients(): React.JSX.Element {
                         icone="afficher"
                         libelle={`Voir la fiche de « ${c.nom} »`}
                         onClick={() => ouvrir({ type: 'fiche', client: c })}
+                      />
+                      {c.encours > 0 && (
+                        <BoutonIcone
+                          icone="payer"
+                          libelle={`Encaisser un paiement de « ${c.nom} »`}
+                          onClick={() => ouvrir({ type: 'encaisser', client: c })}
+                        />
+                      )}
+                      <BoutonIcone
+                        icone="historique"
+                        libelle={`Historique de « ${c.nom} »`}
+                        onClick={() => ouvrir({ type: 'historique', client: c })}
                       />
                       {estGerant && c.actif && (
                         <BoutonIcone
@@ -303,6 +353,8 @@ function FenetreFiche(props: {
   estGerant: boolean
   onFermer: () => void
   onEnregistre: (message: string) => Promise<void>
+  onEncaisser: (client: Client) => void
+  onHistorique: (client: Client) => void
 }): React.JSX.Element {
   const [fiche, setFiche] = useState<FicheClient | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
@@ -382,6 +434,18 @@ function FenetreFiche(props: {
               </div>
             </>
           )}
+          <div className="formulaire-bloc">
+            {fiche.encours > 0 && (
+              <button type="button" className="btn" onClick={() => props.onEncaisser(fiche)}>
+                <Icone nom="payer" />
+                Encaisser un paiement
+              </button>
+            )}{' '}
+            <button type="button" className="btn btn-secondaire" onClick={() => props.onHistorique(fiche)}>
+              <Icone nom="historique" />
+              Voir l’historique
+            </button>
+          </div>
           {fiche.creances.length === 0 ? (
             <p className="vide">Aucun crédit pour ce client.</p>
           ) : (

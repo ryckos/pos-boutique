@@ -218,7 +218,12 @@ export function PageClotureCaisse(): React.JSX.Element {
     ['Flooz', r.totauxParMode.flooz],
     ['Ventes crédit', r.totauxParMode.credit],
     // Part payée par avoir en boutique (A11) : jamais dans le tiroir, montrée seulement s'il y en a eu.
-    ...(r.totauxParMode.avoir > 0 ? ([['Avoirs utilisés', r.totauxParMode.avoir]] as [string, number][]) : [])
+    ...(r.totauxParMode.avoir > 0 ? ([['Avoirs utilisés', r.totauxParMode.avoir]] as [string, number][]) : []),
+    // Paiements de créances reçus (A12) : les espèces sont déjà dans le tiroir ci-dessous, le mobile money
+    // n'y entre jamais ; la carte dit seulement d'où vient l'argent.
+    ...(r.creancesEncaissees.total > 0
+      ? ([['Créances encaissées', r.creancesEncaissees.total]] as [string, number][])
+      : [])
   ]
 
   return (

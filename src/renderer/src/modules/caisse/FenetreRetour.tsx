@@ -27,8 +27,8 @@ import {
   ceQuiManque,
   changerQuantiteRendue,
   modeParDefaut,
-  montantARendre,
   montantLigne,
+  repartitionRetour,
   type Selection,
   versRequete
 } from './retour'
@@ -132,7 +132,9 @@ export function FenetreRetour({ estCaissiere, onRetour, onFermer }: Props): Reac
     code
   }
   const manque = ceQuiManque(saisie)
-  const montant = ticket ? montantARendre(ticket, selection) : 0
+  const { creanceReduite, aRembourser: montant } = ticket
+    ? repartitionRetour(ticket, selection)
+    : { creanceReduite: 0, aRembourser: 0 }
 
   return (
     <FenetreFormulaire
@@ -330,6 +332,12 @@ export function FenetreRetour({ estCaissiere, onRetour, onFermer }: Props): Reac
             </label>
           )}
 
+          {creanceReduite > 0 && (
+            <div className="formulaire-bloc retour-total">
+              <span>Dette du client réduite de</span>
+              <span className="montant">{formaterFCFA(creanceReduite)}</span>
+            </div>
+          )}
           <div className="formulaire-bloc retour-total">
             <span>À rembourser</span>
             <span className="montant">{formaterFCFA(montant)}</span>

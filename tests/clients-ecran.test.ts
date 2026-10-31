@@ -3,6 +3,8 @@ import {
   etatCreance,
   lireMontant,
   manqueClient,
+  manqueEncaissement,
+  messageEncaissement,
   resteDisponible,
   texteCredit
 } from '../src/renderer/src/modules/clients/clients'
@@ -45,5 +47,39 @@ describe('écran Clients (logique pure)', () => {
     expect(etatCreance({ statut: 'ouverte', enRetard: false }).libelle).toBe('Ouverte')
     expect(etatCreance({ statut: 'soldee', enRetard: false }).libelle).toBe('Soldée')
     expect(etatCreance({ statut: 'annulee', enRetard: false }).libelle).toBe('Annulée')
+  })
+})
+
+describe('Encaissement d’une créance (A12)', () => {
+  it('guide la saisie : montant entier, pas plus que le dû, référence en mobile money', () => {
+    const saisie = { montant: '1 500', mode: 'especes' as const, reference: '' }
+    expect(manqueEncaissement(saisie, 3500)).toBeNull()
+    expect(manqueEncaissement({ ...saisie, montant: '' }, 3500)).toMatch(/Saisissez le montant/)
+    expect(manqueEncaissement({ ...saisie, montant: '12,5' }, 3500)).toMatch(/nombre entier/)
+    expect(manqueEncaissement({ ...saisie, montant: '0' }, 3500)).toMatch(/nombre entier/)
+    expect(manqueEncaissement({ ...saisie, montant: '3501' }, 3500)).toMatch(/ne doit que 3\s500\sF/)
+    expect(manqueEncaissement({ ...saisie, mode: 'tmoney' }, 3500)).toMatch(/référence du transfert TMoney/)
+    expect(manqueEncaissement({ ...saisie, mode: 'flooz', reference: 'FL-1' }, 3500)).toBeNull()
+  })
+
+  it('message : reste à payer, reçu non sorti, tiroir à ouvrir à la clé', () => {
+    const r = {
+      numeroRecu: 'EC-2026-000001',
+      client: 'Mme Abra',
+      montant: 1000,
+      mode: 'especes' as const,
+      parts: [],
+      restantClient: 2500,
+      recuImprime: true,
+      tiroirOuvert: true
+    }
+    expect(messageEncaissement(r)).toMatch(
+      /^1\s000\sF encaissés de Mme Abra \(reçu EC-2026-000001\)\. Il reste 2\s500\sF à payer\.$/
+    )
+    expect(messageEncaissement({ ...r, restantClient: 0 })).toMatch(/Plus rien à payer\.$/)
+    expect(messageEncaissement({ ...r, recuImprime: false, tiroirOuvert: false })).toMatch(
+      /Le reçu n’est pas sorti.*ouvrez-le à la clé\.$/
+    )
+    expect(messageEncaissement({ ...r, mode: 'tmoney', tiroirOuvert: false })).not.toMatch(/tiroir/)
   })
 })

@@ -5,7 +5,7 @@
  * mouvements de caisse (A8), ventes d'une période (A14). Voir docs/DEV_A_COMPTOIR.md.
  */
 import type { MotifMouvementCaisse, MotifSaisiAuTiroir, SensMouvementCaisse } from '../caisse'
-import type { LigneRetournable, ModeRemboursement, MotifRetour, SortRetour } from '../retour'
+import type { CreditDuTicket, LigneRetournable, ModeRemboursement, MotifRetour, SortRetour } from '../retour'
 import type { ArticleCatalogue } from '../types'
 import type { PeriodeRapport } from './rapports-gestion'
 
@@ -130,6 +130,11 @@ export interface RapportCaisse {
     avoir: number
     total: number
   }
+  /**
+   * Créances encaissées pendant la session (A12), paiements annulés exclus, par mode. Les espèces sont
+   * déjà dans `mouvements` (entrée) : ce bloc ne sert qu'à voir d'où vient l'argent, dont le mobile money.
+   */
+  creancesEncaissees: { nombre: number; especes: number; tmoney: number; flooz: number; total: number }
   fondOuverture: number
   ventesEspeces: number
   mouvements: LigneMouvementCaisse[]
@@ -254,6 +259,8 @@ export interface TicketRetour {
   raisonRefus: string | null
   /** Ticket payé en partie par avoir : le client à créditer, le remboursement ne se fait alors qu'en avoir. */
   clientAvoir: { id: number; nom: string } | null
+  /** Ticket vendu à crédit (A12) : de quoi calculer ce qui réduit la dette et ce qui se rembourse. */
+  credit: CreditDuTicket | null
 }
 
 export interface RequeteRetour {
@@ -277,13 +284,15 @@ export interface RetourEnregistre {
   /** R-AAAA-NNNNNN */
   numeroRetour: string
   numeroTicketOrigine: string
-  /** Montant rendu au client, positif. */
+  /** Argent rendu au client, positif (0 si le retour ne fait que réduire sa dette). */
   montant: number
   mode: ModeRemboursement
   /** L'avoir créé (remboursement en avoir), null sinon. */
   avoir: { numero: string; montant: number; client: string; soldeClient: number } | null
   /** Le tiroir s'est-il ouvert (seulement pour un remboursement en espèces) ? */
   tiroirOuvert: boolean
+  /** Retour sur un ticket à crédit (A12) : part qui a réduit la dette du client, sans argent rendu. */
+  creanceReduite: number
 }
 
 /** Coordonnées du client recopiées sur une facture ou une proforma (A10). Le nom seul est obligatoire. */

@@ -43,6 +43,8 @@ export const LIBELLES_ACTION: Record<string, string> = {
   desactivation_client: 'Désactivation d’un client',
   vente_credit: 'Vente à crédit',
   utilisation_avoir: 'Paiement par avoir en boutique',
+  encaissement_creance: 'Paiement d’une créance',
+  annulation_encaissement: 'Annulation d’un paiement de créance',
   modification_parametre: 'Modification d’un paramètre',
   creation_utilisateur: 'Création d’un compte',
   modification_role: 'Changement de rôle',
@@ -117,6 +119,11 @@ const LIBELLES_CHAMP: Record<string, string> = {
   client: 'Client',
   avoir: 'Avoir',
   avoirs: 'Avoirs utilisés',
+  recu: 'Reçu',
+  reference: 'Référence',
+  tickets: 'Tickets',
+  resteDu: 'Reste dû',
+  creanceReduite: 'Dette du client réduite de',
   telephone: 'Téléphone',
   adresse: 'Adresse',
   nif: 'NIF',
@@ -147,7 +154,9 @@ const MONTANTS = new Set([
   'ecart',
   'manquants',
   'surplus',
-  'plafond'
+  'plafond',
+  'resteDu',
+  'creanceReduite'
 ])
 const QUANTITES = new Set(['quantite', 'stockRestant', 'stockAvant', 'stock', 'reste'])
 
