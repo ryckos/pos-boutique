@@ -27,6 +27,7 @@ Un contrat livré débloque l'autre développeur. Statut : ✅ livré · 🔄 en
 | `caisse/sessionOuverte()`, `enregistrerMouvementCaisse()` | A         | B           | fin S10  | ✅     | PR #55 — débloque B13 (source caisse) et le règlement fournisseur au tiroir : `sessionOuverte(db)` (seule caisse ouverte, sinon `null`), `enregistrerMouvementCaisse(db, { sessionId, utilisateurId, sens, motif, montant, commentaire, documentType?, documentId? })` et `annulerMouvementCaisse` dans `modules/caisse/service-mouvements.ts`, à appeler dans la transaction du document ; sortie ≤ tiroir ; motif `reglement_fournisseur` ajouté |
 | `caisse:ventesPeriode`                                    | A         | B           | fin S16  | ✅     | PR #73, livré en avance : `ventesPeriode(db, { du, au })` de `modules/caisse/service-rapports.ts` → `VentesPeriode` (`chiffreAffaires`, `cout`, `marge`, `margeHt`…), à appeler directement dans `rapports-gestion/resultat.ts` (REGLES_METIER § 11) ; débloque la marge de B14 |
 | Alertes rupture et péremption (lecture)                   | B         | A           | fin S17  | 🔄     | A15 ; canal `stock:alertesAccueil` (gérant) → `AlertesAccueil` (ruptures, stocks bas, périmés, urgents, proches, valeur en jeu, 5 premiers de chaque) sur `b/alertes-accueil`, PR vers `test` à fusionner (REGLES_METIER § 3.3) |
+| Libellés du journal des clients (`src/shared/audit.ts`) — demandé le 2026-10-31 | B | A | avec A11 | ⏳ | `creation_client`, `modification_client` (nom, téléphone, adresse, NIF), `plafond_credit` (`client`, `plafond`), `desactivation_client` (`client`, `motif`), `vente_credit` (`numeroTicket`, `client`, `montant`, `echeance`) ; sinon le journal les affiche en code brut |
 
 ## Phase 0 — Validation matérielle ✅
 | Test | Objet                              | Résultat                                                |
@@ -85,7 +86,7 @@ Le socle comprend :
 ## Phase 3 — Suivi financier (S13–S15)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
 |-------|-------------------------------------------|-----|--------|--------------------------|
-| A11   | Clients et vente à crédit                 | A   | ⏳     |   |
+| A11   | Clients et vente à crédit                 | A   | 🔄     | Parties 1 et 2 dans la **PR #79** (`a/clients-fiche`, en relecture par Dev B) : fiches clients, plafond (gérant), encours, migration `20261031_1000_clients_credit.sql` ; vente à crédit (plafond strict, créance à 30 jours, annulation de la créance, retour refusé, ticket en deux exemplaires), venue de la PR #80 fusionnée dans `a/clients-fiche`. Suivent : écran Clients, crédit à la caisse, avoir en boutique |
 | A12   | Recouvrement                              | A   | ⏳     |   |
 | A13   | Écran client définitif                    | A   | ⏳     |   |
 | B11   | Sorties de stock, retours fournisseur     | B   | ✅     | PR #39 (serveur : sorties, retours, avoirs déduits de la dette, migration `retours_fournisseur`) et #40 (écran Sorties de stock, avoirs reçus ou refusés dans « Dettes », avoir à valoir sur la page Fournisseurs) |
@@ -95,7 +96,7 @@ Le socle comprend :
 ## Phase 4 — Pilotage (S16–S18)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
 |-------|-------------------------------------------|-----|--------|--------------------------|
-| A14   | Rapports ventes et caisse                 | A   | 🔄     | Partie 1 avancée (avant A11–A13) : canal `caisse:ventesPeriode` pour la marge de B14, branche `a/caisse-ventes-periode`. Reste : ventes par heure, par caissier, top / flop produits, historique des sessions, écran `/rapports` |
+| A14   | Rapports ventes et caisse                 | A   | 🔄     | Partie 1 avancée (avant A11–A13), PR #73 fusionnée : canal `caisse:ventesPeriode` pour la marge de B14. Reste : ventes par heure, par caissier, top / flop produits, historique des sessions, écran `/rapports` |
 | A15   | Tableau de bord d'accueil                 | A   | ⏳     |   |
 | A16   | Promotions programmées                    | A   | ⏳     |   |
 | B14   | Rapports de gestion, journal d'audit      | B   | ✅     | PR #47 (serveur : pertes par cause, valeur du stock par rayon, achats par fournisseur, résultat), #48 (menu « Rapports de gestion », quatre onglets), #49 (journal des opérations, admin, `audit:journal` / `audit:choix`) et #76 (marge branchée sur `ventesPeriode` d'A14 : chiffre d'affaires, coût, marge TTC, résultat) ; testé à la main. Marge HT prête à afficher selon D-A6 |

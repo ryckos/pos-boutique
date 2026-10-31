@@ -13,16 +13,20 @@
  *
  * FEFO (règle 5.1, A9) : un produit suivi en péremption sort de ses lots, la date la plus proche
  * d'abord (`allouerFefo` de Dev B), un mouvement par lot ; le reste sort sans lot, jamais bloquant.
+ *
+ * Crédit (règle 7, A11) : la part `credit` exige un client actif dont le plafond tient ; la créance
+ * naît dans la même transaction que la vente.
  */
 import { randomUUID } from 'node:crypto'
 import type {
   AccordRemiseDonne,
-  ModePaiementCaisse,
+  ModePaiementVente,
   RequeteAccordRemise,
   RequeteVente,
   VenteEnregistree
 } from '@shared/ipc/caisse'
 import type { Role } from '@shared/types'
+import { ajouterJours, DELAI_CREDIT_JOURS } from '@shared/clients'
 import { formaterFCFA } from '@shared/format'
 import type { Db } from '../../db/connexion'
 import { avecTransaction, executer, toutes, une } from '../../db/requetes'
@@ -33,11 +37,18 @@ import { ErreurMetier } from '../../core/erreurs'
 import { verifierCodeCompte } from '../auth/service'
 import { lireParametres } from '../parametres/service'
 import { allouerFefo } from '../stock/fefo'
+import { encoursClient } from '../clients/service'
 import { ventilerTva } from './calculs'
 import { sessionOuverte } from './service-session'
 
-const MODES: Record<ModePaiementCaisse, string> = { especes: 'Espèces', tmoney: 'TMoney', flooz: 'Flooz' }
-const MOBILE_MONEY: ModePaiementCaisse[] = ['tmoney', 'flooz']
+const MODES: Record<ModePaiementVente, string> = {
+  especes: 'Espèces',
+  tmoney: 'TMoney',
+  flooz: 'Flooz',
+  credit: 'Crédit'
+}
+const MOBILE_MONEY: ModePaiementVente[] = ['tmoney', 'flooz']
+const DATE_ISO = /^\d{4}-\d{2}-\d{2}$/
 
 /** Un conditionnement tel que la base le connaît au moment de la vente. */
 interface ConditionnementEnBase {
@@ -241,6 +252,54 @@ function controlerPaiements(
   return { montantRecu, monnaieRendue: montantRecu - especes }
 }
 
+interface CreditControle {
+  clientId: number
+  client: string
+  montant: number
+  echeance: string
+  encoursApres: number
+}
+
+/**
+ * Part à crédit (REGLES_METIER § 7 et 7.1, A11) : client actif obligatoire, plafond strict (pas de code
+ * du gérant : il relève d'abord le plafond dans la fiche), échéance à 30 jours par défaut. Relu dans
+ * la transaction de la vente : deux ventes à crédit simultanées ne dépassent pas le plafond à elles deux.
+ */
+function controlerCredit(db: Db, requete: RequeteVente): CreditControle | null {
+  const credits = requete.paiements.filter((p) => p.mode === 'credit')
+  if (credits.length === 0) return null
+  if (credits.length > 1) throw new ErreurMetier('Une seule part à crédit par ticket : additionnez-les.')
+  if (requete.clientId === undefined) throw new ErreurMetier('Choisissez le client avant de vendre à crédit.')
+  const c = une<{ nom: string; plafond: number; actif: number }>(
+    db,
+    'SELECT nom, plafond_credit AS plafond, actif FROM clients WHERE id = ?',
+    requete.clientId
+  )
+  if (!c) throw new ErreurMetier('Client introuvable : choisissez-le à nouveau.')
+  if (!c.actif) throw new ErreurMetier(`« ${c.nom} » est désactivé : pas de vente à crédit.`)
+  if (c.plafond === 0) {
+    throw new ErreurMetier(
+      `« ${c.nom} » n’a pas de crédit autorisé : le gérant fixe son plafond dans sa fiche.`
+    )
+  }
+  const montant = credits[0].montant
+  const encoursApres = encoursClient(db, requete.clientId) + montant
+  if (encoursApres > c.plafond) {
+    const reste = Math.max(0, c.plafond - (encoursApres - montant))
+    throw new ErreurMetier(
+      `Plafond de crédit de « ${c.nom} » dépassé : il lui reste ${formaterFCFA(reste)} sur ${formaterFCFA(c.plafond)}. ` +
+        'Faites payer la différence, ou demandez au gérant de relever le plafond.'
+    )
+  }
+  const aujourdhui = une<{ j: string }>(db, "SELECT date('now','localtime') AS j")!.j
+  const echeance = requete.echeance?.trim() || ajouterJours(aujourdhui, DELAI_CREDIT_JOURS)
+  const dateValide =
+    DATE_ISO.test(echeance) && new Date(`${echeance}T00:00:00Z`).toISOString().startsWith(echeance)
+  if (!dateValide) throw new ErreurMetier('Date d’échéance invalide : choisissez-la dans le calendrier.')
+  if (echeance < aujourdhui) throw new ErreurMetier('L’échéance du crédit ne peut pas être dans le passé.')
+  return { clientId: requete.clientId, client: c.nom, montant, echeance, encoursApres }
+}
+
 /** Numéros des lots périmés du produit qui ont encore du stock, le plus ancien d'abord. */
 function lotsPerimesEnStock(db: Db, produitId: number): string[] {
   return toutes<{ numero: string }>(
@@ -274,17 +333,26 @@ export function enregistrerVente(db: Db, utilisateurId: number, requete: Requete
     const totalRemises = remiseGlobale + lignes.reduce((s, l) => s + l.remise, 0)
     const autorisePar = controlerPlafond(db, utilisateurId, totalRemises, requete.jetonRemise)
     const { montantRecu, monnaieRendue } = controlerPaiements(requete, totaux.totalTtc)
+    const credit = controlerCredit(db, requete)
+    // Un client sans crédit (pour la facture, plus tard) doit au moins exister.
+    if (!credit && requete.clientId !== undefined) {
+      if (!une(db, 'SELECT id FROM clients WHERE id = ? AND actif = 1', requete.clientId)) {
+        throw new ErreurMetier('Client introuvable ou désactivé : choisissez-le à nouveau.')
+      }
+    }
 
     // Le numéro n'est pris qu'une fois tout contrôlé ; en cas d'échec plus loin, le rollback le rend.
     const numeroTicket = prochainNumero(db, 'T')
     const venteId = executer(
       db,
-      `INSERT INTO ventes (numero_ticket, session_caisse_id, utilisateur_id, total_ht, total_tva, total_ttc,
-                           remise_globale, montant_recu, monnaie_rendue)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO ventes (numero_ticket, session_caisse_id, utilisateur_id, client_id, est_credit,
+                           total_ht, total_tva, total_ttc, remise_globale, montant_recu, monnaie_rendue)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       numeroTicket,
       session.id,
       utilisateurId,
+      requete.clientId ?? null,
+      credit ? 1 : 0,
       totaux.totalHt,
       totaux.totalTva,
       totaux.totalTtc,
@@ -351,6 +419,25 @@ export function enregistrerVente(db: Db, utilisateurId: number, requete: Requete
       )
     }
 
+    // La créance naît avec la vente, dans la même transaction (REGLES_METIER § 7).
+    if (credit) {
+      executer(
+        db,
+        'INSERT INTO creances (vente_id, client_id, montant_initial, date_echeance) VALUES (?, ?, ?, ?)',
+        venteId,
+        credit.clientId,
+        credit.montant,
+        credit.echeance
+      )
+      journaliser(db, {
+        utilisateurId,
+        action: 'vente_credit',
+        entite: 'ventes',
+        entiteId: venteId,
+        apres: { numeroTicket, client: credit.client, montant: credit.montant, echeance: credit.echeance }
+      })
+    }
+
     // Chaque remise est journalisée (règle 6.6), au nom de la caissière, avec le gérant qui l'a autorisée.
     const remises = [
       ...lignes
@@ -393,7 +480,15 @@ export function enregistrerVente(db: Db, utilisateurId: number, requete: Requete
       totalTtc: totaux.totalTtc,
       monnaieRendue,
       alertesStock,
-      alertesPeremption
+      alertesPeremption,
+      credit: credit
+        ? {
+            client: credit.client,
+            montant: credit.montant,
+            echeance: credit.echeance,
+            encoursApres: credit.encoursApres
+          }
+        : null
     }
   })
   // Usage unique : l'accord tombe avec la vente qu'il a permise (pas avant, un refus de paiement le garde).

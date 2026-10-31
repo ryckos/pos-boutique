@@ -10,6 +10,7 @@ import type { ContratAudit } from './audit'
 import type { ContratAuth } from './auth'
 import type { ContratCaisse } from './caisse'
 import type { ContratCatalogue } from './catalogue'
+import type { ContratClients } from './clients'
 import type { ContratDepenses } from './depenses'
 import type { ContratExports } from './exports'
 import type { ContratFournisseurs } from './fournisseurs'
@@ -37,6 +38,7 @@ export type ContratIpc = ContratSysteme &
   ContratExports &
   ContratSauvegardes &
   ContratCaisse &
+  ContratClients &
   ContratMateriel
 
 export type Canal = keyof ContratIpc

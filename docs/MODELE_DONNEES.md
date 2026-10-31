@@ -57,9 +57,9 @@ document à jour.
 ### Clients — Dev A
 | Table                    | Rôle                                                             |
 |--------------------------|------------------------------------------------------------------|
-| `clients`                | Fiche, `plafond_credit`                                          |
-| `creances`               | Née d'une vente à crédit, `montant_initial`, `date_echeance`, `statut` |
-| `encaissements_creances` | Paiements de créances, rattachés à une session de caisse         |
+| `clients`                | Fiche (`nom`, `telephone`, `adresse`, `nif`), `plafond_credit` (0 = pas de crédit), `actif` ; jamais supprimé (trigger) |
+| `creances`               | Née d'une vente à crédit, `montant_initial`, `date_echeance`, `statut` ; annulation par `annulee_le`, `annulee_par`, `motif_annulation` (A11 : statut `annulee` exposé par la vue) ; ni suppression, ni changement de montant, vente ou client, annulation définitive (triggers) |
+| `encaissements_creances` | Paiements de créances, rattachés à une session de caisse ; ni modification ni suppression (triggers) |
 
 ### Dépenses et inventaires — Dev B
 | Table                | Rôle                                                                  |

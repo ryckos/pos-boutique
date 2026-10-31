@@ -7,6 +7,7 @@ import { enregistrerIpcAudit } from '../modules/audit/ipc'
 import { enregistrerIpcAuth } from '../modules/auth/ipc'
 import { enregistrerIpcCaisse } from '../modules/caisse/ipc'
 import { enregistrerIpcCatalogue } from '../modules/catalogue/ipc'
+import { enregistrerIpcClients } from '../modules/clients/ipc'
 import { enregistrerIpcDepenses } from '../modules/depenses/ipc'
 import { enregistrerIpcExports } from '../modules/exports/ipc'
 import { enregistrerIpcFournisseurs } from '../modules/fournisseurs/ipc'
@@ -37,5 +38,6 @@ export function enregistrerTousLesIpc(options: { cheminBase: string; modeDev: bo
   enregistrerIpcSauvegardes()
   // ─── Dev A ───
   enregistrerIpcCaisse()
+  enregistrerIpcClients()
   enregistrerIpcMateriel()
 }

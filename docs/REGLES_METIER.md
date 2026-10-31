@@ -782,6 +782,35 @@ repart à 1 chaque année.
 - La **balance âgée** classe le restant dû par ancienneté de la créance : 0–30 jours, 31–60 jours,
   plus de 60 jours.
 
+### 7.1 Précisions validées par Dev A (2026-10-28, A11)
+- **Fiche client** : nom obligatoire ; téléphone, adresse et NIF facultatifs ; **téléphone obligatoire
+  dès que le plafond dépasse 0** (pour relancer). Un même téléphone ne sert pas à deux clients actifs
+  (deux fiches doubleraient le plafond) ; deux clients de même nom sans téléphone restent possibles.
+- **Droits** : la caissière crée un client (plafond 0) et corrige ses coordonnées ; **seul le gérant**
+  fixe ou change un plafond (journal `plafond_credit`, avant / après). Désactivation par le gérant, motif
+  obligatoire, **refusée tant que le client doit de l'argent** ; jamais de suppression.
+- **Encours** = restant dû des créances non annulées ; la part dont l'échéance est dépassée est
+  affichée à part (« en retard »).
+- **Vente à crédit** : la caissière vend à crédit sans code du gérant tant que le plafond tient ; au-delà,
+  **refus strict** (le gérant relève d'abord le plafond dans la fiche). Crédit sans client : refusé.
+  Échéance **30 jours** par défaut, modifiable à l'encaissement ; une créance échue impayée affiche une
+  alerte sans bloquer.
+- **Ticket à crédit** : nom du client, part à crédit, échéance, ligne « Signature du client » ; imprimé
+  en **deux exemplaires** (client, et boutique qui garde la copie signée).
+- **Annulation d'un ticket à crédit** (§ 6.7) : la créance est annulée (`annulee_le`, motif), sauf si un
+  encaissement a déjà eu lieu sur elle (refus).
+- **Retour sur un ticket à crédit** (§ 6.8) : refusé jusqu'au recouvrement (A12), « Ce ticket est à
+  crédit : voyez le gérant ».
+- **Avoir en boutique** (reporté depuis A7) : dernière partie d'A11.
+- Journal : `creation_client`, `modification_client`, `plafond_credit`, `desactivation_client`,
+  `vente_credit` (`numeroTicket`, `client`, `montant`, `echeance`).
+- Précisions de réalisation (PR 2) : **une seule part à crédit** par ticket ; le plafond est relu dans la
+  transaction de la vente (deux ventes simultanées ne le dépassent pas à elles deux) ; l'encours exact au
+  plafond passe ; échéance dans le passé refusée ; un client peut être joint à une vente sans crédit
+  (`ventes.client_id`). La part à crédit compte dans « Ventes crédit » du X / Z et dans le chiffre
+  d'affaires (§ 11), jamais dans les espèces théoriques. À l'annulation, rien n'est rendu pour la part
+  à crédit : la créance est annulée. Un duplicata du ticket à crédit ne sort qu'en exemplaire boutique.
+
 ---
 
 ## 8. Sorties de stock et retours fournisseur (Dev B)
