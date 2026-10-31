@@ -294,6 +294,14 @@ le panier.
   et affiche « Vente T-… enregistrée. Monnaie à rendre : … ».
 - Sans session ouverte, l'écran de caisse affiche « Caisse fermée » et « Ouvrir la caisse » ; le fond
   se saisit dans la fenêtre commune `FenetreFormulaire`.
+- **Crédit (A11)** : le bouton « Crédit » ouvre d'abord « Vente à crédit : quel client ? » (recherche par
+  nom ou téléphone ; un client sans plafond est grisé « voyez le gérant » ; pastilles « Plafond atteint » et
+  « En retard »). Le client choisi, la fenêtre de paiement montre une ligne « À crédit : <nom> » avec le
+  reste disponible, l'échéance (30 jours, modifiable) et un bandeau si le client a des retards (la vente
+  reste possible). Le crédit commence par tout le ticket ; ajouter des espèces, TMoney ou Flooz le limite
+  à ce que le client peut encore emprunter, et le montant à crédit devient modifiable. « Encaisser » reste
+  grisé tant que le crédit dépasse le plafond. Après la vente : « 5 000 F à crédit pour <nom>, à régler avant
+  le … ». À l'annulation d'un ticket à crédit : « Le crédit de … est effacé ».
 
 ### 5.4 Clôture de caisse (Dev A — A4)
 ```

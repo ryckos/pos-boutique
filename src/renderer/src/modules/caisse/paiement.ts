@@ -14,6 +14,8 @@
  *   vide vaut le montant exact, pour que « Espèces » puis « Encaisser » suffise.
  */
 import type { ModePaiementCaisse, RequeteVente } from '@shared/ipc/caisse'
+import type { Client } from '@shared/ipc/clients'
+import { resteDisponible } from '../clients/clients'
 import { formaterFCFA } from '@shared/format'
 
 export type ModeMobile = Exclude<ModePaiementCaisse, 'especes'>
@@ -35,6 +37,17 @@ export interface PaiementMobile {
   reference: string
 }
 
+/** Le client à qui l'on vend à crédit, tel que le choix de client le renvoie. */
+export type ClientCredit = Pick<Client, 'id' | 'nom' | 'plafondCredit' | 'encours' | 'enRetard'>
+
+/** Part laissée à crédit (A11, REGLES_METIER § 7.1) : un montant saisi, comme TMoney et Flooz. */
+export interface PartCredit {
+  client: ClientCredit
+  montant: number
+  /** 'AAAA-MM-JJ' */
+  echeance: string
+}
+
 export interface EtatPaiement {
   total: number
   /** Les espèces font partie du paiement ; leur montant est toujours le reste. */
@@ -42,6 +55,8 @@ export interface EtatPaiement {
   mobiles: PaiementMobile[]
   /** Espèces données par le client ; null = montant exact. */
   recu: number | null
+  /** Part à crédit ; null = pas de crédit. */
+  credit: PartCredit | null
 }
 
 /** Montant saisi au clavier → entier FCFA ≥ 0 (tout ce qui n'est pas un chiffre est ignoré). */
@@ -50,26 +65,35 @@ export function lireMontant(saisie: string): number {
   return chiffres ? Number.parseInt(chiffres, 10) : 0
 }
 
-export function ouvrirPaiement(total: number, mode: ModePaiementCaisse): EtatPaiement {
+/** Ouvre le paiement ; un crédit demande le client et l'échéance, et commence par tout le total. */
+export function ouvrirPaiement(
+  total: number,
+  mode: ModePaiementCaisse,
+  credit: Omit<PartCredit, 'montant'> | null = null
+): EtatPaiement {
+  if (credit) return { total, especes: false, mobiles: [], recu: null, credit: { ...credit, montant: total } }
   return mode === 'especes'
-    ? { total, especes: true, mobiles: [], recu: null }
-    : { total, especes: false, mobiles: [{ mode, montant: total, reference: '' }], recu: null }
+    ? { total, especes: true, mobiles: [], recu: null, credit: null }
+    : { total, especes: false, mobiles: [{ mode, montant: total, reference: '' }], recu: null, credit: null }
 }
 
 const totalMobiles = (etat: EtatPaiement): number => etat.mobiles.reduce((s, m) => s + m.montant, 0)
 
+/** Ce que TMoney, Flooz et le crédit couvrent déjà : les espèces prennent le reste. */
+const dejaCouvert = (etat: EtatPaiement): number => totalMobiles(etat) + (etat.credit?.montant ?? 0)
+
 export function nombreDeModes(etat: EtatPaiement): number {
-  return etat.mobiles.length + (etat.especes ? 1 : 0)
+  return etat.mobiles.length + (etat.especes ? 1 : 0) + (etat.credit ? 1 : 0)
 }
 
-/** Part payée en espèces : ce que TMoney et Flooz ne couvrent pas. */
+/** Part payée en espèces : ce que TMoney, Flooz et le crédit ne couvrent pas. */
 export function partEspeces(etat: EtatPaiement): number {
-  return etat.especes ? Math.max(etat.total - totalMobiles(etat), 0) : 0
+  return etat.especes ? Math.max(etat.total - dejaCouvert(etat), 0) : 0
 }
 
-/** Positif : il manque ; négatif : TMoney et Flooz dépassent le total. */
+/** Positif : il manque ; négatif : les modes saisis dépassent le total. */
 export function resteAPayer(etat: EtatPaiement): number {
-  return etat.total - totalMobiles(etat) - partEspeces(etat)
+  return etat.total - dejaCouvert(etat) - partEspeces(etat)
 }
 
 export function monnaieARendre(etat: EtatPaiement): number {
@@ -78,28 +102,50 @@ export function monnaieARendre(etat: EtatPaiement): number {
 
 /** Ajoute un mode (paiement mixte). Un mode mobile ajouté prend le reste s'il n'y a pas d'espèces. */
 export function ajouterMode(etat: EtatPaiement, mode: ModePaiementCaisse): EtatPaiement {
-  if (mode === 'especes') return etat.especes ? etat : { ...etat, especes: true }
-  if (etat.mobiles.some((m) => m.mode === mode)) return etat
-  const montant = etat.especes ? 0 : Math.max(etat.total - totalMobiles(etat), 0)
-  return { ...etat, mobiles: [...etat.mobiles, { mode, montant, reference: '' }] }
+  const base = limiterCredit(etat)
+  if (mode === 'especes') return base.especes ? base : { ...base, especes: true }
+  if (base.mobiles.some((m) => m.mode === mode)) return base
+  const montant = base.especes ? 0 : Math.max(base.total - dejaCouvert(base), 0)
+  return { ...base, mobiles: [...base.mobiles, { mode, montant, reference: '' }] }
+}
+
+/**
+ * Un crédit seul couvre tout le total : dès qu'on ajoute un autre mode, il se limite à ce que le client
+ * peut encore emprunter, pour que le reste se règle tout de suite (8 500 F, 5 000 F disponibles →
+ * 5 000 F à crédit, 3 500 F à payer).
+ */
+function limiterCredit(etat: EtatPaiement): EtatPaiement {
+  const c = etat.credit
+  if (!c || etat.especes || etat.mobiles.length > 0) return etat
+  return { ...etat, credit: { ...c, montant: Math.min(c.montant, resteDisponible(c.client)) } }
 }
 
 /**
  * Retire un mode ; il en reste toujours un. Un mode mobile resté seul, sans espèces, reprend tout
  * le total (son montant n'est plus modifiable à l'écran).
  */
-export function retirerMode(etat: EtatPaiement, mode: ModePaiementCaisse): EtatPaiement {
+export function retirerMode(etat: EtatPaiement, mode: ModePaiementCaisse | 'credit'): EtatPaiement {
   if (nombreDeModes(etat) <= 1) return etat
   const especes = mode === 'especes' ? false : etat.especes
+  const credit = mode === 'credit' ? null : etat.credit
   let mobiles = etat.mobiles.filter((m) => m.mode !== mode)
-  if (!especes && mobiles.length === 1) mobiles = [{ ...mobiles[0], montant: etat.total }]
-  return { ...etat, especes, mobiles, recu: especes ? etat.recu : null }
+  if (!especes && !credit && mobiles.length === 1) mobiles = [{ ...mobiles[0], montant: etat.total }]
+  return { ...etat, especes, mobiles, credit, recu: especes ? etat.recu : null }
+}
+
+export function changerCredit(etat: EtatPaiement, montant: number): EtatPaiement {
+  if (!etat.credit) return etat
+  return { ...etat, credit: { ...etat.credit, montant: Math.max(Math.trunc(montant), 0) } }
+}
+
+export function changerEcheance(etat: EtatPaiement, echeance: string): EtatPaiement {
+  return etat.credit ? { ...etat, credit: { ...etat.credit, echeance } } : etat
 }
 
 /** Sans espèces, avec deux modes mobiles, l'autre prend le reste : 3 500 en TMoney → 5 000 en Flooz. */
 export function changerMontant(etat: EtatPaiement, mode: ModeMobile, montant: number): EtatPaiement {
   const m = Math.max(Math.trunc(montant), 0)
-  const equilibrer = !etat.especes && etat.mobiles.length === 2
+  const equilibrer = !etat.especes && !etat.credit && etat.mobiles.length === 2
   const mobiles = etat.mobiles.map((p) => {
     if (p.mode === mode) return { ...p, montant: m }
     return equilibrer ? { ...p, montant: Math.max(etat.total - m, 0) } : p
@@ -135,6 +181,15 @@ export function blocage(etat: EtatPaiement): string | null {
       .map((m) => LIBELLES_MODES[m.mode])
       .join(' ou ')}.`
   }
+  const c = etat.credit
+  if (c) {
+    if (c.montant === 0) return 'Saisissez le montant laissé à crédit, ou retirez le crédit.'
+    const dispo = resteDisponible(c.client)
+    if (c.montant > dispo) {
+      return `Ce crédit dépasse le plafond de ${c.client.nom} : il peut encore prendre ${formaterFCFA(dispo)}. Baissez le montant, ou demandez au gérant de relever le plafond.`
+    }
+    if (!c.echeance) return 'Choisissez la date d’échéance du crédit.'
+  }
   for (const m of etat.mobiles) {
     // Une ligne à 0 F ferait croire à un paiement TMoney ou Flooz qui n'existe pas.
     if (m.montant === 0)
@@ -143,7 +198,7 @@ export function blocage(etat: EtatPaiement): string | null {
   }
   const especes = partEspeces(etat)
   if (etat.especes && especes === 0) {
-    return 'TMoney et Flooz couvrent déjà tout : retirez les espèces ou baissez un montant.'
+    return 'TMoney, Flooz et le crédit couvrent déjà tout : retirez les espèces ou baissez un montant.'
   }
   if (etat.recu !== null && etat.recu < especes) {
     return `Espèces reçues insuffisantes : il manque ${formaterFCFA(especes - etat.recu)}.`
@@ -156,6 +211,7 @@ export function versRequete(etat: EtatPaiement, lignes: RequeteVente['lignes']):
   const especes = partEspeces(etat)
   const paiements: RequeteVente['paiements'] = [
     ...(especes > 0 ? [{ mode: 'especes' as const, montant: especes }] : []),
+    ...(etat.credit ? [{ mode: 'credit' as const, montant: etat.credit.montant }] : []),
     ...etat.mobiles
       .filter((m) => m.montant > 0)
       .map((m) => ({ mode: m.mode, montant: m.montant, reference: m.reference.trim() }))
@@ -163,6 +219,7 @@ export function versRequete(etat: EtatPaiement, lignes: RequeteVente['lignes']):
   return {
     lignes,
     paiements,
+    ...(etat.credit ? { clientId: etat.credit.client.id, echeance: etat.credit.echeance } : {}),
     ...(especes > 0 && etat.recu !== null ? { montantRecu: etat.recu } : {})
   }
 }

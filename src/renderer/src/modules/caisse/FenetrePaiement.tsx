@@ -12,7 +12,10 @@
  */
 import { useEffect, useState } from 'react'
 import type { ModePaiementCaisse } from '@shared/ipc/caisse'
+import { DELAI_CREDIT_JOURS, ajouterJours } from '@shared/clients'
 import { formaterFCFA } from '@shared/format'
+import { jourLocal } from '@renderer/lib/exportExcel'
+import { resteDisponible } from '../clients/clients'
 import {
   BILLETS_RAPIDES,
   LIBELLES_MODES,
@@ -20,6 +23,8 @@ import {
   ajouterBillet,
   ajouterMode,
   blocage,
+  changerCredit,
+  changerEcheance,
   changerMontant,
   changerRecu,
   changerReference,
@@ -31,6 +36,7 @@ import {
   partEspeces,
   resteAPayer,
   retirerMode,
+  type ClientCredit,
   type EtatPaiement
 } from './paiement'
 import { Icone } from '@renderer/ui/Icone'
@@ -48,13 +54,29 @@ const selectionnerTout = (e: React.FocusEvent<HTMLInputElement>): void => {
 interface Props {
   total: number
   modeInitial: ModePaiementCaisse
+  /** Vente à crédit : le client choisi (A11). Absent = paiement ordinaire. */
+  clientCredit?: ClientCredit
   /** Envoie la vente ; en cas de refus, le message s'affiche ici et la saisie est gardée. */
   onEncaisser: (etat: EtatPaiement) => Promise<void>
   onFermer: () => void
 }
 
-export function FenetrePaiement({ total, modeInitial, onEncaisser, onFermer }: Props): React.JSX.Element {
-  const [etat, setEtat] = useState(() => ouvrirPaiement(total, modeInitial))
+export function FenetrePaiement({
+  total,
+  modeInitial,
+  clientCredit,
+  onEncaisser,
+  onFermer
+}: Props): React.JSX.Element {
+  const [etat, setEtat] = useState(() =>
+    ouvrirPaiement(
+      total,
+      modeInitial,
+      clientCredit
+        ? { client: clientCredit, echeance: ajouterJours(jourLocal(), DELAI_CREDIT_JOURS) }
+        : null
+    )
+  )
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
 
@@ -156,6 +178,57 @@ export function FenetrePaiement({ total, modeInitial, onEncaisser, onFermer }: P
             </div>
           ))}
 
+          {etat.credit && (
+            <div className="paiement-ligne">
+              <div className="paiement-ligne-entete">
+                <h3>À crédit : {etat.credit.client.nom}</h3>
+                {mixte ? (
+                  <button
+                    type="button"
+                    className="btn btn-discret"
+                    onClick={() => setEtat((s) => retirerMode(s, 'credit'))}
+                  >
+                    Retirer le crédit
+                  </button>
+                ) : (
+                  <span className="montant paiement-part">{formaterFCFA(etat.credit.montant)}</span>
+                )}
+              </div>
+              <p className="vide">
+                Reste disponible : {formaterFCFA(resteDisponible(etat.credit.client))} (plafond{' '}
+                {formaterFCFA(etat.credit.client.plafondCredit)}, encours{' '}
+                {formaterFCFA(etat.credit.client.encours)}).
+              </p>
+              {etat.credit.client.enRetard > 0 && (
+                <p className="bandeau">
+                  Ce client a déjà {formaterFCFA(etat.credit.client.enRetard)} en retard de paiement.
+                  Prévenez le gérant si besoin : la vente reste possible.
+                </p>
+              )}
+              {mixte && (
+                <label className="champ">
+                  Montant laissé à crédit
+                  <input
+                    inputMode="numeric"
+                    value={String(etat.credit.montant)}
+                    onFocus={selectionnerTout}
+                    onChange={(e) => setEtat((s) => changerCredit(s, lireMontant(e.target.value)))}
+                  />
+                </label>
+              )}
+              <label className="champ">
+                À régler avant le
+                <input
+                  type="date"
+                  min={jourLocal()}
+                  value={etat.credit.echeance}
+                  onChange={(e) => setEtat((s) => changerEcheance(s, e.target.value))}
+                />
+                <span className="champ-aide">{DELAI_CREDIT_JOURS} jours par défaut ; modifiable.</span>
+              </label>
+            </div>
+          )}
+
           {modesAjoutables.length > 0 && (
             <div className="paiement-ajouts">
               {modesAjoutables.map((m) => (
@@ -249,7 +322,7 @@ export function FenetrePaiement({ total, modeInitial, onEncaisser, onFermer }: P
             <button
               type="submit"
               className="btn paiement-encaisser"
-              autoFocus={modeInitial === 'especes'}
+              autoFocus={modeInitial === 'especes' && !clientCredit}
               disabled={probleme !== null || envoi}
             >
               <Icone nom="payer" />

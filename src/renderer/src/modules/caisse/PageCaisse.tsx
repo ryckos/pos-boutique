@@ -15,7 +15,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ArticleCatalogue } from '@shared/types'
 import type { ModePaiementCaisse, SessionCaisse, VenteEnregistree } from '@shared/ipc/caisse'
-import { formaterFCFA, formaterQuantite } from '@shared/format'
+import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
 import { useUtilisateur } from '@renderer/app/contexte'
@@ -33,12 +33,13 @@ import {
 } from './panier'
 import { etatCaisseInitial, reducteurCaisse, resumeAttente, type EtatCaisse } from './attente'
 import { actionClavier } from './clavier'
-import { versRequete, type EtatPaiement } from './paiement'
+import { versRequete, type ClientCredit, type EtatPaiement } from './paiement'
 import { TOUT, afficherOnglets, filtrerGrille, ongletsDeGrille } from './grille'
 import { FenetreRecherche } from './FenetreRecherche'
 import { FenetreConditionnement } from './FenetreConditionnement'
 import { FenetreReimpression } from './FenetreReimpression'
 import { FenetrePaiement } from './FenetrePaiement'
+import { FenetreChoixClient } from './FenetreChoixClient'
 import { FenetreRemise } from './FenetreRemise'
 import { FenetreTiroir } from './FenetreTiroir'
 import { FenetreAnnulation } from './FenetreAnnulation'
@@ -100,6 +101,9 @@ export function PageCaisse(): React.JSX.Element {
   const [reimprime, setReimprime] = useState<string | null>(null)
   /** Mode choisi pour ouvrir la fenêtre de paiement ; null = fenêtre fermée. */
   const [paiement, setPaiement] = useState<ModePaiementCaisse | null>(null)
+  /** Vente à crédit (A11) : fenêtre « quel client ? » ouverte, puis client choisi pour le paiement. */
+  const [choixClientOuvert, setChoixClientOuvert] = useState(false)
+  const [clientCredit, setClientCredit] = useState<ClientCredit | null>(null)
   /** undefined = en cours de lecture ; null = caisse fermée. */
   const [session, setSession] = useState<SessionCaisse | null | undefined>(undefined)
   const [derniereVente, setDerniereVente] = useState<VenteEnregistree | null>(null)
@@ -230,6 +234,7 @@ export function PageCaisse(): React.JSX.Element {
   const fenetreOuverte =
     rechercheOuverte ||
     paiement !== null ||
+    choixClientOuvert ||
     conditionnementOuvert !== null ||
     reimpressionOuverte ||
     tiroirOuvert ||
@@ -286,6 +291,7 @@ export function PageCaisse(): React.JSX.Element {
     })
     agir({ type: 'vider' })
     setPaiement(null)
+    setClientCredit(null)
     setMessage(null)
     setAlertesProforma([])
     setDerniereVente(vente)
@@ -505,6 +511,8 @@ export function PageCaisse(): React.JSX.Element {
               Vente {derniereVente.numeroTicket} enregistrée.
               {derniereVente.monnaieRendue > 0 &&
                 ` Monnaie à rendre : ${formaterFCFA(derniereVente.monnaieRendue)}.`}
+              {derniereVente.credit &&
+                ` ${formaterFCFA(derniereVente.credit.montant)} à crédit pour ${derniereVente.credit.client}, à régler avant le ${formaterDate(derniereVente.credit.echeance)}.`}
               {impression?.venteId === derniereVente.venteId &&
                 impression.etat === 'en_cours' &&
                 ' Impression du ticket…'}
@@ -620,8 +628,7 @@ export function PageCaisse(): React.JSX.Element {
           <button className="btn" disabled={!peutEncaisser} onClick={() => setPaiement('flooz')}>
             Flooz
           </button>
-          {/* Vente à crédit : avec la fiche client (A11). */}
-          <button className="btn" disabled>
+          <button className="btn" disabled={!peutEncaisser} onClick={() => setChoixClientOuvert(true)}>
             Crédit
           </button>
         </div>
@@ -828,12 +835,27 @@ export function PageCaisse(): React.JSX.Element {
           )
         })()}
 
+      {choixClientOuvert && (
+        <FenetreChoixClient
+          onChoisir={(client) => {
+            setChoixClientOuvert(false)
+            setClientCredit(client)
+            setPaiement('especes')
+          }}
+          onFermer={() => setChoixClientOuvert(false)}
+        />
+      )}
+
       {paiement !== null && (
         <FenetrePaiement
           total={total}
           modeInitial={paiement}
+          clientCredit={clientCredit ?? undefined}
           onEncaisser={encaisser}
-          onFermer={() => setPaiement(null)}
+          onFermer={() => {
+            setPaiement(null)
+            setClientCredit(null)
+          }}
         />
       )}
     </div>

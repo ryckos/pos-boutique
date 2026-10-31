@@ -44,5 +44,6 @@ export function aRendre(r: Pick<ResultatAnnulation, 'especesARendre' | 'autresAR
 export function messageAnnulation(r: ResultatAnnulation): string {
   const tiroir =
     r.especesARendre > 0 && !r.tiroirOuvert ? ' Le tiroir ne s’est pas ouvert : ouvrez-le à la clé.' : ''
-  return [`Ticket ${r.numeroTicket} annulé.`, ...aRendre(r)].join(' ') + tiroir
+  const credit = r.creditAnnule > 0 ? [`Le crédit de ${formaterFCFA(r.creditAnnule)} est effacé.`] : []
+  return [`Ticket ${r.numeroTicket} annulé.`, ...aRendre(r), ...credit].join(' ') + tiroir
 }
