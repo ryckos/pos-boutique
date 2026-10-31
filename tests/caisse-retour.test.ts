@@ -96,7 +96,8 @@ describe('Retour client (A7) — jeudi du scénario', () => {
       montant: 600,
       mode: 'especes',
       avoir: null,
-      tiroirOuvert: false
+      tiroirOuvert: false,
+      creanceReduite: 0
     })
     // Un ticket de type retour lié au ticket d'origine, en négatif (600 F à 18 % : HT 508, TVA 92).
     expect(

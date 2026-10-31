@@ -139,6 +139,34 @@ export function rapportSession(db: Db, sessionId: number): RapportCaisse {
     sessionId
   )!
 
+  // Créances encaissées (A12) : un paiement annulé ne compte plus. Les espèces sont déjà dans les
+  // mouvements ci-dessous ; ce bloc montre aussi le mobile money, qui n'entre jamais dans le tiroir.
+  const encaisse = toutes<{ mode: string; total: number }>(
+    db,
+    `SELECT e.mode, SUM(e.montant) AS total FROM encaissements_creances e
+      WHERE e.session_caisse_id = ?
+        AND (e.numero_recu IS NULL
+             OR NOT EXISTS (SELECT 1 FROM annulations_encaissements a WHERE a.numero_recu = e.numero_recu))
+      GROUP BY e.mode`,
+    sessionId
+  )
+  const encaisseMode = (mode: string): number => encaisse.find((e) => e.mode === mode)?.total ?? 0
+  const creancesEncaissees = {
+    nombre:
+      une<{ n: number }>(
+        db,
+        `SELECT COUNT(DISTINCT COALESCE(e.numero_recu, e.id)) AS n FROM encaissements_creances e
+          WHERE e.session_caisse_id = ?
+            AND (e.numero_recu IS NULL
+                 OR NOT EXISTS (SELECT 1 FROM annulations_encaissements a WHERE a.numero_recu = e.numero_recu))`,
+        sessionId
+      )?.n ?? 0,
+    especes: encaisseMode('especes'),
+    tmoney: encaisseMode('tmoney'),
+    flooz: encaisseMode('flooz'),
+    total: encaisse.reduce((somme, e) => somme + e.total, 0)
+  }
+
   // Un mouvement annulé reste listé, suivi de son contre-mouvement : les deux s'annulent au total.
   const mouvements = toutes<{
     sens: 'entree' | 'sortie'
@@ -178,6 +206,7 @@ export function rapportSession(db: Db, sessionId: number): RapportCaisse {
     totauxParMode,
     totalVentes: parMode.reduce((somme, p) => somme + p.total, 0),
     remboursements,
+    creancesEncaissees,
     fondOuverture: s.fondOuverture,
     ventesEspeces,
     mouvements,

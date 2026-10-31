@@ -761,6 +761,28 @@ Page de gestion (§ 5.12) à l'adresse `/clients`, menu « Clients ».
 - **Avoirs** (A11, § 7.2) : la liste dit « Avoir en boutique : … » sous le nom ; la fiche montre le solde et le
   tableau des avoirs (numéro AV-…, date, retour d'origine, montant, dépensé, solde).
 
+### 5.25 Recouvrement (Dev A — A12)
+- **Dans la page Clients (caissière et gérant)** : un client qui doit de l'argent a l'icône **« Encaisser un
+  paiement »** (aussi dans sa fiche) et tous ont **« Historique »**.
+  - **Fenêtre « Encaisser un paiement — <nom> »** : ce que le client doit (« sur 3 crédits »), choix facultatif du
+    crédit à payer (« Le plus ancien d'abord » par défaut), montant (pré-rempli avec tout ce qu'il doit), mode en
+    trois boutons (Espèces, TMoney, Flooz), référence du transfert en mobile money, phrase « Paiement partiel : il
+    restera … » et rappel de ce que fait le mode choisi. Bouton **« Encaisser »**. Message après : « 1 000 F
+    encaissés de Mme Abra (reçu EC-…). Il reste 2 500 F à payer. », avec « Le reçu n'est pas sorti » et « Le tiroir
+    ne s'est pas ouvert : ouvrez-le à la clé » si besoin.
+  - **Fenêtre « Historique de <nom> »** : date, opération (vente à crédit, paiement EC-…, paiement annulé, retour
+    R-… sur le ticket), montant (+ / −) et « Il doit ensuite ». Le gérant a un bouton **« Annuler »** sur un paiement
+    de sa caisse ouverte : motif obligatoire, bouton rouge « Annuler le paiement ».
+- **Page « Recouvrement » (gérant, `/recouvrement`)** : en-tête « Reste à encaisser » et « En retard », bouton
+  **« Imprimer la liste de relance »** (désactivé s'il n'y a personne à relancer). Deux onglets :
+  - **À relancer (n)** : client, téléphone, tickets en retard (échéance), montant échu, jours de retard, pastille
+    d'ancienneté ;
+  - **Balance âgée** : une ligne par client, colonnes 0 à 30 jours, 31 à 60 jours, plus de 60 jours, total dû, et
+    pied de tableau avec les totaux.
+- **Retour client sur un ticket à crédit** (§ 5.10) : la fenêtre ajoute « Dette du client réduite de … » au-dessus
+  de « À rembourser » ; le message après retour le répète.
+- **Clôture de caisse** (§ 5.4) : carte « Créances encaissées » (si > 0), les espèces étant déjà dans le tiroir.
+
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
 - Les messages d'erreur portent `role="alert"`.

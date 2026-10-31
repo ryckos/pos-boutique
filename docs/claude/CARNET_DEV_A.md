@@ -18,6 +18,78 @@ Format d'une entrée :
 
 ---
 
+## 2026-11-01 — a/recouvrement — A12 Recouvrement (codée, PR à ouvrir)
+**Fait** (une seule PR, voulue ainsi par Dev A ; rien n'est encore commité au moment d'écrire ces lignes) :
+- **Début de session** : `test` à jour (PR #85 fusionnée) ; 11 branches locales fusionnées et 15 branches distantes
+  `a/…` supprimées ; `npm run verifier` vert (785 tests). Essai à la main d'A11 **toujours pas fait**.
+- **Règles validées par Dev A** (`REGLES_METIER` § 7.3) : la caissière **et** le gérant encaissent, sur **leur**
+  caisse ouverte ; espèces / TMoney / Flooz (référence obligatoire en mobile money) ; paiement sur la créance
+  choisie, sinon la plus ancienne d'abord, réparti sur plusieurs créances, jamais plus que le dû, partiel permis ;
+  espèces = entrée de caisse `encaissement_creance`, mobile money = jamais dans le tiroir ; annulation d'un
+  paiement par le gérant seul, motif, caisse encore ouverte ; balance âgée par ancienneté de la créance ; liste de
+  relance = clients avec une échéance dépassée ; **retour sur ticket à crédit accepté** : la part à crédit réduit la
+  créance (prorata du ticket, jamais plus que le dû), seul le reste se rembourse.
+- **Migration** `20261101_1400_recouvrement.sql` : `encaissements_creances.numero_recu` (reçu EC-AAAA-NNNNNN partagé
+  par les lignes d'un paiement), tables `annulations_encaissements` et `reductions_creances`, vue
+  `v_creances_clients` recalculée (statut `soldee` / `ouverte` / `annulee` calculé, `total_reduit`), triggers
+  (jamais plus que le restant dû, ni UPDATE ni DELETE). `MODELE_DONNEES` à jour.
+- **Service** `modules/clients/service-recouvrement.ts` : `encaisserCreance`, `annulerEncaissement`, `lireRecu`,
+  `historiqueClient`, `balanceAgee`, `listeRelance` ; règles pures `src/shared/recouvrement.ts`
+  (`imputerPaiement`, `trancheAnciennete`) et `repartirRetourCredit` dans `src/shared/retour.ts`.
+- **Retour** (`service-retour.ts`) : refus des tickets à crédit levé ; `RetourEnregistre.montant` = argent rendu
+  (0 si la dette absorbe tout), `creanceReduite` ajouté ; `TicketRetour.credit` ; ticket de retour « Dette du client
+  réduite de … ». **X / Z / clôture** : `RapportCaisse.creancesEncaissees` (bloc « Créances encaissées »).
+- **Matériel** `materiel/recouvrement.ts` : reçu de paiement (48 colonnes, tiroir dans le même envoi pour les
+  espèces) et liste de relance imprimable. Reçu non sorti = paiement gardé, l'écran le dit.
+- **Écrans** : `FenetreEncaissement`, `FenetreHistorique` (annulation par le gérant), icônes « Encaisser » et
+  « Historique » dans la page Clients, page `/recouvrement` (gérant : « À relancer » et « Balance âgée », bouton
+  « Imprimer la liste de relance »), ligne « Dette du client réduite de » dans la fenêtre de retour, carte
+  « Créances encaissées » sur la clôture. `UI_UX` § 5.25.
+- **Tests** : `tests/recouvrement.test.ts` (22), 2 dans `clients-ecran.test.ts` ; test de refus du retour à crédit
+  supprimé de `caisse-credit.test.ts` (remplacé). `npm run verifier` : **808 tests verts**, typecheck OK.
+- Libellés du journal ajoutés dans `src/shared/audit.ts` (fichier de Dev B) : `encaissement_creance`,
+  `annulation_encaissement`, clés `recu`, `reference`, `tickets`, `resteDu`, `creanceReduite`.
+
+**En cours** : A12 🔄 dans `ETAT_AVANCEMENT.md`. Branche `a/recouvrement` : tout le travail est dans l'arbre, à
+commiter puis pousser. PR vers `test` à ouvrir **après l'essai à la main**.
+
+**Prochaine étape** :
+1. `git add -A && git commit` (message : `feat(caisse): recouvrement des créances, reçu, balance âgée, relance,
+   retour sur ticket à crédit (A12)`), `git push -u origin a/recouvrement`.
+2. **Essai à la main** (`npm run dev`, Kossi `5678`) : client avec plafond, vente à crédit, paiement partiel en
+   espèces (reçu, tiroir, X), paiement réparti sur deux crédits, TMoney avec référence, annulation par le gérant,
+   historique, page Recouvrement (vieillir une créance impose de passer par la base : voir le test), retour sur
+   ticket à crédit (tout à crédit, mixte), clôture (carte « Créances encaissées »). Plus l'essai A11 non fait
+   (crédit, avoir, facture avec client enregistré).
+3. Ouvrir la **PR vers `test`** (texte donné à Dev A dans la session : zone partagée = migration + contrats
+   `clients.ts` / `caisse.ts` + libellés `audit.ts`), relue par Dev B ; après fusion : A12 ✅, ligne au journal
+   (déjà écrite, à passer de « PR à ouvrir » à « PR n° … »), supprimer la branche.
+4. Ensuite **A13 Écran client définitif** (`/tache A13`), puis Phase 4 (A14 reste, A15 : `stock:alertesAccueil`
+   de Dev B est disponible).
+
+**Questions ouvertes** :
+- Pour Dev A : le gérant doit-il pouvoir encaisser sans avoir sa propre caisse (prendre la seule caisse ouverte) ?
+  Aujourd'hui : non, comme pour un retour.
+- Pour la cliente : un avoir expire-t-il ? marge sur TTC ou HT ; délai limite d'un retour ; mentions légales de
+  la facture ; ligne « tickets annulés » sur X / Z ; D-A1 (stock négatif), D-A3 (plafond de remise).
+- Essai sur le terminal toujours à faire (Xprinter : reçu EC-…, liste de relance, ticket à crédit en deux
+  exemplaires, ticket de retour ; tiroir réel ; 15,6″ ; douchette).
+- Sur ce poste : `.claude/settings.json` peut être modifié localement (`git checkout .claude/settings.json`).
+
+**Contrats** :
+- **Livrés (Dev A)** : canaux `clients:encaisserCreance`, `annulerEncaissement`, `historique`, `balanceAgee`,
+  `listeRelance`, `imprimerRelance` ; champs ajoutés (sans impact hors tests qui construisent ces objets) :
+  `CreanceClient.reduit`, `TicketRetour.credit`, `RetourEnregistre.creanceReduite`,
+  `RapportCaisse.creancesEncaissees`.
+- **Pour Dev B (rapports, B14, A14)** : un paiement de créance n'est **pas** une vente ; la dette se lit dans
+  `v_creances_clients` (colonnes `total_encaisse` hors paiements annulés, `total_reduit`, `restant_du`, `statut`).
+  Un retour sur ticket à crédit ne crée **aucun** paiement `credit` négatif : seul l'argent rendu apparaît dans
+  `paiements` ; la valeur totale du retour reste dans `ventes.total_ttc` (négatif). Le mobile money encaissé sur
+  une créance est dans `encaissements_creances` (mode, `session_caisse_id`), pas dans `mouvements_caisse`.
+- **Zone partagée** : migration `20261101_1400_recouvrement.sql` (recrée la vue `v_creances_clients`) et
+  `src/shared/audit.ts` (libellés), à annoncer à Dev B dans la PR.
+- Attendu de Dev B : rien.
+
 ## 2026-11-01 — a/clients-ecran, a/clients-credit-caisse, a/clients-avoir-facture — A11 terminée (parties 3 à 6)
 **Fait** (toutes ces PR sont fusionnées dans `test`, dernière : #84) :
 - **Début de session** : PR #79 (parties 1 et 2) fusionnée par Dev B ; journal des fusions mis à jour (A14 partie 1, A11).
@@ -614,52 +686,3 @@ supprimer (`git tag -d sauvegarde-avant-rebase-a3`).
   pour B13 une forme **sans** utilisateur (`sessionOuverte(db)`, fin S10) : à discuter en A8.
 - Attendus inchangés : `catalogue:conditionnementsProduit` (fin S4), `categorie` dans
   `ArticleCatalogue` (avec B2.1), `parametres:lire` (fin S5).
-
-## 2026-09-23 (suite) — a/caisse-grille — A1.2 Grille, recherche, conditionnement, attente (partie 1)
-**Fait** :
-- A1.1 fusionnée (PR #3) et passée à ✅. Correctif des droits demandé par la revue de Dev B fusionné
-  (PR #5) : `materiel:imprimantes` exige gérant, `materiel:ouvrirEcranClient` exige une session.
-  Contrat « contrôle des rôles » passé à ✅.
-- A1.2 partie 1 (2 commits `ae66392`, `e0b9a3e`) :
-  - `modules/caisse/attente.ts` : tickets en attente (`mettreEnAttente`, `reprendre`, `resumeAttente`,
-    `reducteurCaisse`). **Choix validés par Dev A** : reprendre un ticket alors que le courant est
-    rempli **permute** les deux ; ticket courant et tickets en attente gardés **en mémoire par
-    caissière** (Map au niveau du module de `PageCaisse`), survivent au changement d'écran et à la
-    déconnexion, perdus à la fermeture de l'application, jamais en base.
-  - `modules/caisse/clavier.ts` : F2 recherche, F4 encaisser (sans effet avant A2), F8 attente,
-    Suppr, Échap (désélectionne), + / −. Ignorés dans les champs et quand la recherche est ouverte.
-  - `FenetreRecherche.tsx` : nombre tapé → `catalogue:rechercherCode` d'abord (PLU `101` = baguette),
-    sinon `catalogue:rechercher` ; 200 ms après la dernière frappe ; flèches, Entrée, Échap.
-  - `changerConditionnement()` dans `panier.ts` (quantité conservée, fusion si déjà au ticket, refus si
-    autre produit) : **logique et tests seulement**, pas de bouton tant que le canal de Dev B manque.
-  - `styles.css` (zone partagée) : `.caisse-recherche`, `.caisse-ticket-actions`, `.attente-*`,
-    `.voile`, `.fenetre*`, `.recherche-*`, nouveau jeton `--voile`.
-  - 12 tests de plus (76 au total), build OK, essai manuel concluant (recherche, attente, raccourcis,
-    mémoire, vente mixte < 15 s).
-
-**En cours** : A1.2 🔄 — PR « partie 1 » vers `test` ouverte / en relecture par Dev B.
-
-**Prochaine étape** :
-1. Faire fusionner la PR partie 1 (relecture Dev B). Supprimer la branche.
-2. **Partie 2** dès qu'un des contrats de Dev B arrive dans `test` (nouvelle branche depuis `test`,
-   ex. `a/caisse-conditionnement`) :
-   - `catalogue:conditionnementsProduit` → bouton « Changer le conditionnement » dans
-     `.ticket-actions` de la ligne sélectionnée ; petite fenêtre listant les conditionnements ; action
-     `{ type: 'changerConditionnement', ancienId, article }` déjà prête dans le réducteur.
-   - `categorie` dans `ArticleCatalogue` → onglets de catégories au-dessus de la grille (« Tout » +
-     une par catégorie), filtre local sans nouvelle requête.
-   Puis A1.2 → ✅.
-3. En attendant les contrats : démarrer **A2 — Encaissement et `caisse:enregistrerVente`** (`/tache A2`),
-   rendez-vous à livrer à Dev B fin S5.
-
-**Questions ouvertes** :
-- Essai à la vraie douchette sur le terminal (A1.1) : toujours à faire.
-- D-A1, D-A2, D-A3 : inchangées.
-
-**Contrats** :
-- Demandé à Dev B (2026-09-23) : `categorie: string | null` dans `ArticleCatalogue` (au moins dans
-  `catalogue:grille`), avec B2.1 ; ordre alphabétique suffisant, `ordreCategorie` bienvenu.
-  Ligne ajoutée aux rendez-vous de `ETAT_AVANCEMENT.md`.
-- Rappel fin S4 : `catalogue:conditionnementsProduit` attendu sous la forme
-  `{ requete: { produitId: number }; reponse: ArticleCatalogue[] }`, unité en premier.
-- Aucun contrat livré ni modifié par Dev A.

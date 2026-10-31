@@ -37,6 +37,22 @@ function lignesRetours(r: RapportCaisse['remboursements']): LigneImprimee[] {
   ]
 }
 
+/** Paiements de créances reçus pendant la session (A12), par mode ; rien s'il n'y en a pas eu. */
+function lignesCreances(c: RapportCaisse['creancesEncaissees']): LigneImprimee[] {
+  if (c.nombre === 0) return []
+  const modes: [string, number][] = [
+    ['En espèces', c.especes],
+    ['Par TMoney', c.tmoney],
+    ['Par Flooz', c.flooz]
+  ]
+  return [
+    { texte: `CRÉANCES ENCAISSÉES (${c.nombre})`, gras: true },
+    ...modes.filter(([, m]) => m > 0).map(([g, m]) => ({ texte: colonnes(g, montantTicket(m)) })),
+    { texte: colonnes('Total encaissé', montantTicket(c.total)), gras: true },
+    SEPARATEUR
+  ]
+}
+
 export function lignesRapport(
   r: RapportCaisse,
   entete: EnteteTicket,
@@ -70,6 +86,7 @@ export function lignesRapport(
   l.push(SEPARATEUR)
 
   l.push(...lignesRetours(r.remboursements))
+  l.push(...lignesCreances(r.creancesEncaissees))
 
   // Tiret ordinaire pour les sorties : le signe moins typographique n'existe dans aucune page.
   l.push({ texte: 'ESPÈCES', gras: true })

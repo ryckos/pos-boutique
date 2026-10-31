@@ -49,7 +49,7 @@ export interface TicketAImprimer {
    * Retour client (A7) : montants négatifs (lignes, total, TVA, paiements = ce qui est rendu), ticket
    * d'origine, motif et sort du produit.
    */
-  retour?: { ticketOrigine: string; motif: string; sort: string } | null
+  retour?: { ticketOrigine: string; motif: string; sort: string; creanceReduite?: number } | null
   /** Avoir en boutique créé par ce retour (A11, § 7.2) : numéro, montant, client et son solde total. */
   avoir?: { numero: string; montant: number; client: string; solde: number } | null
   /** Part laissée à crédit (A11) : client, montant, échéance 'AAAA-MM-JJ'. */
@@ -135,7 +135,11 @@ function lignesRetour(r: NonNullable<TicketAImprimer['retour']>): LigneImprimee[
   return [
     { texte: `Sur le ticket ${r.ticketOrigine}` },
     ...couper(`Motif : ${r.motif}`).map((texte) => ({ texte })),
-    { texte: `Produit : ${r.sort}` }
+    { texte: `Produit : ${r.sort}` },
+    // Retour sur un ticket à crédit (A12) : la part qui n'est pas remboursée réduit la dette du client.
+    ...(r.creanceReduite
+      ? [{ texte: colonnes('Dette du client réduite de', montantTicket(r.creanceReduite)), gras: true }]
+      : [])
   ]
 }
 

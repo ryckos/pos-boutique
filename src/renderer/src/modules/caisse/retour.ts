@@ -11,6 +11,7 @@ import {
   montantRetourLigne,
   type MotifRetour,
   quantiteRetournable,
+  repartirRetourCredit,
   type SortRetour,
   texteMotifRetour
 } from '@shared/retour'
@@ -60,6 +61,18 @@ export function montantLigne(ticket: TicketRetour, selection: Selection, ligneId
 
 export function montantARendre(ticket: TicketRetour, selection: Selection): number {
   return lignesChoisies(ticket, selection).reduce((s, l) => s + montantLigne(ticket, selection, l.ligneId), 0)
+}
+
+/**
+ * Ticket à crédit (A12) : la part qui réduit la dette du client et ce qu'il reste à lui rembourser,
+ * tels que le service les calculera.
+ */
+export function repartitionRetour(
+  ticket: TicketRetour,
+  selection: Selection
+): { valeur: number; creanceReduite: number; aRembourser: number } {
+  const valeur = montantARendre(ticket, selection)
+  return { valeur, ...repartirRetourCredit(ticket.credit, valeur) }
 }
 
 /**
@@ -124,13 +137,15 @@ export function versRequete(s: SaisieRetour): RequeteRetour {
 /** Message affiché dans la caisse après le retour. */
 export function messageRetour(r: RetourEnregistre): string {
   const debut = `Retour ${r.numeroRetour} enregistré (ticket ${r.numeroTicketOrigine}).`
-  if (r.montant === 0) return `${debut} Rien à rembourser.`
+  const dette =
+    r.creanceReduite > 0 ? ` La dette du client est réduite de ${formaterFCFA(r.creanceReduite)}.` : ''
+  if (r.montant === 0) return `${debut}${dette} Rien à rembourser.`
   // Le transfert mobile money est déjà fait : sa référence a été saisie dans la fenêtre.
   if (r.avoir) {
-    return `${debut} ${formaterFCFA(r.montant)} versés en avoir ${r.avoir.numero} au nom de ${r.avoir.client} (solde : ${formaterFCFA(r.avoir.soldeClient)}).`
+    return `${debut}${dette} ${formaterFCFA(r.montant)} versés en avoir ${r.avoir.numero} au nom de ${r.avoir.client} (solde : ${formaterFCFA(r.avoir.soldeClient)}).`
   }
   if (r.mode !== 'especes')
-    return `${debut} ${formaterFCFA(r.montant)} remboursés par ${libelleMode(r.mode)}.`
+    return `${debut}${dette} ${formaterFCFA(r.montant)} remboursés par ${libelleMode(r.mode)}.`
   const tiroir = r.tiroirOuvert ? '' : ' Le tiroir ne s’est pas ouvert : ouvrez-le à la clé.'
-  return `${debut} Rendez ${formaterFCFA(r.montant)} en espèces.${tiroir}`
+  return `${debut}${dette} Rendez ${formaterFCFA(r.montant)} en espèces.${tiroir}`
 }

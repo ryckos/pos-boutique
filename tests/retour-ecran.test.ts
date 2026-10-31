@@ -57,7 +57,8 @@ const TICKET: TicketRetour = {
   ],
   retoursPrecedents: ['R-2026-000001'],
   raisonRefus: null,
-  clientAvoir: null
+  clientAvoir: null,
+  credit: null
 }
 
 const saisie = (autres: Partial<SaisieRetour> = {}): SaisieRetour => ({
@@ -140,7 +141,8 @@ describe('Fenêtre « Retour client » (A7)', () => {
       montant: 600,
       mode: 'especes' as const,
       avoir: null,
-      tiroirOuvert: true
+      tiroirOuvert: true,
+      creanceReduite: 0
     }
     expect(messageRetour(r)).toMatch(
       /^Retour R-2026-000002 enregistré \(ticket T-2026-000158\)\. Rendez 600\sF en espèces\.$/
@@ -171,7 +173,8 @@ describe('Fenêtre « Retour client » (A7)', () => {
       montant: 600,
       mode: 'avoir',
       avoir: { numero: 'AV-2026-000001', montant: 600, client: 'Mme Abra', soldeClient: 600 },
-      tiroirOuvert: false
+      tiroirOuvert: false,
+      creanceReduite: 0
     })
     expect(m).toContain('en avoir AV-2026-000001 au nom de Mme Abra')
     expect(m).not.toMatch(/tiroir/)

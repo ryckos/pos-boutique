@@ -17,6 +17,9 @@
  * - stock : un `retour_client` (+) sur les lots servis à la vente, le dernier servi d'abord, au coût de
  *   la sortie d'origine ; « Détruire » ajoute un `casse` (−) sur le même lot. Le CUMP ne bouge pas ;
  * - journal `retour_client`. Le tiroir s'ouvre ensuite (ipc.ts) si le remboursement est en espèces.
+ * - ticket vendu à crédit (A12, § 6.8) : la part du retour qui était à crédit réduit d'abord la créance
+ *   restante (`reductions_creances`, au prorata du ticket, jamais plus que le client doit encore) ;
+ *   seul le reste se rembourse, dans le mode choisi. Rien ne sort du tiroir pour la part de la dette.
  * Le ticket d'origine n'est jamais modifié.
  */
 import type { LigneTicketRetour, RequeteRetour, RetourEnregistre, TicketRetour } from '@shared/ipc/caisse'
@@ -28,7 +31,9 @@ import {
   montantRetourLigne,
   numeroTicketComplet,
   quantiteRetournable,
-  texteMotifRetour
+  repartirRetourCredit,
+  texteMotifRetour,
+  type CreditDuTicket
 } from '@shared/retour'
 import type { UtilisateurConnecte } from '@shared/types'
 import type { Db } from '../../db/connexion'
@@ -151,10 +156,6 @@ function raisonRefus(db: Db, u: UtilisateurConnecte, v: VenteOrigine, lignes: Li
   }
   if (v.statut === 'annulee') return `Le ticket ${v.numeroTicket} est annulé : il n’y a rien à retourner.`
   if (v.statut !== 'terminee') return `Le ticket ${v.numeroTicket} n’est pas encaissé.`
-  // Le rendu devrait d'abord réduire la créance : réglé avec le recouvrement (A12, validé le 2026-10-28).
-  if (v.estCredit) {
-    return `Le ticket ${v.numeroTicket} est à crédit : son retour n’est pas encore possible, voyez le gérant.`
-  }
   if (lignes.every((l) => quantiteRetournable(l) <= 0)) {
     return `Tous les articles du ticket ${v.numeroTicket} ont déjà été retournés.`
   }
@@ -199,7 +200,25 @@ export function consulterRetour(db: Db, u: UtilisateurConnecte, numeroTicket: st
       v.id
     ).map((r) => r.numero),
     raisonRefus: raisonRefus(db, u, v, lignes),
-    clientAvoir: payeParAvoir(db, v)
+    clientAvoir: payeParAvoir(db, v),
+    credit: creditDuTicket(db, v, lignes)
+  }
+}
+
+/** La part à crédit du ticket et ce qui reste dû dessus, null pour un ticket sans crédit. */
+function creditDuTicket(db: Db, v: VenteOrigine, lignes: LigneOrigine[]): CreditDuTicket | null {
+  if (!v.estCredit) return null
+  const creance = une<{ montant: number; restant: number }>(
+    db,
+    'SELECT montant_initial AS montant, restant_du AS restant FROM v_creances_clients WHERE vente_id = ?',
+    v.id
+  )
+  if (!creance) return null
+  return {
+    totalCredit: creance.montant,
+    restantCreance: creance.restant,
+    dejaRendu: lignes.reduce((s, l) => s + l.montantDejaRembourse, 0),
+    totalTtc: v.totalTtc
   }
 }
 
@@ -334,11 +353,17 @@ export function enregistrerRetour(db: Db, u: UtilisateurConnecte, demande: Reque
     })
     const montant = lignes.reduce((s, l) => s + l.montant, 0)
 
-    if (mode === 'especes' && montant > 0) {
+    // Ticket à crédit : la part de la dette réduit la créance, seul le reste est rendu au client.
+    const { creanceReduite, aRembourser } = repartirRetourCredit(
+      creditDuTicket(db, v, lignesOrigine),
+      montant
+    )
+
+    if (mode === 'especes' && aRembourser > 0) {
       const { especesTheoriques } = rapportSession(db, session.id)
-      if (montant > especesTheoriques) {
+      if (aRembourser > especesTheoriques) {
         throw new ErreurMetier(
-          `Il n’y a que ${formaterFCFA(Math.max(0, especesTheoriques))} en caisse : impossible de rendre ${formaterFCFA(montant)} en espèces. Remboursez par TMoney ou Flooz.`
+          `Il n’y a que ${formaterFCFA(Math.max(0, especesTheoriques))} en caisse : impossible de rendre ${formaterFCFA(aRembourser)} en espèces. Remboursez par TMoney ou Flooz.`
         )
       }
     }
@@ -405,20 +430,30 @@ export function enregistrerRetour(db: Db, u: UtilisateurConnecte, demande: Reque
       }
     }
 
-    // Article entièrement remisé : rien à rendre, pas de paiement à 0 F.
-    if (montant > 0) {
+    if (creanceReduite > 0) {
+      const creance = une<{ id: number }>(db, 'SELECT id FROM creances WHERE vente_id = ?', v.id)!
+      executer(
+        db,
+        'INSERT INTO reductions_creances (creance_id, retour_id, montant) VALUES (?, ?, ?)',
+        creance.id,
+        retourId,
+        creanceReduite
+      )
+    }
+    // Article entièrement remisé, ou retour absorbé par la dette : pas de paiement à 0 F.
+    if (aRembourser > 0) {
       executer(
         db,
         'INSERT INTO paiements (vente_id, mode, montant, reference) VALUES (?, ?, ?, ?)',
         retourId,
         mode,
-        -montant,
+        -aRembourser,
         reference
       )
     }
     const creation =
-      mode === 'avoir' && montant > 0
-        ? creerAvoir(db, { clientId: demande.clientId!, retourId, montant, utilisateurId: u.id })
+      mode === 'avoir' && aRembourser > 0
+        ? creerAvoir(db, { clientId: demande.clientId!, retourId, montant: aRembourser, utilisateurId: u.id })
         : null
     const avoir = creation && {
       numero: creation.numero,
@@ -435,7 +470,8 @@ export function enregistrerRetour(db: Db, u: UtilisateurConnecte, demande: Reque
       apres: {
         numeroRetour,
         ticketOrigine: v.numeroTicket,
-        montant,
+        montant: aRembourser,
+        ...(creanceReduite > 0 && { creanceReduite }),
         mode,
         ...(avoir && { avoir: avoir.numero, client: avoir.client }),
         motif,
@@ -448,10 +484,11 @@ export function enregistrerRetour(db: Db, u: UtilisateurConnecte, demande: Reque
       venteId: retourId,
       numeroRetour,
       numeroTicketOrigine: v.numeroTicket,
-      montant,
+      montant: aRembourser,
       mode,
       avoir,
-      tiroirOuvert: false
+      tiroirOuvert: false,
+      creanceReduite
     }
   })
 }

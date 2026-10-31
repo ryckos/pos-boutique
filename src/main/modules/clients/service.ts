@@ -110,7 +110,8 @@ export function ficheClient(db: Db, clientId: number): FicheClient {
   const creances = toutes<Omit<CreanceClient, 'enRetard'> & { enRetard: number }>(
     db,
     `SELECT v.creance_id AS id, v.vente_id AS venteId, ve.numero_ticket AS numeroTicket, v.cree_le AS creeLe,
-            v.montant_initial AS montantInitial, v.total_encaisse AS encaisse, v.restant_du AS restantDu,
+            v.montant_initial AS montantInitial, v.total_encaisse AS encaisse, v.total_reduit AS reduit,
+            v.restant_du AS restantDu,
             v.date_echeance AS dateEcheance, v.statut,
             (v.restant_du > 0 AND v.date_echeance < date('now','localtime')) AS enRetard
        FROM v_creances_clients v

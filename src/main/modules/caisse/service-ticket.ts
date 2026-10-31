@@ -134,7 +134,10 @@ export function lireTicket(db: Db, venteId: number): TicketAImprimer {
       ? {
           ticketOrigine: v.ticketOrigine ?? '',
           motif: v.motifRetour ?? '',
-          sort: v.sortRetour ? LIBELLES_SORT_RETOUR[v.sortRetour] : ''
+          sort: v.sortRetour ? LIBELLES_SORT_RETOUR[v.sortRetour] : '',
+          creanceReduite:
+            une<{ montant: number }>(db, 'SELECT montant FROM reductions_creances WHERE retour_id = ?', venteId)
+              ?.montant ?? 0
         }
       : null
   }

@@ -61,7 +61,9 @@ document à jour.
 | `creances`               | Née d'une vente à crédit, `montant_initial`, `date_echeance`, `statut` ; annulation par `annulee_le`, `annulee_par`, `motif_annulation` (A11 : statut `annulee` exposé par la vue) ; ni suppression, ni changement de montant, vente ou client, annulation définitive (triggers) |
 | `avoirs`                 | Avoir en boutique (A11, § 7.2) : `numero` AV-…, `client_id`, `montant`, `retour_id` (unique : un avoir par retour) ; ni modification ni suppression (triggers) |
 | `utilisations_avoir`     | Dépense d'un avoir (`montant` > 0, `vente_id`) ou son rétablissement (`montant` < 0, `utilisation_origine_id` unique) ; ni modification ni suppression ; un trigger refuse de dépasser le solde |
-| `encaissements_creances` | Paiements de créances, rattachés à une session de caisse ; ni modification ni suppression (triggers) |
+| `encaissements_creances` | Paiements de créances, rattachés à une session de caisse ; `numero_recu` EC-… partagé par les lignes d'un même paiement (A12) ; ni modification ni suppression ; un trigger refuse de dépasser le restant dû |
+| `annulations_encaissements` | Annulation d'un reçu (A12, § 7.3) : `numero_recu` unique, `motif`, gérant, session ; ni modification ni suppression |
+| `reductions_creances`    | Retour client sur un ticket à crédit (A12) : `creance_id`, `retour_id` unique, `montant` > 0 ; un trigger refuse de dépasser le restant dû ; ni modification ni suppression |
 
 ### Dépenses et inventaires — Dev B
 | Table                | Rôle                                                                  |
@@ -80,7 +82,7 @@ document à jour.
 | `v_stock_lots`         | Quantité restante par lot                                     | B (FEFO)     |
 | `v_peremptions`        | Lots en stock, avec jours restants et valeur en jeu           | B            |
 | `v_dettes_fournisseurs`| Achats, règlements non annulés, avoirs reçus et solde dû par fournisseur (négatif = avoir à valoir) | B |
-| `v_creances_clients`   | Encaissé et restant dû par créance                            | A            |
+| `v_creances_clients`   | Encaissé (hors paiements annulés), réduit par retour, restant dû et statut par créance | A            |
 | `v_avoirs_clients`     | Utilisé et solde par avoir en boutique                        | A            |
 
 ## Triggers de protection

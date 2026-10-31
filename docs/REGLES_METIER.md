@@ -632,7 +632,7 @@ cliente (D-A3) :
   remisées de 100 F (950 F payés) rendues une à une → 316, 316, 318 F.
 - **Remboursement** : espèces, TMoney ou Flooz, au choix (le mode d'origine est proposé). Référence du
   transfert obligatoire en mobile money. En espèces, **pas plus que les espèces théoriques du tiroir**
-  (comme toute sortie, § 6.10). L'**avoir en boutique** attend la fiche client (A11).
+  (comme toute sortie, § 6.10). L'**avoir en boutique** : voir § 7.2. Ticket **à crédit** : voir § 7.3.
 - **Le retour** : numéro **`R-AAAA-NNNNNN`**, `type = 'retour'`, montants **négatifs** (lignes,
   HT/TVA/TTC ventilés comme à la vente, paiement), motif en clair (`motif_retour`) et sort
   (`sort_retour`). Le ticket d'origine n'est jamais modifié. Rien n'est écrit dans `mouvements_caisse` :
@@ -809,8 +809,7 @@ repart à 1 chaque année.
   en **deux exemplaires** (client, et boutique qui garde la copie signée).
 - **Annulation d'un ticket à crédit** (§ 6.7) : la créance est annulée (`annulee_le`, motif), sauf si un
   encaissement a déjà eu lieu sur elle (refus).
-- **Retour sur un ticket à crédit** (§ 6.8) : refusé jusqu'au recouvrement (A12), « Ce ticket est à
-  crédit : voyez le gérant ».
+- **Retour sur un ticket à crédit** (§ 6.8) : accepté depuis A12, la part à crédit réduit la dette (§ 7.3).
 - **Avoir en boutique** (reporté depuis A7) : dernière partie d'A11.
 - Journal : `creation_client`, `modification_client`, `plafond_credit`, `desactivation_client`,
   `vente_credit` (`numeroTicket`, `client`, `montant`, `echeance`).
@@ -839,6 +838,43 @@ repart à 1 chaque année.
   du ticket (le remboursement ne peut pas sortir en argent ce que le client a payé en avoir).
 - **Un client qui a un solde d'avoir ne se désactive pas.**
 - Journal : le `retour_client` porte `avoir` (numéro) et `client` ; la dépense se lit dans le paiement du ticket.
+
+### 7.3 Recouvrement des créances (validé par Dev A, 2026-11-01, A12)
+- **Qui encaisse** : la caissière comme le gérant, sur **leur** caisse ouverte (« Ouvrez votre caisse avant
+  d'encaisser un paiement »). Seul le **gérant annule** un encaissement.
+- **Modes** : espèces, TMoney, Flooz ; référence du transfert obligatoire en mobile money. Les **espèces**
+  créent une entrée de caisse `encaissement_creance` (une par créance payée, commentaire « client, ticket »),
+  donc entrent dans les espèces théoriques ; le **mobile money n'y entre jamais** (il apparaît seulement dans
+  le bloc « Créances encaissées » du X, du Z et de l'écran de clôture, par mode).
+- **Imputation** : le paiement va sur la créance choisie ; sans choix, sur la **plus ancienne d'abord**, et se
+  répartit sur plusieurs créances (chacune soldée avant la suivante, la dernière peut rester partielle).
+  **Jamais plus que ce que le client doit** (refus, et trigger de la base). Paiement partiel autorisé.
+- **Reçu** : un paiement a un numéro **`EC-AAAA-NNNNNN`** (toutes ses lignes le partagent) et sort sur
+  l'imprimante (tickets payés, reste dû par ticket, reste à payer), le tiroir s'ouvrant dans le même envoi pour
+  les espèces. Imprimante en panne : le paiement reste enregistré, l'écran le dit (jamais bloquant).
+- **Statut** d'une créance (calculé par la vue) : `soldee` quand le restant dû est 0, sinon `ouverte`, `annulee`
+  si son ticket est annulé. Restant dû = initial − encaissements non annulés − réductions par retour.
+- **Annulation d'un paiement** (gérant, **motif obligatoire**, tant que la **caisse du paiement est ouverte**,
+  une seule fois) : table `annulations_encaissements` ; les espèces ressortent par un contre-mouvement de caisse
+  (refusé s'il n'y a plus assez d'espèces, § 6.10) ; la dette est rétablie ; journal `annulation_encaissement`.
+  Rien n'est effacé. Une caisse clôturée est figée : l'annulation est refusée.
+- **Annulation d'un ticket à crédit** (§ 6.7) : toujours refusée tant qu'un encaissement existe (même annulé).
+- **Balance âgée** (gérant) : restant dû par client, classé selon l'**ancienneté de la créance** (date de la
+  vente) : 0–30, 31–60, plus de 60 jours.
+- **Liste de relance** (gérant, imprimable) : clients dont **au moins une échéance est dépassée**, du plus
+  en retard au moins en retard, avec téléphone, tickets échus et montant échu, regroupée en 0–30 / 31–60 / +60
+  jours **de retard**. Un client à jour n'y figure pas.
+- **Historique d'un client** : crédits, paiements, annulations et réductions par retour, avec ce qu'il devait
+  après chaque ligne. Une créance annulée n'y figure pas.
+- **Retour sur un ticket à crédit** (§ 6.8) : la **part du retour qui était à crédit** réduit la créance restante
+  (table `reductions_creances`, montant initial intact), calculée **au prorata du ticket** (le retour qui solde
+  le ticket prend le reste), **jamais plus que ce que le client doit encore**. Seul le reste se rembourse, dans le
+  mode choisi (espèces plafonnées au tiroir, TMoney, Flooz, avoir) ; si la dette absorbe tout, rien n'est rendu et
+  aucun paiement n'est écrit. Exemple : ticket 2 800 F espèces + 4 200 F crédit, retour de 1 750 F → 1 050 F de
+  dette en moins + 700 F rendus ; le client a déjà payé 3 000 F d'un crédit de 3 500 F et rend tout → 500 F de
+  dette en moins + 3 000 F rendus. Le ticket de retour imprime « Dette du client réduite de … ».
+- Journal : `encaissement_creance` (`recu`, `client`, `montant`, `mode`, `reference`, `tickets`, `resteDu`) et
+  `annulation_encaissement` (`recu`, `client`, `montant`, `motif`) ; le `retour_client` porte `creanceReduite`.
 
 ---
 
