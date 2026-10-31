@@ -27,6 +27,7 @@ import { contrePasser } from '../../core/mouvements'
 import { journaliser } from '../../core/audit'
 import { ErreurMetier } from '../../core/erreurs'
 import { verifierCodeCompte } from '../auth/service'
+import { retablirAvoirs } from '../clients/service-avoir'
 import { sessionOuverte } from './service-session'
 import { venteParNumero } from './service-ticket'
 
@@ -206,6 +207,9 @@ export function annulerTicket(
       )
     }
 
+    // La part payée par avoir revient au solde du client : une ligne négative liée, jamais d'effacement.
+    const avoirRetabli = retablirAvoirs(db, venteId, u.id)
+
     journaliser(db, {
       utilisateurId: u.id,
       action: 'annulation_ticket',
@@ -224,9 +228,10 @@ export function annulerTicket(
       numeroTicket: v.numeroTicket,
       especesARendre,
       autresARendre: paiements
-        .filter((p) => p.mode !== 'especes' && p.mode !== 'credit')
+        .filter((p) => p.mode !== 'especes' && p.mode !== 'credit' && p.mode !== 'avoir')
         .map((p) => ({ mode: p.mode, montant: p.montant, reference: p.reference })),
       creditAnnule,
+      avoirRetabli,
       tiroirOuvert: false
     }
   })

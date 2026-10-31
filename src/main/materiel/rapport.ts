@@ -26,7 +26,8 @@ function lignesRetours(r: RapportCaisse['remboursements']): LigneImprimee[] {
   const modes: [string, number][] = [
     ['Rendu en espèces', r.especes],
     ['Rendu par TMoney', r.tmoney],
-    ['Rendu par Flooz', r.flooz]
+    ['Rendu par Flooz', r.flooz],
+    ['Rendu en avoir', r.avoir]
   ]
   return [
     { texte: `RETOURS CLIENT (${r.nombre})`, gras: true },
@@ -63,6 +64,8 @@ export function lignesRapport(
   ligne('TMoney', r.totauxParMode.tmoney)
   ligne('Flooz', r.totauxParMode.flooz)
   ligne('Crédit', r.totauxParMode.credit)
+  // Part payée par avoir en boutique (A11) : jamais dans le tiroir, affichée seulement s'il y en a.
+  if (r.totauxParMode.avoir) ligne('Avoirs utilisés', r.totauxParMode.avoir)
   ligne('Total des ventes', r.totalVentes, true)
   l.push(SEPARATEUR)
 

@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { Db } from '../src/main/db/connexion'
 import { executer, toutes, une } from '../src/main/db/requetes'
+import { lignesRapport } from '../src/main/materiel/rapport'
+import { lignesTicket } from '../src/main/materiel/ticket'
 import { rechercherParCode } from '../src/main/modules/catalogue/service'
+import { annulerTicket } from '../src/main/modules/caisse/service-annulation'
+import { lireTicket } from '../src/main/modules/caisse/service-ticket'
 import { consulterRetour, enregistrerRetour } from '../src/main/modules/caisse/service-retour'
 import { rapportSession } from '../src/main/modules/caisse/service-cloture'
 import { ouvrirSession } from '../src/main/modules/caisse/service-session'
@@ -182,5 +186,139 @@ describe('Avoir en boutique — dépense et rétablissement', () => {
         venteId
       )
     ).toThrow(/solde de l’avoir|solde de l'avoir/)
+  })
+})
+
+describe('Avoir en boutique — paiement à la caisse (A11)', () => {
+  const ENTETE = { nom: 'Ma Boutique', adresse: ['Lomé'], pied: 'Merci' }
+
+  /** Mme Abra a un avoir de 600 F (jus rendu) ; Afi a sa caisse ouverte. */
+  function avecAvoir600(): { db: Db; abra: number; numeroAchat: string; venteId: number } {
+    const { db, abra, numero } = preparer()
+    enregistrerRetour(db, AFI, enAvoir(numero, [{ ligneId: ligne(db, numero, 'ananas'), quantite: 1 }], abra))
+    return { db, abra, numeroAchat: numero, venteId: 0 }
+  }
+
+  const deuxUnites = (db: Db) => [{ conditionnementId: id(db, UNITE), quantite: 2 }] // 700 F
+
+  it('700 F payés 600 F par avoir + 100 F en espèces : solde à 0, tiroir pour 100 F seulement', () => {
+    const { db, abra } = avecAvoir600()
+    const avant = rapportSession(db, 1)
+
+    const v = enregistrerVente(db, AFI.id, {
+      lignes: deuxUnites(db),
+      paiements: [
+        { mode: 'avoir', montant: 600 },
+        { mode: 'especes', montant: 100 }
+      ],
+      clientId: abra
+    })
+
+    expect(v.avoir).toEqual({ client: 'Mme Abra', montant: 600, soldeApres: 0 })
+    expect(soldeAvoirs(db, abra)).toBe(0)
+    const r = rapportSession(db, 1)
+    expect(r.totauxParMode.avoir).toBe(600)
+    expect(r.ventesEspeces - avant.ventesEspeces).toBe(100)
+    expect(r.especesTheoriques - avant.especesTheoriques).toBe(100)
+    expect(une(db, 'SELECT client_id AS c FROM ventes WHERE id = ?', v.venteId)).toEqual({ c: abra })
+    // Le ticket montre l'avoir comme un moyen de paiement.
+    const lignes = lignesTicket(lireTicket(db, v.venteId), ENTETE, { duplicata: false }).map((l) => l.texte)
+    expect(lignes.some((t) => t.startsWith('Avoir') && t.includes('600'))).toBe(true)
+  })
+
+  it('refus : au-delà du solde, sans client, deux parts, client désactivé — rien n’est enregistré', () => {
+    const { db, abra } = avecAvoir600()
+    const ventes = (): number => une<{ n: number }>(db, "SELECT COUNT(*) AS n FROM ventes WHERE type = 'ticket'")!.n
+    const avant = ventes()
+    const lignes = [{ conditionnementId: id(db, CARTON), quantite: 1 }] // 7 500 F
+
+    expect(() =>
+      enregistrerVente(db, AFI.id, {
+        lignes,
+        paiements: [{ mode: 'avoir', montant: 700 }, { mode: 'especes', montant: 6800 }],
+        clientId: abra
+      })
+    ).toThrow(/impossible d’en dépenser/)
+    expect(() =>
+      enregistrerVente(db, AFI.id, {
+        lignes,
+        paiements: [{ mode: 'avoir', montant: 600 }, { mode: 'especes', montant: 6900 }]
+      })
+    ).toThrow(/Choisissez le client/)
+    expect(() =>
+      enregistrerVente(db, AFI.id, {
+        lignes,
+        paiements: [
+          { mode: 'avoir', montant: 300 },
+          { mode: 'avoir', montant: 300 },
+          { mode: 'especes', montant: 6900 }
+        ],
+        clientId: abra
+      })
+    ).toThrow(/Une seule part/)
+    expect(ventes()).toBe(avant)
+    expect(soldeAvoirs(db, abra)).toBe(600)
+  })
+
+  it('l’annulation du ticket rend l’avoir au client, sans le rendre en argent', () => {
+    const { db, abra } = avecAvoir600()
+    const v = enregistrerVente(db, AFI.id, {
+      lignes: deuxUnites(db),
+      paiements: [{ mode: 'avoir', montant: 600 }, { mode: 'especes', montant: 100 }],
+      clientId: abra
+    })
+    expect(soldeAvoirs(db, abra)).toBe(0)
+
+    const r = annulerTicket(db, KOSSI, { numeroTicket: v.numeroTicket, motif: 'Erreur de client' })
+
+    expect(r.avoirRetabli).toBe(600)
+    expect(r.especesARendre).toBe(100)
+    expect(r.autresARendre).toEqual([])
+    expect(soldeAvoirs(db, abra)).toBe(600)
+    // Les paiements du ticket annulé s'annulent : somme 0 par mode.
+    expect(
+      une<{ s: number }>(db, "SELECT SUM(montant) AS s FROM paiements WHERE vente_id = ? AND mode = 'avoir'", v.venteId)!.s
+    ).toBe(0)
+  })
+
+  it('retour sur un ticket payé par avoir : seulement en avoir, au même client', () => {
+    const { db, abra } = avecAvoir600()
+    const v = enregistrerVente(db, AFI.id, {
+      lignes: deuxUnites(db),
+      paiements: [{ mode: 'avoir', montant: 600 }, { mode: 'especes', montant: 100 }],
+      clientId: abra
+    })
+    const autre = creerClient(db, KOSSI, { nom: 'M. Dossou' }).id
+    const l = ligne(db, v.numeroTicket, 'Tomate')
+    expect(consulterRetour(db, KOSSI, v.numeroTicket).clientAvoir).toEqual({ id: abra, nom: 'Mme Abra' })
+
+    expect(() =>
+      enregistrerRetour(db, AFI, enAvoir(v.numeroTicket, [{ ligneId: l, quantite: 1 }], abra, {
+        remboursement: { mode: 'especes' }
+      }))
+    ).toThrow(/remboursez en avoir/)
+    expect(() => enregistrerRetour(db, AFI, enAvoir(v.numeroTicket, [{ ligneId: l, quantite: 1 }], autre))).toThrow(
+      /Mme Abra/
+    )
+    const ok = enregistrerRetour(db, AFI, enAvoir(v.numeroTicket, [{ ligneId: l, quantite: 1 }], abra))
+    expect(ok.avoir?.client).toBe('Mme Abra')
+  })
+
+  it('le ticket de retour porte le numéro de l’avoir et le X compte le rendu en avoir à part', () => {
+    const { db, abra, numero: numeroAchat } = preparer()
+    const r = enregistrerRetour(
+      db,
+      AFI,
+      enAvoir(numeroAchat, [{ ligneId: ligne(db, numeroAchat, 'ananas'), quantite: 1 }], abra)
+    )
+    const lignes = lignesTicket(lireTicket(db, r.venteId), ENTETE, { duplicata: false }).map((l) => l.texte)
+    expect(lignes).toContain(`AVOIR EN BOUTIQUE ${r.avoir!.numero}`)
+    expect(lignes.some((t) => t.startsWith('Solde de Mme Abra') && t.includes('600'))).toBe(true)
+
+    const x = rapportSession(db, 1)
+    expect(x.remboursements).toMatchObject({ nombre: 1, especes: 0, avoir: 600, total: 600 })
+    expect(lignesRapport(x, ENTETE, { type: 'X', duplicata: false }).map((l) => l.texte).join('\n')).toMatch(
+      /Rendu en avoir/
+    )
   })
 })

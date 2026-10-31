@@ -98,6 +98,7 @@ describe('Annulation d’un ticket à crédit', () => {
       especesARendre: 0,
       autresARendre: [],
       creditAnnule: 5000,
+      avoirRetabli: 0,
       tiroirOuvert: false
     })
     expect(m).toContain(`Le crédit de ${formaterFCFA(5000)} est effacé`)
