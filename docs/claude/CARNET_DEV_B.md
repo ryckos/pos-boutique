@@ -18,6 +18,61 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-31 (suite) — b/essai-restauration — B16 : procédure d'essai de restauration sur le terminal
+**Fait** :
+- **PR #83 fusionnée** (`b/libelles-clients`, libellés du journal des clients, du crédit et de 6 actions
+  de la caisse) : rendez-vous « Libellés du journal des clients » → ✅ et ligne au journal des fusions de
+  `ETAT_AVANCEMENT.md`. L'entrée de carnet du 31/10 (commit `ddb8222`, poussée **après** la fusion) n'était
+  pas arrivée dans `test` : reprise ici par `cherry-pick`.
+- **B16 — essai de restauration** (choix de Dev B : B16 avant B-P5). Branche `b/essai-restauration` depuis
+  `test` à jour, commit `c7a8f33`, poussée :
+  - `docs/fiches-test/ESSAI_RESTAURATION.md` (+ `.docx`) : fiche pour le technicien et la patronne, sur le
+    terminal OMA POS, hors heures d'ouverture (~1 h 30). **Validé avec Dev B : l'essai se joue sur une
+    copie de la vraie base, jamais sur elle** (la cliente travaille déjà sur sa vraie base avec la rc.1).
+    Préparation : empreinte `Get-FileHash` de la vraie base, copie de la dernière sauvegarde en
+    `C:\EssaiRestauration\boutique.db`, 5 repères (valeur du stock, total dû, dépenses du mois, nombre de
+    produits, dernière ligne du journal). 9 essais : sauvegarde manuelle ; dépense repère « ESSAI
+    RESTAURATION » 100 F ; restauration depuis la liste ; retour arrière depuis la clé avec la sauvegarde
+    « Avant une restauration » ; refus d'un faux fichier ; restauration à la main (`DEPLOIEMENT` § 7.3) ;
+    **coupure de courant** pendant une sauvegarde puis pendant une restauration (accord de Dev B) ; reprise
+    sur un autre PC (facultatif). Remise en état : même empreinte, dossiers d'essai supprimés ;
+  - piège traité : la copie garde le dossier de la clé USB de la boutique → **clé débranchée avant le premier
+    lancement**, puis dossier `E:\EssaiRestauration` choisi sur la clé (sinon la rotation abîmerait les
+    vraies sauvegardes de la clé) ;
+  - `scripts/lancer-essai-restauration.cmd` : lance l'application installée avec
+    `POS_DB=C:\EssaiRestauration\boutique.db` (refus si la copie manque : testé ; recherche de l'exe dans
+    `%LOCALAPPDATA%\Programs` **non testée**, l'application n'est pas installée sur ce poste).
+    `.gitattributes` : `*.cmd text eol=crlf` ;
+  - renvois : `DEPLOIEMENT.md` § 8.2, `SCENARIOS_TEST.md` PAT-07, fiche administrateur 6.4. `.docx`
+    régénérés par `scripts/md_vers_docx.py <md> <docx> "<titre>"` (le titre est obligatoire) ;
+  - `npm run verifier` : **761 tests verts**, typecheck OK. Aucun code de l'application, aucune migration.
+
+**En cours** : PR `b/essai-restauration` → `test` à ouvrir par Dev B (texte fourni dans la session) :
+https://github.com/ryckos/pos-boutique/compare/test...b/essai-restauration?expand=1
+Ce carnet et celui du 31/10 sont commités sur cette branche. **B16 reste 🔄** : l'essai n'est pas joué.
+
+**Prochaine étape** :
+1. Répétition à blanc de la fiche sur le PC de Dev B (rc.1 installée, une sauvegarde de démo) : au moins
+   les essais 1 à 4 et la remise en état ; corriger fiche et script si un texte ne correspond pas à l'écran.
+2. Jouer l'essai sur le terminal avec la patronne, fiche imprimée. Tout OK → B16 ✅ (hors envoi distant,
+   D-A4) dans `ETAT_AVANCEMENT.md`, avec la date et la durée d'une restauration (partie 5 de la fiche).
+   Un « Non » → remise en état, puis branche `b/…` de correction.
+3. Après la fusion : supprimer `b/essai-restauration`, `b/libelles-clients`, `b/alertes-accueil`,
+   `b/docs-b14-fusion` (local et GitHub ; demander l'accord de Dev B).
+4. Ensuite **B-P5** : démarrage automatique (`shell:startup` ou option de l'installateur), mode kiosque,
+   icône, champ `author` de `package.json` ; suivre les retours de la cliente sur la 1.0.0-rc.1.
+
+**Questions ouvertes** :
+- D-A1, D-A3, D-A4 (bloque la fin de B16), D-A5, D-A6 : toujours en attente.
+- À faire confirmer par Dev A : « un téléphone ne sert pas à deux clients actifs ».
+- Libellés du journal (PR #83) pas encore testés à la main par Dev B (scénario dans l'entrée précédente).
+
+**Contrats** : aucun livré, attendu ni modifié. **Pour Dev A** : `.gitattributes` (zone partagée) gagne
+`*.cmd text eol=crlf`. Sa prochaine migration (avoir en boutique, A11 partie 5) doit être relue par Dev B
+avant la fusion.
+
+---
+
 ## 2026-10-31 — b/libelles-clients — libellés du journal pour A11, alertes fusionnées
 **Fait** :
 - **PR #78 fusionnée** (`stock:alertesAccueil`, pour A15) : rendez-vous « Alertes rupture et péremption »
@@ -680,75 +735,3 @@ Dev B). Elle porte aussi ce carnet et le passage de B10 à ✅.
   `LIBELLES_MOUVEMENT` (`src/shared/stock.ts`) sont réutilisables.
 - Attendu : `enregistrerMouvementCaisse()` (Dev A, A8, fin S10) pas encore livré ; il bloque B13
   (source caisse) et le paiement des fournisseurs au tiroir.
-
----
-
-## 2026-10-06 — b/reglements, b/reglements-ecran — B10 Règlements et dettes fournisseurs
-**Fait** :
-- **PR #35 (`b/fefo`) et #36 (`b/peremptions`) fusionnées** le 2026-10-06 (commits de fusion) :
-  B9 → ✅, rendez-vous `allouerFefo` → ✅, deux lignes au journal des fusions (sur `b/reglements`).
-  Branches supprimées en local.
-- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 4.5 :
-  - un règlement paie une **réception précise** ou le **solde global** ; le global couvre d'abord la
-    réception la plus ancienne ;
-  - montant en francs entiers > 0, **au plus le reste dû** (pas d'avance, dette jamais négative) ;
-  - modes espèces, TMoney, Flooz, virement, autre ; référence facultative ; date du jour par défaut,
-    passée acceptée, jamais future ; pas de numéro ; paiement non journalisé ;
-  - **hors caisse** pour l'instant (paiement au tiroir après A8 de Dev A) ;
-  - correction = **annulation avec motif**, journalisée (`annulation_reglement_fournisseur`, § 1.4) ;
-    le règlement reste visible, ne compte plus ; une seule fois ;
-  - échéancier : « Soldée », « À payer le … » (jour de l'échéance compris), « En retard de N j » ;
-    alerte du retard par fournisseur et au total sur la page Fournisseurs.
-- **PR 1 `b/reglements`** (commit `61e9dd5`, poussée) : migration
-  `20261006_1000_annulation_reglement.sql` (`annule_le`, `annule_par`, `motif_annulation` ;
-  `v_dettes_fournisseurs` recréée sans les annulés), règle pure `src/shared/fournisseurs.ts`
-  (`imputerReglements`, `joursEntre`, `LIBELLES_MODE_REGLEMENT`), service
-  `modules/fournisseurs/reglements.ts`, 3 canaux gérant, `SOLDE_DU` de `fournisseurs/service.ts`
-  filtré sur les non annulés. 11 tests (`tests/reglements.test.ts` : 18 000 − 10 000 = **8 000**, 8 001
-  refusé ; global 20 000 sur 18 000 + 13 200 → **11 200** ; annulation ; 5 jours de retard ; refus ;
-  désactivation après paiement).
-- **PR 2 `b/reglements-ecran`** (commit `30f9a62`, empilée sur la PR 1, poussée) : boutons « Dettes » et
-  « Payer » sur la page Fournisseurs, retard en en-tête et par ligne, `FenetreDettes.tsx` (échéancier,
-  règlements, payer, annuler), logique pure `saisieReglement.ts` (4 tests), `UI_UX.md` § 5.17.
-  **Scénario complet testé à la main par Dev B.**
-- 431 tests verts, typecheck OK.
-
-**En cours** : deux PR à ouvrir sur GitHub (`gh` absent de ce poste), **dans l'ordre** ; le texte de
-chacune a été fourni à Dev B dans la session :
-1. `b/reglements` → `test` : https://github.com/ryckos/pos-boutique/compare/test...b/reglements?expand=1
-2. `b/reglements-ecran` → `test`, après la fusion de la PR 1. Si la PR 1 est fusionnée en squash :
-   `git switch b/reglements-ecran && git fetch && git rebase --onto origin/test 61e9dd5 && git push --force-with-lease`.
-   Ce carnet est commité sur `b/reglements-ecran`.
-
-**Prochaine étape** :
-1. Suivre les fusions : une ligne au journal des fusions de `ETAT_AVANCEMENT.md` par PR ; après la
-   PR 2, B10 → ✅ (Phase 2 terminée côté Dev B). Supprimer les branches. Sur GitHub, Dev B doit encore
-   supprimer `b/commandes`, `b/commandes-ecran`, `b/docs-b8-fusion`, `b/receptions`,
-   `b/receptions-ecran`, `b/fournisseurs`, `b/fournisseurs-achats`, `b/fefo`, `b/peremptions`.
-2. **B11 Sorties de stock et retours fournisseur** (`/tache B11`, branche `b/sorties` depuis `test`
-   à jour). Relire `REGLES_METIER.md` § 8 et § 4.5, `UI_UX.md` (écran « Sortie de stock »),
-   `SCENARIO_REFERENCE.md` (2 boîtes bombées × 250 = **500 F** d'avoir). Points à trancher avec Dev B
-   avant le plan :
-   - où stocker l'avoir attendu et sa confirmation (aucune table d'avoirs dans le schéma → migration) ;
-   - l'avoir confirmé doit **se déduire du solde dû** : à intégrer dans `SOLDE_DU`
-     (`fournisseurs/service.ts`), dans `imputerReglements` / `receptionsImputees`
-     (`fournisseurs/reglements.ts`) et dans `v_dettes_fournisseurs` (nouvelle migration) — un avoir
-     s'impute-t-il comme un règlement global ?
-   - coût de l'avoir : CUMP ou prix du lot ; sortie depuis un lot précis (FEFO) ou non ;
-   - type « don » dédié (demande de recréer le CHECK : à voir avec Dev A) ou `casse` + motif « don ».
-
-**Questions ouvertes** :
-- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
-- Plafond de remise caissier (D-A3) : en attente de la cliente.
-- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photo des produits : reportée.
-- Paiement d'un fournisseur depuis le tiroir : après A8 ; motif de mouvement de caisse à prévoir
-  (`mouvements_caisse.motif` n'a que `autre` qui convienne → migration du CHECK, à décider avec Dev A).
-
-**Contrats** :
-- Ajoutés (gérant, **sans impact pour la caisse**) : `fournisseurs:enregistrerReglement`,
-  `fournisseurs:annulerReglement`, `fournisseurs:dettes` ; champs facultatifs `Fournisseur.enRetard`
-  et `prochaineEcheance`.
-- **Pour Dev A** : nouvelle migration (table `reglements_fournisseurs` et vue `v_dettes_fournisseurs`
-  seulement) ; `allouerFefo` est dans `test` (PR #35), A9 peut démarrer.
-- Attendu : `enregistrerMouvementCaisse()` (Dev A, A8, fin S10) pas encore livré ; il bloque B13 et le
-  paiement des fournisseurs au tiroir.
