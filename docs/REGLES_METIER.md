@@ -55,6 +55,15 @@ Actions à journaliser avec `journaliser()` :
 | `impression_rapport_z`        | duplicata ou non (§ 6.9) |
 | `mouvement_caisse`            | session, sens, motif, montant, commentaire, document (§ 6.10) |
 | `annulation_mouvement_caisse` | mouvement annulé, contre-mouvement, motif (§ 6.10) |
+| `retour_client`               | numéros, montant, mode, motif, sort, gérant qui a autorisé (§ 6.8) |
+| `facture`                     | numéro, ticket, client, montant (A10) |
+| `edition_facture`             | enregistrée en PDF ou imprimée, copie ou non (A10) |
+| `proforma`                    | numéro, montant, client s'il est connu (A10) |
+| `creation_client`             | nom, téléphone, plafond (§ 7.1) |
+| `modification_client`         | nom, téléphone, adresse, NIF, avant/après (§ 7.1) |
+| `plafond_credit`              | client, plafond avant/après (§ 7.1) |
+| `desactivation_client`        | client ; motif (§ 7.1) |
+| `vente_credit`                | ticket, client, montant, échéance (§ 7.1) |
 | `modification_parametre`      |                    |
 | `creation_utilisateur`        | nom, rôle, code provisoire |
 | `modification_role`           |                    |
@@ -77,7 +86,7 @@ Actions à journaliser avec `journaliser()` :
 personne, action ; les plus récentes d'abord, 200 par page puis « Afficher plus ». Chaque action et
 chaque valeur sont écrites en français (montants en F, rôles, noms des personnes au lieu des
 identifiants) ; jamais de code ni de JSON à l'écran. **Toute nouvelle action journalisée doit
-recevoir son libellé dans `src/shared/audit.ts`** (sinon elle s'affiche avec ses mots bruts).
+recevoir son libellé dans `src/shared/audit.ts`** (sinon elle s'affiche avec ses mots bruts) ; un test (`tests/audit.test.ts`) relit toutes les actions du code et échoue s'il en manque une.
 
 ---
 
