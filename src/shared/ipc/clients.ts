@@ -19,6 +19,22 @@ export interface Client {
   encours: number
   /** Part de l'encours dont l'échéance est dépassée, FCFA. */
   enRetard: number
+  /** Solde des avoirs en boutique à dépenser, FCFA (REGLES_METIER § 7.2). */
+  soldeAvoir: number
+}
+
+/** Un avoir en boutique : crédit nominatif né d'un retour client. */
+export interface AvoirClient {
+  id: number
+  /** AV-AAAA-NNNNNN */
+  numero: string
+  /** 'AAAA-MM-JJ HH:MM:SS' */
+  creeLe: string
+  montantInitial: number
+  utilise: number
+  solde: number
+  /** Numéro du retour (R-…) qui l'a créé. */
+  numeroRetour: string
 }
 
 export interface SaisieClient {
@@ -49,6 +65,8 @@ export interface CreanceClient {
 export interface FicheClient extends Client {
   /** Les plus récentes d'abord. */
   creances: CreanceClient[]
+  /** Avoirs en boutique, les plus récents d'abord (soldés compris). */
+  avoirs: AvoirClient[]
 }
 
 export interface ContratClients {

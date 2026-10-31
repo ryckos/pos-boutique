@@ -85,7 +85,7 @@ describe('Rapport de caisse (X)', () => {
     expect(r.statut).toBe('ouverte')
     expect(r.caissier).toBe('Afi')
     expect(r.nombreTickets).toBe(4)
-    expect(r.totauxParMode).toEqual({ especes: 46200, tmoney: 22500, flooz: 8000, credit: 0 })
+    expect(r.totauxParMode).toEqual({ especes: 46200, tmoney: 22500, flooz: 8000, credit: 0, avoir: 0 })
     expect(r.totalVentes).toBe(76700)
     expect(r.fondOuverture).toBe(10000)
     expect(r.ventesEspeces).toBe(46200)

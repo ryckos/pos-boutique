@@ -33,7 +33,7 @@ import {
 } from './panier'
 import { etatCaisseInitial, reducteurCaisse, resumeAttente, type EtatCaisse } from './attente'
 import { actionClavier } from './clavier'
-import { versRequete, type ClientCredit, type EtatPaiement } from './paiement'
+import { versRequete, type ClientAvoir, type ClientCredit, type EtatPaiement } from './paiement'
 import { TOUT, afficherOnglets, filtrerGrille, ongletsDeGrille } from './grille'
 import { FenetreRecherche } from './FenetreRecherche'
 import { FenetreConditionnement } from './FenetreConditionnement'
@@ -104,6 +104,9 @@ export function PageCaisse(): React.JSX.Element {
   /** Vente à crédit (A11) : fenêtre « quel client ? » ouverte, puis client choisi pour le paiement. */
   const [choixClientOuvert, setChoixClientOuvert] = useState(false)
   const [clientCredit, setClientCredit] = useState<ClientCredit | null>(null)
+  /** Paiement par avoir en boutique (A11, § 7.2) : même principe que le crédit. */
+  const [choixAvoirOuvert, setChoixAvoirOuvert] = useState(false)
+  const [clientAvoir, setClientAvoir] = useState<ClientAvoir | null>(null)
   /** undefined = en cours de lecture ; null = caisse fermée. */
   const [session, setSession] = useState<SessionCaisse | null | undefined>(undefined)
   const [derniereVente, setDerniereVente] = useState<VenteEnregistree | null>(null)
@@ -235,6 +238,7 @@ export function PageCaisse(): React.JSX.Element {
     rechercheOuverte ||
     paiement !== null ||
     choixClientOuvert ||
+    choixAvoirOuvert ||
     conditionnementOuvert !== null ||
     reimpressionOuverte ||
     tiroirOuvert ||
@@ -292,6 +296,7 @@ export function PageCaisse(): React.JSX.Element {
     agir({ type: 'vider' })
     setPaiement(null)
     setClientCredit(null)
+    setClientAvoir(null)
     setMessage(null)
     setAlertesProforma([])
     setDerniereVente(vente)
@@ -511,6 +516,8 @@ export function PageCaisse(): React.JSX.Element {
               Vente {derniereVente.numeroTicket} enregistrée.
               {derniereVente.monnaieRendue > 0 &&
                 ` Monnaie à rendre : ${formaterFCFA(derniereVente.monnaieRendue)}.`}
+              {derniereVente.avoir &&
+                ` ${formaterFCFA(derniereVente.avoir.montant)} payés par avoir (${derniereVente.avoir.client}). Avoir restant : ${formaterFCFA(derniereVente.avoir.soldeApres)}.`}
               {derniereVente.credit &&
                 ` ${formaterFCFA(derniereVente.credit.montant)} à crédit pour ${derniereVente.credit.client}, à régler avant le ${formaterDate(derniereVente.credit.echeance)}.`}
               {impression?.venteId === derniereVente.venteId &&
@@ -630,6 +637,9 @@ export function PageCaisse(): React.JSX.Element {
           </button>
           <button className="btn" disabled={!peutEncaisser} onClick={() => setChoixClientOuvert(true)}>
             Crédit
+          </button>
+          <button className="btn" disabled={!peutEncaisser} onClick={() => setChoixAvoirOuvert(true)}>
+            Avoir
           </button>
         </div>
         <div className="caisse-ticket-actions">
@@ -846,15 +856,29 @@ export function PageCaisse(): React.JSX.Element {
         />
       )}
 
+      {choixAvoirOuvert && (
+        <FenetreChoixClient
+          usage="avoir"
+          onChoisir={(client) => {
+            setChoixAvoirOuvert(false)
+            setClientAvoir({ id: client.id, nom: client.nom, soldeAvoir: client.soldeAvoir })
+            setPaiement('especes')
+          }}
+          onFermer={() => setChoixAvoirOuvert(false)}
+        />
+      )}
+
       {paiement !== null && (
         <FenetrePaiement
           total={total}
           modeInitial={paiement}
           clientCredit={clientCredit ?? undefined}
+          clientAvoir={clientAvoir ?? undefined}
           onEncaisser={encaisser}
           onFermer={() => {
             setPaiement(null)
             setClientCredit(null)
+            setClientAvoir(null)
           }}
         />
       )}

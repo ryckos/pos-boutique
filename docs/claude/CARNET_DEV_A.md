@@ -18,6 +18,88 @@ Format d'une entrée :
 
 ---
 
+## 2026-11-01 — a/clients-ecran, a/clients-credit-caisse, a/clients-avoir-facture — A11 terminée (parties 3 à 6)
+**Fait** (toutes ces PR sont fusionnées dans `test`, dernière : #84) :
+- **Début de session** : PR #79 (parties 1 et 2) fusionnée par Dev B ; journal des fusions mis à jour (A14 partie 1, A11).
+  Dev B a ajouté les libellés du journal des clients (#83).
+- **A11 partie 3, écran Clients** (#81) : page `/clients` (caissière et gérant), `modules/clients/PageClients.tsx` +
+  `clients.ts` (logique pure). Recherche nom ou téléphone, fiche (coordonnées, plafond grisé pour la caissière, encours,
+  reste disponible, créances avec « en retard » en rouge), « Nouveau client », « Désactiver » (gérant, motif).
+  `UI_UX` § 5.24. Règle confirmée par Dev A : **un téléphone ne sert pas à deux clients actifs** (déjà dans § 7.1).
+- **Partie 4, crédit à la caisse** (#82) : bouton « Crédit » actif → `FenetreChoixClient.tsx` (clients à plafond > 0
+  seulement, pastilles « Plafond atteint » / « En retard ») → ligne « À crédit » dans `FenetrePaiement` (reste disponible,
+  échéance J+30, bandeau si retard, vente possible). Le crédit commence par tout le ticket ; ajouter espèces / TMoney / Flooz
+  le limite au reste disponible. `paiement.ts` : `ouvrirPaiement(total, mode, credit?, clientAvoir?)`, `changerCredit`,
+  `changerEcheance`, `retirerMode(…, 'credit')`. Message « … F à crédit pour <nom>, à régler avant le … » ; annulation :
+  « Le crédit de … est effacé ». Pas de création rapide de client à la caisse (une caissière ne crée qu'un client à
+  plafond 0, inutile pour le crédit : le gérant fixe le plafond dans la page Clients).
+- **Partie 5, facture / proforma** (#84, commit 1) : « Choisir un client enregistré » dans `ChampsClient` (recopie
+  nom, téléphone, adresse, NIF ; pas de lien avec la fiche). `FenetreChoixClient` a un paramètre `usage`
+  (`credit` | `avoir` | `recopie`) ; Échap ne ferme que la fenêtre de recherche.
+- **Partie 6, avoir en boutique** (#84, commits 2 à 5). Modèle validé par Dev A le 01/11, **`REGLES_METIER` § 7.2** :
+  - migration `20261101_0900_avoirs_boutique.sql` : `paiements` recréée (mode `avoir` ajouté au CHECK), tables
+    `avoirs` (numéro `AV-AAAA-NNNNNN`, un par retour, au nom d'un client) et `utilisations_avoir` (dépense > 0,
+    rétablissement < 0 lié, une seule fois), triggers (ni UPDATE ni DELETE, jamais plus que le solde), vue
+    `v_avoirs_clients`. `MODELE_DONNEES` mis à jour.
+  - `modules/clients/service-avoir.ts` : `creerAvoir`, `depenserAvoirs` (les plus anciens d'abord), `retablirAvoirs`,
+    `soldeAvoirs`, `avoirsDuClient` ; `Client.soldeAvoir`, `FicheClient.avoirs`.
+  - **Retour client en avoir** : `ModeRemboursement` + `'avoir'`, `RequeteRetour.clientId`, `RetourEnregistre.avoir`,
+    `TicketRetour.clientAvoir`. **Un ticket payé en partie par avoir ne se rembourse qu'en avoir, au même client**
+    (choix de Claude : pas de répartition au prorata entre modes). Rien ne sort du tiroir.
+  - **Vente** : mode `avoir` (`ModePaiementVente`), `clientId` obligatoire, une seule part, solde relu dans la
+    transaction, journal `utilisation_avoir` ; `VenteEnregistree.avoir`. Bouton « Avoir » à la caisse : les espèces
+    prennent le reste.
+  - **Annulation** : avoir rétabli (`ResultatAnnulation.avoirRetabli`), jamais compté comme « à rendre ».
+  - **X / Z et clôture** : `totauxParMode.avoir`, `remboursements.avoir` ; lignes « Avoirs utilisés » (si > 0) et
+    « Rendu en avoir » ; carte sur l'écran de clôture. L'avoir n'entre jamais dans les espèces théoriques.
+  - Ticket de retour : bloc « AVOIR EN BOUTIQUE AV-… », montant, solde du client. Facture : mode « Avoir en boutique ».
+  - Un client qui a un solde d'avoir **ne se désactive pas**. Fiche client : solde et tableau des avoirs.
+- **CI** : le test de Dev B « toutes les actions du code ont un libellé » refusait `utilisation_avoir` ; libellés
+  (`utilisation_avoir`, clés `avoir`, `avoirs`) ajoutés dans `src/shared/audit.ts` (fichier de Dev B, à sa demande
+  implicite par la CI). La poussée forcée a été refusée : correctif poussé par fusion de `test`, sans réécrire.
+- `npm run verifier` sur `test` à `d7db583` : **785 tests verts**, typecheck OK.
+
+**En cours** : rien de non fusionné. Cette entrée et l'état sont sur `a/docs-carnet-a11` (PR à ouvrir).
+
+**Prochaine étape** :
+1. `git switch test && git pull`, puis supprimer les branches fusionnées : locales (`a/clients-avoir-facture`,
+   `a/docs-a6-a9-fusion`, anciennes `a/caisse-*`, tag/branche `sauvegarde-rebase-avoir`) et distantes
+   (`a/clients-fiche`, `a/clients-credit-vente`, `a/clients-ecran`, `a/clients-credit-caisse`,
+   `a/clients-avoir-facture`).
+2. **Essai à la main de A11** (pas encore fait en entier) : client avec plafond (Kossi `5678`), vente 100 % à crédit,
+   mixte espèces + crédit au plafond, refus au-delà, annulation ; retour en avoir puis paiement par avoir ; facture avec
+   client enregistré ; clôture (carte « Avoirs utilisés »). Puis ajouter à l'essai terminal : ticket à crédit en deux
+   exemplaires, ticket de retour avec avoir.
+3. **A12 Recouvrement** (`/tache A12`, branche `a/recouvrement` depuis `test` à jour) : encaissement d'une créance par la
+   session de caisse ouverte (`enregistrerMouvementCaisse`, motif `encaissement_creance`, table `encaissements_creances`
+   et vue `v_creances_clients` existent), paiements partiels, balance âgée 0–30 / 31–60 / +60 jours, liste de relance
+   imprimable, historique par client, et **levée du refus de retour sur ticket à crédit** (« le rendu doit d'abord réduire
+   la créance », § 6.8). Points de règle à faire trancher par Dev A avant de coder : droits (caissière encaisse ?),
+   modes acceptés (espèces, TMoney, Flooz avec référence ?), ordre d'imputation d'un paiement sur plusieurs créances,
+   retour sur ticket à crédit (réduit la créance, rembourse le reste ?), contenu de la liste de relance.
+4. Ensuite A13 (écran client définitif), puis Phase 4 (A14 reste, A15 : `stock:alertesAccueil` de Dev B est disponible).
+
+**Questions ouvertes** :
+- **Pour la cliente** : marge sur le TTC ou le HT ; délai limite d'un retour ; mentions légales de la facture ; validité de
+  la proforma ; ligne « tickets annulés » sur le X et le Z ; D-A1 (stock négatif), D-A3 (plafond de remise) ; **un avoir
+  expire-t-il ?** (aucune validité aujourd'hui, validé par Dev A) ; un remboursement en avoir peut-il se changer en argent ?
+- **Essai sur le terminal** toujours à faire (Xprinter, tiroir réel, 15,6″, douchette).
+- Sur ce poste : `.claude/settings.json` modifié localement ? (`git checkout .claude/settings.json` si c'est le cas).
+
+**Contrats** :
+- **Livrés (Dev A)** : `clients:*` (déjà), `Client.soldeAvoir`, `FicheClient.avoirs` ; dans `caisse.ts` : `ModePaiementVente`
+  + `'avoir'`, `VenteEnregistree.avoir`, `ResultatAnnulation.avoirRetabli`, `RequeteRetour.clientId`, `RetourEnregistre.avoir`,
+  `TicketRetour.clientAvoir`, `RapportCaisse.totauxParMode.avoir` et `remboursements.avoir` (ajouts, sans impact pour B
+  hors tests qui construisent ces objets).
+- **Pour Dev B (rapports B14, A14)** : un ticket payé par avoir a un paiement `mode = 'avoir'` ; c'est une vente
+  `terminee` ordinaire (dans `ventesPeriode`), mais ce n'est **pas** un encaissement d'argent : à écarter d'un futur
+  « encaissé par mode ». Un retour en avoir est un paiement `avoir` négatif. Le solde d'un client se lit dans
+  `v_avoirs_clients`.
+- **Migration en zone partagée** : `20261101_0900_avoirs_boutique.sql` (recrée `paiements`). Fusionnée.
+- **Fait côté Dev B** : libellés du journal des clients, du crédit et de la caisse (#83) ; j'y ai ajouté
+  `utilisation_avoir`, `avoir`, `avoirs`.
+- Attendu de Dev B : rien.
+
 ## 2026-10-28 → 31 — a/caisse-ventes-periode, a/clients-fiche, a/clients-credit-vente — A14 partie 1 (en avance), A11 parties 1 et 2
 **Fait** :
 - **A14 partie 1 livrée en avance** (PR #73, fusionnée) pour débloquer la marge de B14 : `ventesPeriode(db, { du, au })`
@@ -581,44 +663,3 @@ supprimer (`git tag -d sauvegarde-avant-rebase-a3`).
 - Rappel fin S4 : `catalogue:conditionnementsProduit` attendu sous la forme
   `{ requete: { produitId: number }; reponse: ArticleCatalogue[] }`, unité en premier.
 - Aucun contrat livré ni modifié par Dev A.
-
-## 2026-09-23 — a/caisse-panier — A1.1 Panier et logique de calcul
-**Fait** :
-- `src/renderer/src/modules/caisse/panier.ts` : panier en fonctions pures (`ajouterArticle`,
-  `changerQuantite`, `incrementer`/`decrementer`, `supprimerLigne`, `selectionner`, `totalLigne`,
-  `totalPanier`, `quantiteBaseTotale`, `versPanierClient`, `reducteurPanier`). Même conditionnement =
-  quantité +1 ; quantité 0 = ligne supprimée ; la ligne touchée devient la sélection.
-- `tests/panier.test.ts` : 13 tests (vente mixte du scénario 10 100 F, 29 boîtes de tomate,
-  20 scans = 1 ligne ×20, immutabilité…). `npm run verifier` vert (30 tests), build OK.
-- `PageCaisse.tsx` réécrit (démo retirée) selon la maquette 5.2 : grille à gauche, ticket à droite,
-  total 40 px, pastille verte si `quantiteBase !== 1`, sélection d'une ligne avec − / + /
-  « Supprimer la ligne », boutons Espèces/TMoney/Flooz/Crédit **présents mais désactivés** (A2).
-  Scans traités **en file** (promesse chaînée dans un `useRef`) : ordre conservé, aucune perte.
-  Code inconnu : « Code … inconnu. Créez le produit ou vérifiez le code. », le scan suivant marche.
-- `styles.css` (zone partagée) : classes `.ticket-entete`, `.ticket-ligne*`, `.pastille-conditionnement`,
-  `.ticket-actions*`, `.caisse-paiements`, `.caisse-ecran-client` — jetons existants seulement.
-- Essai manuel validé par Dev A **en simulation** (événements clavier dans la console DevTools :
-  vente mixte 10 100 F, rafale de 20 scans, code inconnu puis code valide).
-- 2 commits sur `a/caisse-panier` : `4486136`, `bc9524a`.
-
-**En cours** : A1.1 🔄 — branche poussée, PR vers `test` à ouvrir / en relecture par Dev B.
-
-**Prochaine étape** :
-1. Si la PR A1.1 n'est pas fusionnée : relancer Dev B pour la relecture, corriger ses remarques.
-2. Une fois fusionnée : passer A1.1 à ✅ dans `ETAT_AVANCEMENT.md` (+ ligne au journal des fusions),
-   supprimer la branche, puis `git switch test && git pull && git switch -c a/caisse-grille` et
-   `/tache A1.2` (onglets de catégories, recherche F2 sans `data-scan`, mise en attente de tickets,
-   raccourcis F2/F4/F8/Suppr/Échap/+ −). Le changement de conditionnement attend
-   `catalogue:conditionnementsProduit` (Dev B, fin S4) : bouton masqué d'ici là.
-
-**Questions ouvertes** :
-- **Essai à la vraie douchette sur le terminal** (critère « 20 scans rapides ») : à faire dès que
-  Dev A a la douchette. Astuce de simulation sans matériel : dans la console DevTools,
-  `window.dispatchEvent(new KeyboardEvent('keydown', { key: c }))` pour chaque caractère puis `'Enter'`.
-- Pastille du conditionnement basée sur `quantiteBase !== 1` car `ArticleCatalogue` n'expose pas
-  `estDefaut`. Suffisant pour l'instant ; demander le champ à Dev B si un cas contraire apparaît.
-- D-A2 (page de codes), D-A3 (plafond remise), D-A1 (stock négatif) : inchangées.
-
-**Contrats** : aucun livré ni modifié. Pour Dev B : seule la zone partagée `ui/styles.css` a reçu des
-classes de caisse (ajouts purs, rien de modifié). Attendus inchangés :
-`catalogue:conditionnementsProduit` (fin S4), `parametres:lire` (fin S5).

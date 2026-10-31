@@ -65,6 +65,7 @@ describe('Annulation d’un ticket (A6)', () => {
       especesARendre: 3500,
       autresARendre: [{ mode: 'tmoney', montant: 5000, reference: 'TM-0042' }],
       creditAnnule: 0,
+      avoirRetabli: 0,
       tiroirOuvert: false
     })
     expect(une(db, 'SELECT statut, motif_annulation AS motif FROM ventes WHERE id = ?', venteId)).toEqual({
@@ -93,7 +94,7 @@ describe('Annulation d’un ticket (A6)', () => {
     // Le X ne compte plus le ticket : les espèces théoriques reviennent au fond.
     expect(rapportSession(db, sessionId)).toMatchObject({
       nombreTickets: 0,
-      totauxParMode: { especes: 0, tmoney: 0, flooz: 0, credit: 0 },
+      totauxParMode: { especes: 0, tmoney: 0, flooz: 0, credit: 0, avoir: 0 },
       totalVentes: 0,
       especesTheoriques: 10000
     })

@@ -23,6 +23,7 @@ import {
   ajouterBillet,
   ajouterMode,
   blocage,
+  changerAvoir,
   changerCredit,
   changerEcheance,
   changerMontant,
@@ -36,6 +37,7 @@ import {
   partEspeces,
   resteAPayer,
   retirerMode,
+  type ClientAvoir,
   type ClientCredit,
   type EtatPaiement
 } from './paiement'
@@ -56,6 +58,8 @@ interface Props {
   modeInitial: ModePaiementCaisse
   /** Vente à crédit : le client choisi (A11). Absent = paiement ordinaire. */
   clientCredit?: ClientCredit
+  /** Paiement par avoir : le client dont on dépense l'avoir (A11, § 7.2). */
+  clientAvoir?: ClientAvoir
   /** Envoie la vente ; en cas de refus, le message s'affiche ici et la saisie est gardée. */
   onEncaisser: (etat: EtatPaiement) => Promise<void>
   onFermer: () => void
@@ -65,6 +69,7 @@ export function FenetrePaiement({
   total,
   modeInitial,
   clientCredit,
+  clientAvoir,
   onEncaisser,
   onFermer
 }: Props): React.JSX.Element {
@@ -74,7 +79,8 @@ export function FenetrePaiement({
       modeInitial,
       clientCredit
         ? { client: clientCredit, echeance: ajouterJours(jourLocal(), DELAI_CREDIT_JOURS) }
-        : null
+        : null,
+      clientAvoir ?? null
     )
   )
   const [envoi, setEnvoi] = useState(false)
@@ -177,6 +183,37 @@ export function FenetrePaiement({
               </label>
             </div>
           ))}
+
+          {etat.avoir && (
+            <div className="paiement-ligne">
+              <div className="paiement-ligne-entete">
+                <h3>Avoir : {etat.avoir.client.nom}</h3>
+                {mixte ? (
+                  <button
+                    type="button"
+                    className="btn btn-discret"
+                    onClick={() => setEtat((s) => retirerMode(s, 'avoir'))}
+                  >
+                    Retirer l’avoir
+                  </button>
+                ) : (
+                  <span className="montant paiement-part">{formaterFCFA(etat.avoir.montant)}</span>
+                )}
+              </div>
+              <p className="vide">Avoir disponible : {formaterFCFA(etat.avoir.client.soldeAvoir)}.</p>
+              {mixte && (
+                <label className="champ">
+                  Montant payé par avoir
+                  <input
+                    inputMode="numeric"
+                    value={String(etat.avoir.montant)}
+                    onFocus={selectionnerTout}
+                    onChange={(e) => setEtat((s) => changerAvoir(s, lireMontant(e.target.value)))}
+                  />
+                </label>
+              )}
+            </div>
+          )}
 
           {etat.credit && (
             <div className="paiement-ligne">
@@ -322,7 +359,7 @@ export function FenetrePaiement({
             <button
               type="submit"
               className="btn paiement-encaisser"
-              autoFocus={modeInitial === 'especes' && !clientCredit}
+              autoFocus={modeInitial === 'especes' && !clientCredit && !clientAvoir}
               disabled={probleme !== null || envoi}
             >
               <Icone nom="payer" />

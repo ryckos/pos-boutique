@@ -12,8 +12,11 @@ import type { PeriodeRapport } from './rapports-gestion'
 /** Modes encaissés au comptoir (argent reçu). */
 export type ModePaiementCaisse = 'especes' | 'tmoney' | 'flooz'
 
-/** Modes d'une vente : ceux du comptoir, plus la part laissée à crédit à un client (A11). */
-export type ModePaiementVente = ModePaiementCaisse | 'credit'
+/**
+ * Modes d'une vente : ceux du comptoir, plus la part laissée à crédit à un client et la part payée par
+ * avoir en boutique (A11). Ces deux dernières exigent un `clientId`.
+ */
+export type ModePaiementVente = ModePaiementCaisse | 'credit' | 'avoir'
 
 export interface SessionCaisse {
   id: number
@@ -32,7 +35,7 @@ export interface RequeteVente {
   paiements: { mode: ModePaiementVente; montant: number; reference?: string }[]
   /** Espèces données par le client (≥ la part payée en espèces). Absent : montant exact. */
   montantRecu?: number
-  /** Client de la vente ; obligatoire avec un paiement `credit` (A11). */
+  /** Client de la vente ; obligatoire avec un paiement `credit` ou `avoir` (A11). */
   clientId?: number
   /** Échéance de la part à crédit, 'AAAA-MM-JJ' ; absente = dans 30 jours (DELAI_CREDIT_JOURS). */
   echeance?: string
@@ -84,6 +87,8 @@ export interface VenteEnregistree {
   alertesPeremption: { produitId: number; designation: string; lots: string[] }[]
   /** Part laissée à crédit (A11), null sans crédit. */
   credit: { client: string; montant: number; echeance: string; encoursApres: number } | null
+  /** Part payée par avoir en boutique (A11, § 7.2), null sinon. */
+  avoir: { client: string; montant: number; soldeApres: number } | null
 }
 
 /** Une session ouverte, vue par le gérant qui choisit laquelle clôturer. */
@@ -113,10 +118,18 @@ export interface RapportCaisse {
   dateFermeture: string | null
   nombreTickets: number
   /** Ventes par mode de paiement (tickets terminés, sans les retours). Crédit : 0 jusqu'à A11. */
-  totauxParMode: { especes: number; tmoney: number; flooz: number; credit: number }
+  totauxParMode: { especes: number; tmoney: number; flooz: number; credit: number; avoir: number }
   totalVentes: number
   /** Retours client remboursés sur cette caisse (A7), montants positifs, par mode. */
-  remboursements: { nombre: number; especes: number; tmoney: number; flooz: number; total: number }
+  remboursements: {
+    nombre: number
+    especes: number
+    tmoney: number
+    flooz: number
+    /** Rendu en avoir en boutique (A11) : rien ne sort du tiroir. */
+    avoir: number
+    total: number
+  }
   fondOuverture: number
   ventesEspeces: number
   mouvements: LigneMouvementCaisse[]
@@ -209,6 +222,8 @@ export interface ResultatAnnulation {
   autresARendre: { mode: string; montant: number; reference: string | null }[]
   /** Part à crédit effacée : la créance du client est annulée (A11) ; 0 sans crédit. */
   creditAnnule: number
+  /** Part payée par avoir, rendue au solde du client (A11, § 7.2) ; 0 sans avoir. */
+  avoirRetabli: number
   /** Le tiroir s'est-il ouvert (seulement s'il y a des espèces à rendre) ? */
   tiroirOuvert: boolean
 }
@@ -237,6 +252,8 @@ export interface TicketRetour {
   retoursPrecedents: string[]
   /** Pourquoi on ne peut rien retourner sur ce ticket ; null si on le peut. */
   raisonRefus: string | null
+  /** Ticket payé en partie par avoir : le client à créditer, le remboursement ne se fait alors qu'en avoir. */
+  clientAvoir: { id: number; nom: string } | null
 }
 
 export interface RequeteRetour {
@@ -249,6 +266,8 @@ export interface RequeteRetour {
   precision?: string
   sort: SortRetour
   remboursement: { mode: ModeRemboursement; reference?: string }
+  /** Remboursement en avoir : le client à qui il est destiné (A11, REGLES_METIER § 7.2). */
+  clientId?: number
   /** Caissière : le code du gérant. Absent pour un gérant connecté. */
   autorisation?: AutorisationGerant
 }
@@ -261,6 +280,8 @@ export interface RetourEnregistre {
   /** Montant rendu au client, positif. */
   montant: number
   mode: ModeRemboursement
+  /** L'avoir créé (remboursement en avoir), null sinon. */
+  avoir: { numero: string; montant: number; client: string; soldeClient: number } | null
   /** Le tiroir s'est-il ouvert (seulement pour un remboursement en espèces) ? */
   tiroirOuvert: boolean
 }

@@ -16,6 +16,9 @@
  *
  * Crédit (règle 7, A11) : la part `credit` exige un client actif dont le plafond tient ; la créance
  * naît dans la même transaction que la vente.
+ *
+ * Avoir en boutique (règle 7.2, A11) : la part `avoir` exige un client actif et ne dépasse pas son solde
+ * (relu dans la transaction) ; elle se prend sur les avoirs les plus anciens d'abord.
  */
 import { randomUUID } from 'node:crypto'
 import type {
@@ -38,6 +41,7 @@ import { verifierCodeCompte } from '../auth/service'
 import { lireParametres } from '../parametres/service'
 import { allouerFefo } from '../stock/fefo'
 import { encoursClient } from '../clients/service'
+import { depenserAvoirs, soldeAvoirs } from '../clients/service-avoir'
 import { ventilerTva } from './calculs'
 import { sessionOuverte } from './service-session'
 
@@ -45,7 +49,8 @@ const MODES: Record<ModePaiementVente, string> = {
   especes: 'Espèces',
   tmoney: 'TMoney',
   flooz: 'Flooz',
-  credit: 'Crédit'
+  credit: 'Crédit',
+  avoir: 'Avoir'
 }
 const MOBILE_MONEY: ModePaiementVente[] = ['tmoney', 'flooz']
 const DATE_ISO = /^\d{4}-\d{2}-\d{2}$/
@@ -252,6 +257,33 @@ function controlerPaiements(
   return { montantRecu, monnaieRendue: montantRecu - especes }
 }
 
+interface AvoirControle {
+  clientId: number
+  client: string
+  montant: number
+}
+
+/**
+ * Part payée par avoir (REGLES_METIER § 7.2) : un seul paiement `avoir`, au nom d'un client actif, dans la
+ * limite de son solde. Les cumuls sont relus ici, dans la transaction de la vente.
+ */
+function controlerAvoir(db: Db, requete: RequeteVente): AvoirControle | null {
+  const parts = requete.paiements.filter((p) => p.mode === 'avoir')
+  if (parts.length === 0) return null
+  if (parts.length > 1) throw new ErreurMetier('Une seule part payée par avoir par ticket : additionnez-les.')
+  if (requete.clientId === undefined) throw new ErreurMetier('Choisissez le client avant de payer par avoir.')
+  const c = une<{ nom: string; actif: number }>(db, 'SELECT nom, actif FROM clients WHERE id = ?', requete.clientId)
+  if (!c) throw new ErreurMetier('Client introuvable : choisissez-le à nouveau.')
+  if (!c.actif) throw new ErreurMetier(`« ${c.nom} » est désactivé : choisissez un autre client.`)
+  const solde = soldeAvoirs(db, requete.clientId)
+  if (parts[0].montant > solde) {
+    throw new ErreurMetier(
+      `L’avoir de « ${c.nom} » est de ${formaterFCFA(solde)} : impossible d’en dépenser ${formaterFCFA(parts[0].montant)}.`
+    )
+  }
+  return { clientId: requete.clientId, client: c.nom, montant: parts[0].montant }
+}
+
 interface CreditControle {
   clientId: number
   client: string
@@ -334,8 +366,9 @@ export function enregistrerVente(db: Db, utilisateurId: number, requete: Requete
     const autorisePar = controlerPlafond(db, utilisateurId, totalRemises, requete.jetonRemise)
     const { montantRecu, monnaieRendue } = controlerPaiements(requete, totaux.totalTtc)
     const credit = controlerCredit(db, requete)
+    const avoir = controlerAvoir(db, requete)
     // Un client sans crédit (pour la facture, plus tard) doit au moins exister.
-    if (!credit && requete.clientId !== undefined) {
+    if (!credit && !avoir && requete.clientId !== undefined) {
       if (!une(db, 'SELECT id FROM clients WHERE id = ? AND actif = 1', requete.clientId)) {
         throw new ErreurMetier('Client introuvable ou désactivé : choisissez-le à nouveau.')
       }
@@ -419,6 +452,25 @@ export function enregistrerVente(db: Db, utilisateurId: number, requete: Requete
       )
     }
 
+    // L'avoir est dépensé avec la vente, dans la même transaction (REGLES_METIER § 7.2).
+    let soldeAvoirApres = 0
+    if (avoir) {
+      const detail = depenserAvoirs(db, { clientId: avoir.clientId, venteId, montant: avoir.montant, utilisateurId })
+      soldeAvoirApres = soldeAvoirs(db, avoir.clientId)
+      journaliser(db, {
+        utilisateurId,
+        action: 'utilisation_avoir',
+        entite: 'ventes',
+        entiteId: venteId,
+        apres: {
+          numeroTicket,
+          client: avoir.client,
+          montant: avoir.montant,
+          avoirs: detail.map((d) => d.numero).join(', ')
+        }
+      })
+    }
+
     // La créance naît avec la vente, dans la même transaction (REGLES_METIER § 7).
     if (credit) {
       executer(
@@ -488,7 +540,8 @@ export function enregistrerVente(db: Db, utilisateurId: number, requete: Requete
             echeance: credit.echeance,
             encoursApres: credit.encoursApres
           }
-        : null
+        : null,
+      avoir: avoir ? { client: avoir.client, montant: avoir.montant, soldeApres: soldeAvoirApres } : null
     }
   })
   // Usage unique : l'accord tombe avec la vente qu'il a permise (pas avant, un refus de paiement le garde).
