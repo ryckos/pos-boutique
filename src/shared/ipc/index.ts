@@ -18,6 +18,7 @@ import type { ContratInventaires } from './inventaires'
 import type { ContratMateriel } from './materiel'
 import type { ContratParametres } from './parametres'
 import type { ContratRapportsGestion } from './rapports-gestion'
+import type { ContratRapportsVentes } from './rapports-ventes'
 import type { ContratSauvegardes } from './sauvegardes'
 import type { ContratStock } from './stock'
 import type { ContratSysteme } from './systeme'
@@ -39,6 +40,7 @@ export type ContratIpc = ContratSysteme &
   ContratSauvegardes &
   ContratCaisse &
   ContratClients &
+  ContratRapportsVentes &
   ContratMateriel
 
 export type Canal = keyof ContratIpc
