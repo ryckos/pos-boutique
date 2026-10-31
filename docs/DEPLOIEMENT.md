@@ -347,6 +347,9 @@ pas.
 3. L'application sauvegarde d'abord la base en place (« Avant une restauration »), la remplace,
    puis redémarre. Chacun se reconnecte.
 
+Avant la mise en service, cette restauration se répète sur le terminal, **sur une copie** de la
+base, avec `docs/fiches-test/ESSAI_RESTAURATION.md` (script `scripts/lancer-essai-restauration.cmd`).
+
 ### 8.3 Le terminal est en panne (disque, vol)
 
 1. Préparer un nouveau poste Windows (§ 4) avec le **même compte Windows dédié**.

@@ -5,6 +5,138 @@ Entrées les plus anciennes, retirées de `docs/claude/CARNET_DEV_B.md` quand il
 
 ---
 
+## 2026-10-06 — b/reglements, b/reglements-ecran — B10 Règlements et dettes fournisseurs
+**Fait** :
+- **PR #35 (`b/fefo`) et #36 (`b/peremptions`) fusionnées** le 2026-10-06 (commits de fusion) :
+  B9 → ✅, rendez-vous `allouerFefo` → ✅, deux lignes au journal des fusions (sur `b/reglements`).
+  Branches supprimées en local.
+- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 4.5 :
+  - un règlement paie une **réception précise** ou le **solde global** ; le global couvre d'abord la
+    réception la plus ancienne ;
+  - montant en francs entiers > 0, **au plus le reste dû** (pas d'avance, dette jamais négative) ;
+  - modes espèces, TMoney, Flooz, virement, autre ; référence facultative ; date du jour par défaut,
+    passée acceptée, jamais future ; pas de numéro ; paiement non journalisé ;
+  - **hors caisse** pour l'instant (paiement au tiroir après A8 de Dev A) ;
+  - correction = **annulation avec motif**, journalisée (`annulation_reglement_fournisseur`, § 1.4) ;
+    le règlement reste visible, ne compte plus ; une seule fois ;
+  - échéancier : « Soldée », « À payer le … » (jour de l'échéance compris), « En retard de N j » ;
+    alerte du retard par fournisseur et au total sur la page Fournisseurs.
+- **PR 1 `b/reglements`** (commit `61e9dd5`, poussée) : migration
+  `20261006_1000_annulation_reglement.sql` (`annule_le`, `annule_par`, `motif_annulation` ;
+  `v_dettes_fournisseurs` recréée sans les annulés), règle pure `src/shared/fournisseurs.ts`
+  (`imputerReglements`, `joursEntre`, `LIBELLES_MODE_REGLEMENT`), service
+  `modules/fournisseurs/reglements.ts`, 3 canaux gérant, `SOLDE_DU` de `fournisseurs/service.ts`
+  filtré sur les non annulés. 11 tests (`tests/reglements.test.ts` : 18 000 − 10 000 = **8 000**, 8 001
+  refusé ; global 20 000 sur 18 000 + 13 200 → **11 200** ; annulation ; 5 jours de retard ; refus ;
+  désactivation après paiement).
+- **PR 2 `b/reglements-ecran`** (commit `30f9a62`, empilée sur la PR 1, poussée) : boutons « Dettes » et
+  « Payer » sur la page Fournisseurs, retard en en-tête et par ligne, `FenetreDettes.tsx` (échéancier,
+  règlements, payer, annuler), logique pure `saisieReglement.ts` (4 tests), `UI_UX.md` § 5.17.
+  **Scénario complet testé à la main par Dev B.**
+- 431 tests verts, typecheck OK.
+
+**En cours** : deux PR à ouvrir sur GitHub (`gh` absent de ce poste), **dans l'ordre** ; le texte de
+chacune a été fourni à Dev B dans la session :
+1. `b/reglements` → `test` : https://github.com/ryckos/pos-boutique/compare/test...b/reglements?expand=1
+2. `b/reglements-ecran` → `test`, après la fusion de la PR 1. Si la PR 1 est fusionnée en squash :
+   `git switch b/reglements-ecran && git fetch && git rebase --onto origin/test 61e9dd5 && git push --force-with-lease`.
+   Ce carnet est commité sur `b/reglements-ecran`.
+
+**Prochaine étape** :
+1. Suivre les fusions : une ligne au journal des fusions de `ETAT_AVANCEMENT.md` par PR ; après la
+   PR 2, B10 → ✅ (Phase 2 terminée côté Dev B). Supprimer les branches. Sur GitHub, Dev B doit encore
+   supprimer `b/commandes`, `b/commandes-ecran`, `b/docs-b8-fusion`, `b/receptions`,
+   `b/receptions-ecran`, `b/fournisseurs`, `b/fournisseurs-achats`, `b/fefo`, `b/peremptions`.
+2. **B11 Sorties de stock et retours fournisseur** (`/tache B11`, branche `b/sorties` depuis `test`
+   à jour). Relire `REGLES_METIER.md` § 8 et § 4.5, `UI_UX.md` (écran « Sortie de stock »),
+   `SCENARIO_REFERENCE.md` (2 boîtes bombées × 250 = **500 F** d'avoir). Points à trancher avec Dev B
+   avant le plan :
+   - où stocker l'avoir attendu et sa confirmation (aucune table d'avoirs dans le schéma → migration) ;
+   - l'avoir confirmé doit **se déduire du solde dû** : à intégrer dans `SOLDE_DU`
+     (`fournisseurs/service.ts`), dans `imputerReglements` / `receptionsImputees`
+     (`fournisseurs/reglements.ts`) et dans `v_dettes_fournisseurs` (nouvelle migration) — un avoir
+     s'impute-t-il comme un règlement global ?
+   - coût de l'avoir : CUMP ou prix du lot ; sortie depuis un lot précis (FEFO) ou non ;
+   - type « don » dédié (demande de recréer le CHECK : à voir avec Dev A) ou `casse` + motif « don ».
+
+**Questions ouvertes** :
+- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
+- Plafond de remise caissier (D-A3) : en attente de la cliente.
+- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photo des produits : reportée.
+- Paiement d'un fournisseur depuis le tiroir : après A8 ; motif de mouvement de caisse à prévoir
+  (`mouvements_caisse.motif` n'a que `autre` qui convienne → migration du CHECK, à décider avec Dev A).
+
+**Contrats** :
+- Ajoutés (gérant, **sans impact pour la caisse**) : `fournisseurs:enregistrerReglement`,
+  `fournisseurs:annulerReglement`, `fournisseurs:dettes` ; champs facultatifs `Fournisseur.enRetard`
+  et `prochaineEcheance`.
+- **Pour Dev A** : nouvelle migration (table `reglements_fournisseurs` et vue `v_dettes_fournisseurs`
+  seulement) ; `allouerFefo` est dans `test` (PR #35), A9 peut démarrer.
+- Attendu : `enregistrerMouvementCaisse()` (Dev A, A8, fin S10) pas encore livré ; il bloque B13 et le
+  paiement des fournisseurs au tiroir.
+
+---
+
+## 2026-10-04 — b/fefo, b/peremptions — B9 Lots, FEFO, tableau des péremptions
+**Fait** :
+- PR #34 (`b/docs-b8-fusion`) fusionnée ; `test` local mis à jour, branche supprimée en local.
+- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 5.1 :
+  - le FEFO ne sert que les lots en stock **non périmés** (date ≥ aujourd'hui), date la plus proche
+    d'abord, puis le lot le plus ancien ;
+  - la répartition couvre toujours toute la quantité : le reste sort **sans lot** (D-A1, jamais bloquer) ;
+  - tableau : lots sous `peremption_seuil_jours`, **périmés compris** (« Périmé depuis 2 j »), rouge à
+    3 jours ou moins, ambre au-delà ; valeur en jeu = restant × prix d'achat du lot ;
+  - « Retirer » : quantité saisie (restant proposé), au plus le restant ; `perte_peremption` sur le lot,
+    motif « Périmé » (+ commentaire facultatif), chiffré au CUMP, gérant, pas de journal d'audit ;
+  - « Promo » : affiché inactif, à brancher avec les promotions programmées (A16, Dev A), car une
+    promotion vaut pour tout le produit.
+- **PR 1 `b/fefo`** (commit `c1254dc`, poussée) : `src/main/modules/stock/fefo.ts`
+  (`allouerFefo`), 8 tests (`tests/fefo.test.ts` : A12 avant B03, 9 + 3, reste sans lot, lot vidé ou
+  périmé ignoré, lot du jour servi, égalité de date, quantité au poids).
+- **PR 2 `b/peremptions`** (commit `980ea5b`, empilée sur la PR 1, poussée) : service
+  `stock/peremptions.ts`, canaux `stock:peremptions` et `stock:retirerLot`, écran
+  `PagePeremptions.tsx` (menu « Péremptions », gérant), classes communes `.tableau tr.ligne-urgente`
+  et `tr.ligne-proche`, `UI_UX.md` § 5.8 complété. 6 tests (`tests/peremptions.test.ts` : scénario du
+  mardi 5 400 + 18 900 = **24 300**, périmés, horizon, retraits et refus). **Testé à la main par Dev B.**
+- 416 tests verts, typecheck OK. Aucune migration.
+
+**En cours** : deux PR à ouvrir sur GitHub (`gh` absent de ce poste), **dans l'ordre** :
+1. `b/fefo` → `test` : https://github.com/ryckos/pos-boutique/compare/test...b/fefo?expand=1
+2. `b/peremptions` → `test`, après la fusion de la PR 1. Si la PR 1 est fusionnée en squash :
+   `git switch b/peremptions && git fetch && git rebase --onto origin/test c1254dc && git push --force-with-lease`.
+   Ce carnet est commité sur `b/peremptions`.
+
+**Prochaine étape** :
+1. Suivre les fusions : à chaque fusion, une ligne au journal des fusions de `ETAT_AVANCEMENT.md` ;
+   après la PR 1, rendez-vous `allouerFefo` → ✅ ; après la PR 2, B9 → ✅. Supprimer les branches.
+   Supprimer aussi sur GitHub les branches déjà fusionnées : `b/commandes`, `b/commandes-ecran`,
+   `b/docs-b8-fusion`, `b/receptions`, `b/receptions-ecran`, `b/fournisseurs`, `b/fournisseurs-achats`.
+2. **B10 Règlements et dettes fournisseurs** (`/tache B10`, branche `b/reglements` depuis `test` à jour).
+   Relire `REGLES_METIER.md` § 4.5 (dettes, échéance déjà figée à la réception : `receptions.date_echeance`)
+   et § 4.6 ; tables `reglements_fournisseurs`, vue `v_dettes_fournisseurs` ; le solde dû est déjà
+   calculé dans `fournisseurs/service.ts` (même formule que la vue). Questions à poser à Dev B avant le
+   plan : règlement imputé à une réception précise ou au solde global ? modes de paiement ? règlement
+   depuis la caisse (dépend de `enregistrerMouvementCaisse`, A8) ou hors caisse seulement ? numérotation ?
+
+**Questions ouvertes** :
+- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
+- Plafond de remise caissier (D-A3) : en attente de la cliente.
+- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photo des produits : reportée.
+
+**Contrats** :
+- **Livré à Dev A (rendez-vous fin S10, en relecture PR 1)** : `allouerFefo(db, produitId, qteBase)`
+  de `src/main/modules/stock/fefo.ts`, appel direct dans le principal (pas d'IPC), lecture seule, à
+  appeler **dans la transaction de la vente** → `{ lotId: number | null; quantite: number }[]`.
+  Somme des parts = `qteBase` ; **un mouvement `vente` par part** (`lotId` tel quel, `null` = part non
+  couverte) ; lots périmés jamais servis ; `[]` si `qteBase` ≤ 0. Débloque A9 (`service-vente.ts`,
+  commentaire « Lot : null jusqu'au FEFO »).
+- Ajoutés (gérant, sans impact pour la caisse) : `stock:peremptions`, `stock:retirerLot`.
+- **Pour Dev A** : le bouton « Promo −20 % » du tableau attend les promotions programmées (A16) ;
+  nouvelles classes communes `.tableau tr.ligne-urgente` / `tr.ligne-proche`.
+- Attendus : `enregistrerMouvementCaisse()` (Dev A, A8, fin S10) pas encore livré.
+
+---
+
 ## 2026-10-01 — b/commandes, b/commandes-ecran — B8 partie 3 : commandes fournisseur (fusionnées, B8 ✅)
 **Fait** :
 - **PR #25, #26, #27 fusionnées** (réceptions serveur, écran Réceptions, achats d'un fournisseur) :
