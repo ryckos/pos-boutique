@@ -62,7 +62,7 @@
 | 6.1 | Branchez la clé USB des sauvegardes. Menu **Sauvegardes** → « Choisir la clé USB » → choisissez son dossier | « Branchée » | ☐ OK ☐ Non | |
 | 6.2 | Cliquez sur « Sauvegarder maintenant » | Une nouvelle ligne « Sauvegarde manuelle » ; le fichier est aussi sur la clé | ☐ OK ☐ Non | |
 | 6.3 | Le soir, après la clôture de la caisse : ouvrez **Sauvegardes** | Une ligne « Clôture de caisse » | ☐ OK ☐ Non | |
-| 6.4 | **Restaurer une sauvegarde : ne le faites pas seule.** Uniquement avec le technicien | — | ☐ Fait avec le technicien | |
+| 6.4 | **Restaurer une sauvegarde : ne le faites pas seule.** Uniquement avec le technicien, qui suit la fiche « Essai de restauration » | — | ☐ Fait avec le technicien | |
 
 ## 7. Le reste de l'application
 

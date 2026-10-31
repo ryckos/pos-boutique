@@ -594,6 +594,8 @@ docs/SCENARIOS_TEST.docx "Scénarios de test — Ma Boutique POS"`).
 - **Résultat** : ☐ OK ☐ KO — remarque :
 
 ### PAT-07 — Restaurer une sauvegarde
+Sur le terminal de la boutique, jouer plutôt la procédure complète `docs/fiches-test/ESSAI_RESTAURATION.md`
+(sur une copie de la vraie base ; couvre aussi la clé USB, la restauration à la main, les coupures et DEP-08).
 - **Étapes** : noter un repère (ex. créer la dépense « TEST RESTAURATION ») ; dans la liste,
   « Restaurer » une sauvegarde faite **avant** ce repère ; cocher « J'ai compris » ; valider. Puis
   « Restaurer depuis un fichier » avec la sauvegarde « Avant une restauration ».
