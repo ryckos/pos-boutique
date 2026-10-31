@@ -7,7 +7,13 @@
 import { formaterFCFA } from '@shared/format'
 import type { ResultatAnnulation, TicketConsulte } from '@shared/ipc/caisse'
 
-const LIBELLES_MODES: Record<string, string> = { especes: 'Espèces', tmoney: 'TMoney', flooz: 'Flooz' }
+const LIBELLES_MODES: Record<string, string> = {
+  especes: 'Espèces',
+  tmoney: 'TMoney',
+  flooz: 'Flooz',
+  credit: 'Crédit',
+  avoir: 'Avoir'
+}
 
 export const libelleMode = (mode: string): string => LIBELLES_MODES[mode] ?? mode
 
@@ -45,5 +51,7 @@ export function messageAnnulation(r: ResultatAnnulation): string {
   const tiroir =
     r.especesARendre > 0 && !r.tiroirOuvert ? ' Le tiroir ne s’est pas ouvert : ouvrez-le à la clé.' : ''
   const credit = r.creditAnnule > 0 ? [`Le crédit de ${formaterFCFA(r.creditAnnule)} est effacé.`] : []
-  return [`Ticket ${r.numeroTicket} annulé.`, ...aRendre(r), ...credit].join(' ') + tiroir
+  const avoir =
+    r.avoirRetabli > 0 ? [`${formaterFCFA(r.avoirRetabli)} d’avoir rendus au solde du client.`] : []
+  return [`Ticket ${r.numeroTicket} annulé.`, ...aRendre(r), ...credit, ...avoir].join(' ') + tiroir
 }

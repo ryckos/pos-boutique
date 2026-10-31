@@ -170,6 +170,9 @@ export function PageClients(): React.JSX.Element {
                   <td className="cellule-titre">
                     {c.nom}
                     <div className="detail">{texteCredit(c)}</div>
+                    {c.soldeAvoir > 0 && (
+                      <div className="detail">Avoir en boutique : {formaterFCFA(c.soldeAvoir)}</div>
+                    )}
                   </td>
                   <td>{c.telephone ?? '—'}</td>
                   <td className="nombre montant">{formaterFCFA(c.plafondCredit)}</td>
@@ -346,6 +349,39 @@ function FenetreFiche(props: {
             Encours : <span className="montant">{formaterFCFA(fiche.encours)}</span> · Reste disponible :{' '}
             <span className="montant">{formaterFCFA(resteDisponible(fiche))}</span>
           </p>
+          {fiche.avoirs.length > 0 && (
+            <>
+              <p>
+                Avoir en boutique : <span className="montant">{formaterFCFA(fiche.soldeAvoir)}</span>
+              </p>
+              <div className="tableau-cadre">
+                <table className="tableau">
+                  <thead>
+                    <tr>
+                      <th>Avoir</th>
+                      <th>Date</th>
+                      <th>Retour</th>
+                      <th className="nombre">Montant</th>
+                      <th className="nombre">Dépensé</th>
+                      <th className="nombre">Solde</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fiche.avoirs.map((a) => (
+                      <tr key={a.id}>
+                        <td>{a.numero}</td>
+                        <td>{formaterDate(a.creeLe)}</td>
+                        <td>{a.numeroRetour}</td>
+                        <td className="nombre montant">{formaterFCFA(a.montantInitial)}</td>
+                        <td className="nombre montant">{formaterFCFA(a.utilise)}</td>
+                        <td className="nombre montant">{formaterFCFA(a.solde)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
           {fiche.creances.length === 0 ? (
             <p className="vide">Aucun crédit pour ce client.</p>
           ) : (
@@ -411,6 +447,12 @@ function FormulaireDesactivation(props: {
       {client.encours > 0 && (
         <p className="alerte formulaire-bloc">
           Il doit encore {formaterFCFA(client.encours)} : le crédit doit être soldé avant de le désactiver.
+        </p>
+      )}
+      {client.soldeAvoir > 0 && (
+        <p className="alerte formulaire-bloc">
+          Il a encore {formaterFCFA(client.soldeAvoir)} d’avoir en boutique : il doit le dépenser avant d’être
+          désactivé.
         </p>
       )}
       <label className="champ champ-large">

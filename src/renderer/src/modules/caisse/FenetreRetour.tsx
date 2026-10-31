@@ -21,6 +21,7 @@ import { appel } from '@renderer/lib/api'
 import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
 import { dateHeure } from './cloture'
 import { libelleMode } from './annulation'
+import { FenetreChoixClient } from './FenetreChoixClient'
 import {
   basculerLigne,
   ceQuiManque,
@@ -41,7 +42,7 @@ interface Props {
 
 const MOTIFS = Object.keys(LIBELLES_MOTIF_RETOUR) as MotifRetour[]
 const SORTS = Object.keys(LIBELLES_SORT_RETOUR) as SortRetour[]
-const MODES: ModeRemboursement[] = ['especes', 'tmoney', 'flooz']
+const MODES: ModeRemboursement[] = ['especes', 'tmoney', 'flooz', 'avoir']
 
 /** Une rangée de boutons à choix unique (cibles tactiles de 48 px). */
 function Choix<T extends string>(props: {
@@ -84,6 +85,9 @@ export function FenetreRetour({ estCaissiere, onRetour, onFermer }: Props): Reac
   const [sort, setSort] = useState<SortRetour | null>(null)
   const [mode, setMode] = useState<ModeRemboursement>('especes')
   const [reference, setReference] = useState('')
+  /** Client de l'avoir ; imposé quand le ticket a été payé par avoir. */
+  const [client, setClient] = useState<{ id: number; nom: string } | null>(null)
+  const [choixClient, setChoixClient] = useState(false)
   const [gerants, setGerants] = useState<{ id: number; nom: string }[]>([])
   const [gerantId, setGerantId] = useState<number | null>(null)
   const [code, setCode] = useState('')
@@ -98,6 +102,7 @@ export function FenetreRetour({ estCaissiere, onRetour, onFermer }: Props): Reac
       setTicket(t)
       setNumero(t.numeroTicket)
       setMode(modeParDefaut(t))
+      setClient(t.clientAvoir)
     } catch (e) {
       setLecture((e as Error).message)
     }
@@ -121,6 +126,7 @@ export function FenetreRetour({ estCaissiere, onRetour, onFermer }: Props): Reac
     sort,
     mode,
     reference,
+    client,
     estCaissiere,
     gerantId,
     code
@@ -280,18 +286,39 @@ export function FenetreRetour({ estCaissiere, onRetour, onFermer }: Props): Reac
           />
           <Choix
             libelle="Remboursement"
-            options={MODES}
-            libelles={libelleMode}
+            // Ticket payé en partie par avoir : on ne peut rembourser qu'en avoir (REGLES_METIER § 7.2).
+            options={ticket.clientAvoir ? (['avoir'] as ModeRemboursement[]) : MODES}
+            libelles={(m) => (m === 'avoir' ? 'Avoir en boutique' : libelleMode(m))}
             valeur={mode}
             onChoisir={setMode}
-            enPlus={
-              // L'avoir en boutique attend la fiche client (A11).
-              <button type="button" className="btn btn-discret" disabled title="Avec la fiche client">
-                Avoir en boutique
-              </button>
-            }
           />
-          {mode !== 'especes' && (
+          {mode === 'avoir' && (
+            <div className="champ champ-large">
+              <span>
+                Avoir au nom de : <strong>{client ? client.nom : 'aucun client choisi'}</strong>
+              </span>
+              {ticket.clientAvoir ? (
+                <span className="champ-aide">
+                  Ce ticket a été payé en partie par avoir : le remboursement retourne au même client.
+                </span>
+              ) : (
+                <button type="button" className="btn btn-secondaire" onClick={() => setChoixClient(true)}>
+                  {client ? 'Changer de client' : 'Choisir le client'}
+                </button>
+              )}
+            </div>
+          )}
+          {choixClient && (
+            <FenetreChoixClient
+              usage="recopie"
+              onChoisir={(c) => {
+                setClient({ id: c.id, nom: c.nom })
+                setChoixClient(false)
+              }}
+              onFermer={() => setChoixClient(false)}
+            />
+          )}
+          {mode !== 'especes' && mode !== 'avoir' && (
             <label className="champ">
               Référence du transfert {libelleMode(mode)}
               <input

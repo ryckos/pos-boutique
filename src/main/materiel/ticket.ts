@@ -50,6 +50,8 @@ export interface TicketAImprimer {
    * d'origine, motif et sort du produit.
    */
   retour?: { ticketOrigine: string; motif: string; sort: string } | null
+  /** Avoir en boutique créé par ce retour (A11, § 7.2) : numéro, montant, client et son solde total. */
+  avoir?: { numero: string; montant: number; client: string; solde: number } | null
   /** Part laissée à crédit (A11) : client, montant, échéance 'AAAA-MM-JJ'. */
   credit?: { client: string; telephone: string | null; montant: number; echeance: string } | null
 }
@@ -73,6 +75,7 @@ const LIBELLES_MODES: Record<string, string> = {
   flooz: 'Flooz',
   carte: 'Carte',
   credit: 'Crédit',
+  avoir: 'Avoir',
   autre: 'Autre'
 }
 
@@ -133,6 +136,16 @@ function lignesRetour(r: NonNullable<TicketAImprimer['retour']>): LigneImprimee[
     { texte: `Sur le ticket ${r.ticketOrigine}` },
     ...couper(`Motif : ${r.motif}`).map((texte) => ({ texte })),
     { texte: `Produit : ${r.sort}` }
+  ]
+}
+
+/** Bloc d'un retour remboursé en avoir : le client garde ce numéro, la boutique le retrouve par lui. */
+function lignesAvoir(a: NonNullable<TicketAImprimer['avoir']>): LigneImprimee[] {
+  return [
+    { texte: `AVOIR EN BOUTIQUE ${a.numero}`, centre: true, gras: true },
+    { texte: colonnes('Montant de l’avoir', montantTicket(a.montant)), gras: true },
+    { texte: colonnes(`Solde de ${a.client}`.slice(0, 30), montantTicket(a.solde)) },
+    { texte: 'À dépenser dans la boutique.', centre: true }
   ]
 }
 
@@ -233,6 +246,7 @@ export function lignesTicket(
   }
 
   if (ticket.annulation) l.push({ texte: 'Ticket annulé : remboursé au client.', centre: true, gras: true })
+  if (ticket.avoir) l.push(...lignesAvoir(ticket.avoir))
   if (ticket.credit) l.push(...lignesCredit(ticket.credit, options.exemplaire ?? 'boutique'))
 
   l.push({ texte: '' })

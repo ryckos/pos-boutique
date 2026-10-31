@@ -7,6 +7,7 @@
  * refusée tant que le client doit de l'argent.
  */
 import type { Client, CreanceClient, FicheClient, SaisieClient } from '@shared/ipc/clients'
+import { avoirsDuClient, soldeAvoirs } from './service-avoir'
 import type { UtilisateurConnecte } from '@shared/types'
 import { formaterFCFA } from '@shared/format'
 import type { Db } from '../../db/connexion'
@@ -22,8 +23,9 @@ const estGerant = (u: UtilisateurConnecte): boolean => u.role === 'gerant' || u.
 const ENCOURS = `COALESCE((SELECT SUM(v.restant_du) FROM v_creances_clients v WHERE v.client_id = c.id), 0)`
 const EN_RETARD = `COALESCE((SELECT SUM(v.restant_du) FROM v_creances_clients v
                              WHERE v.client_id = c.id AND v.date_echeance < date('now','localtime')), 0)`
+const SOLDE_AVOIR = `COALESCE((SELECT SUM(a.solde) FROM v_avoirs_clients a WHERE a.client_id = c.id), 0)`
 const COLONNES = `c.id, c.nom, c.telephone, c.adresse, c.nif, c.plafond_credit AS plafondCredit, c.actif,
-                  ${ENCOURS} AS encours, ${EN_RETARD} AS enRetard`
+                  ${ENCOURS} AS encours, ${EN_RETARD} AS enRetard, ${SOLDE_AVOIR} AS soldeAvoir`
 
 type LigneClient = Omit<Client, 'actif'> & { actif: number }
 
@@ -117,7 +119,7 @@ export function ficheClient(db: Db, clientId: number): FicheClient {
       ORDER BY v.cree_le DESC, v.creance_id DESC`,
     clientId
   ).map((c) => ({ ...c, enRetard: c.enRetard === 1 }))
-  return { ...client, creances }
+  return { ...client, creances, avoirs: avoirsDuClient(db, clientId) }
 }
 
 export function creerClient(db: Db, u: UtilisateurConnecte, saisie: SaisieClient): Client {
@@ -215,6 +217,12 @@ export function desactiverClient(db: Db, u: UtilisateurConnecte, clientId: numbe
     if (c.encours > 0) {
       throw new ErreurMetier(
         `« ${c.nom} » doit encore ${formaterFCFA(c.encours)} : encaissez la dette d’abord`
+      )
+    }
+    const avoir = soldeAvoirs(db, clientId)
+    if (avoir > 0) {
+      throw new ErreurMetier(
+        `« ${c.nom} » a encore ${formaterFCFA(avoir)} d’avoir en boutique : il doit le dépenser d’abord`
       )
     }
     executer(db, 'UPDATE clients SET actif = 0 WHERE id = ?', clientId)

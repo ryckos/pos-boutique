@@ -99,8 +99,20 @@ export function lireTicket(db: Db, venteId: number): TicketAImprimer {
        WHERE c.vente_id = ? AND c.annulee_le IS NULL`,
       venteId
     ) ?? null
+  // Retour remboursé en avoir (A11) : le numéro et le solde du client, relus en base.
+  const avoir = estRetour
+    ? (une<{ numero: string; montant: number; client: string; solde: number }>(
+        db,
+        `SELECT a.numero, a.montant_initial AS montant, cl.nom AS client,
+                (SELECT COALESCE(SUM(s.solde), 0) FROM v_avoirs_clients s WHERE s.client_id = a.client_id) AS solde
+         FROM v_avoirs_clients a JOIN clients cl ON cl.id = a.client_id
+         WHERE a.retour_id = ?`,
+        venteId
+      ) ?? null)
+    : null
   return {
     credit,
+    avoir,
     numeroTicket: v.numeroTicket,
     horodatage: v.horodatage,
     caissier: v.caissier,
