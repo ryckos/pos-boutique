@@ -18,6 +18,83 @@ Format d'une entrée :
 
 ---
 
+## 2026-10-28 → 31 — a/caisse-ventes-periode, a/clients-fiche, a/clients-credit-vente — A14 partie 1 (en avance), A11 parties 1 et 2
+**Fait** :
+- **A14 partie 1 livrée en avance** (PR #73, fusionnée) pour débloquer la marge de B14 : `ventesPeriode(db, { du, au })`
+  (`modules/caisse/service-rapports.ts`) et canal `caisse:ventesPeriode` (gérant). Règles validées par Dev A
+  (`REGLES_METIER` § 11) : CA = Σ `ventes.total_ttc` (la remise sur le ticket n'est pas dans `total_ligne`) ; un retour
+  rend son coût ; chaque document à sa date ; coût arrondi une fois ; `marge` sur le TTC (règle écrite), `margeHt`
+  pour information. Dev B l'a branchée (PR #76) : **B14 ✅**.
+- **A11 Clients et vente à crédit — 🔄, parties 1 et 2 écrites**. Les 8 points de règle ont été validés par Dev A
+  (`REGLES_METIER` § 7.1) : la caissière crée un client à plafond 0, le gérant seul fixe le plafond ; téléphone
+  obligatoire si plafond > 0 (et, ajouté par Claude, unique parmi les actifs : deux fiches doubleraient le plafond —
+  **à faire confirmer par Dev A**) ; crédit sans code du gérant tant que le plafond tient, **refus strict** au-delà ;
+  échéance 30 jours modifiable ; ticket à crédit en **deux exemplaires** (client, boutique avec signature) ;
+  annulation du ticket = créance annulée ; **retour sur ticket à crédit refusé jusqu'à A12** ; **avoir en boutique =
+  dernière PR d'A11**.
+  - Partie 1 (`6ea1daf`) : migration `20261031_1000_clients_credit.sql` (`clients.nif` ; annulation d'une créance par
+    les colonnes `annulee_le`, `annulee_par`, `motif_annulation` — pas de table recréée, la vue `v_creances_clients`
+    expose `statut = 'annulee'` et `restant_du = 0` ; triggers : ni suppression de client ni de créance, montant
+    figé, annulation définitive, encaissements immuables) ; module `modules/clients/` (service, ipc) ; contrat
+    `src/shared/ipc/clients.ts` : `clients:rechercher`, `lire`, `creer`, `modifier`, `desactiver` ;
+    `encoursClient(db, clientId)`. 9 tests (`tests/clients.test.ts`).
+  - Partie 2 (`7671851`) : `enregistrerVente` accepte le mode `credit` + `clientId` (+ `echeance`) ; plafond relu
+    dans la transaction, créance créée avec la vente, journal `vente_credit` ; `annulerTicket` annule la créance
+    (`creditAnnule`), refus si un encaissement existe ; `service-retour` refuse un ticket à crédit ; ticket
+    (`materiel/ticket.ts`) : bloc « VENTE À CRÉDIT », deux exemplaires dans le même envoi, duplicata = exemplaire
+    boutique. `src/shared/clients.ts` : `DELAI_CREDIT_JOURS`, `ajouterJours`. 11 tests (`tests/caisse-credit.test.ts`).
+  - **Attention** : la PR #80 (partie 2) a été fusionnée dans sa base `a/clients-fiche`, pas dans `test`. La **PR #79**
+    contient donc les deux parties ; un commentaire est posté sur #79 pour que Dev B relise les deux.
+- `npm run verifier` sur `a/clients-fiche` : **743 tests verts**, typecheck OK.
+
+**En cours** : **PR #79** (`a/clients-fiche` → `test`) en attente de la relecture de Dev B (relecteur : sowadan). Cette
+entrée de carnet et l'état y sont ajoutés. Rien d'autre de non poussé.
+
+**Prochaine étape** :
+1. `/reprendre`, puis `git fetch` : la #79 est-elle fusionnée ? Si oui : ligne au journal des fusions de
+   `ETAT_AVANCEMENT.md` (A11 parties 1 et 2), supprimer `a/clients-fiche` et `a/clients-credit-vente` (local et
+   GitHub). Sinon, corriger ce que Dev B demande en relecture, sur `a/clients-fiche`.
+2. **A11 PR 3 — écran Clients**, sans attendre la fusion : branche `a/clients-ecran` créée **depuis `a/clients-fiche`**
+   (PR empilée — cette fois **ne pas la fusionner dans sa base** : attendre #79, rebaser sur `test`, changer la base) :
+   - page `/clients` (menu « Clients », caissière et gérant) : recherche (nom ou téléphone), liste avec encours et
+     « en retard » ; fiche : coordonnées modifiables, plafond modifiable **par le gérant seulement** (champ grisé pour
+     la caissière), créances (ticket, date, montant, encaissé, restant dû, échéance, statut, en retard en rouge),
+     « Désactiver » (gérant, motif) ; « Nouveau client » (`FenetreFormulaire`) ;
+   - logique pure à part (`modules/clients/…ts`), tests ; route dans `app/routes.tsx` (zone partagée) ; `UI_UX` :
+     nouvelle section.
+3. **PR 4 — crédit à la caisse** : bouton « Crédit » de `PageCaisse` activé → choix du client (recherche, création
+   rapide, alerte si `enRetard > 0`, reste disponible = plafond − encours) → `FenetrePaiement` avec une ligne
+   « À crédit » (paiement mixte possible) et l'échéance (J+30 par défaut, `DELAI_CREDIT_JOURS`) ; envoi `clientId`,
+   `echeance` ; message après vente avec `VenteEnregistree.credit` ; fenêtre d'annulation : afficher `creditAnnule`
+   (« crédit effacé ») ; facture et proforma : choisir un client existant pour remplir le formulaire.
+4. **PR 5 — avoir en boutique** (reporté d'A7) : à concevoir (table d'avoirs, mode de paiement : le CHECK de
+   `paiements.mode` n'a pas `avoir`, il a `autre`) — proposer le modèle à Dev A avant de coder. Puis A11 → ✅.
+5. Ensuite A12 (recouvrement : encaissement de créance par la session, `enregistrerMouvementCaisse` motif
+   `encaissement_creance`, balance âgée, retour sur ticket à crédit) et A13 (écran client).
+
+**Questions ouvertes** :
+- Pour Dev A : confirmer la règle « un téléphone ne sert pas à deux clients actifs » (ajoutée par Claude).
+- **Pour la cliente** : marge sur le TTC ou le HT (`margeHt` existe déjà) ; délai limite d'un retour ; mentions
+  légales de la facture ; validité de la proforma ; ligne « tickets annulés » sur le X et le Z ; D-A1 (stock
+  négatif), D-A3 (plafond de remise).
+- **Essai sur le terminal** toujours à faire (Xprinter, tiroir réel, 15,6″, douchette) ; y ajouter le ticket à
+  crédit en deux exemplaires et le ticket de retour. A3 et A4 restent 🔄.
+- Sur ce poste : tag local `sauvegarde-avant-rebase-a3` à supprimer ; `.claude/settings.json` modifié localement, à
+  jeter (`git checkout .claude/settings.json`) s'il l'est encore.
+
+**Contrats** :
+- **Livrés (Dev A)** : `caisse:ventesPeriode` / `ventesPeriode()` (PR #73, consommé par Dev B en #76) ; `clients:*`
+  (5 canaux), `encoursClient()` ; dans `caisse.ts` : `ModePaiementVente`, `RequeteVente.clientId` / `echeance`,
+  `VenteEnregistree.credit`, `ResultatAnnulation.creditAnnule` (ajouts, sans impact pour Dev B).
+- **Pour Dev B (rapports)** : une vente à crédit est une vente `terminee` ordinaire (déjà dans `ventesPeriode`) ; la
+  part à crédit est un paiement `credit`, jamais dans les espèces ; une créance annulée se lit par
+  `v_creances_clients.statut = 'annulee'`.
+- **Demandé à Dev B** (ligne ⏳ aux rendez-vous de `ETAT_AVANCEMENT.md`) : libellés de `creation_client`,
+  `modification_client`, `plafond_credit`, `desactivation_client`, `vente_credit` dans `src/shared/audit.ts` (en
+  plus des anciennes demandes : `mouvement_caisse`, `annulation_mouvement_caisse`, `retour_client`, `facture`,
+  `edition_facture`, `proforma`).
+- **Reçu de Dev B** : `stock:alertesAccueil` (PR #78) pour **A15** (tableau de bord) — rendez-vous 🔄 côté Dev B.
+
 ## 2026-10-16 — a/caisse-retour(-ecran), a/caisse-facture, a/caisse-proforma — A7 terminée, A10 parties 1 et 2
 **Fait** (session du 13 au 16/10) :
 - **Fusions de début de session** : A9 (#57), A6 (#58 puis #61). La PR #59 (écran d'A6) avait été
@@ -545,14 +622,3 @@ supprimer (`git tag -d sauvegarde-avant-rebase-a3`).
 **Contrats** : aucun livré ni modifié. Pour Dev B : seule la zone partagée `ui/styles.css` a reçu des
 classes de caisse (ajouts purs, rien de modifié). Attendus inchangés :
 `catalogue:conditionnementsProduit` (fin S4), `parametres:lire` (fin S5).
-
-## 2026-09-22 — main — Passation initiale
-**Fait** : conception complète (voir `docs/claude/BRIEF_DEV_A.md` § 3), socle initialisé et
-vérifié (typecheck, 17 tests, build), documentation et briefs en place.
-**En cours** : rien.
-**Prochaine étape** : Démarrer **A1.1 — Panier et logique de calcul** (`/tache A1.1`). Branche proposée : `a/caisse-panier`.
-**Questions ouvertes** :
-- Page de codes gagnante du test T2 (D-A2) : à demander à Dev A avant A3.
-- Plafond de remise caissier (D-A3) : à obtenir de la cliente avant A5.
-- Politique de stock négatif (D-A1) : en attente de la cliente, ne jamais bloquer une vente d'ici là.
-**Contrats** : attendus — `catalogue:conditionnementsProduit` (Dev B, fin S4) · `parametres:lire` (Dev B, fin S5).
