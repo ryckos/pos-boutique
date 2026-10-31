@@ -346,6 +346,20 @@ Fond `--encre` et texte blanc, lisibles à 1,5 m. Il affiche :
 Au repos, il affiche « Bienvenue ». En fin de vente, il affiche le montant reçu et la monnaie
 rendue pendant quelques secondes.
 
+Fait en A13 (`client.tsx`, logique pure dans `modules/caisse/ecran-client.ts`) :
+- **Ouverture** : au démarrage, sur le second écran, s'il existe. Sans second écran (portable de
+  développement), rien ne s'ouvre d'office : le bouton « Ouvrir l'écran client » de la caisse reste.
+  L'écran se ferme avec la caisse. Le principal garde le dernier état envoyé et le rejoue si l'écran
+  s'ouvre ou se recharge en cours de ticket.
+- **Nom de la boutique** : paramètre `boutique_nom` (« Ma Boutique » à défaut), lu par le principal.
+- **Trois vues** : accueil (ticket vide ou caisse fermée) ; panier (lignes, nombre d'articles, total
+  en 56 px ; ticket long = les dernières lignes ajoutées restent visibles) ; fin de vente.
+- **Fin de vente** : « Merci et à bientôt ! », Total, Reçu (espèces saisies seulement), **Monnaie à
+  vous rendre en 56 px** si elle est positive, « … à régler avant le … » pour une part à crédit. Elle
+  dure 8 secondes, puis retour à l'accueil ; un article scanné pour le client suivant la remplace
+  aussitôt. En mobile money il n'y a ni « Reçu » ni monnaie.
+- Pendant la fenêtre de paiement, l'écran garde le ticket (pas d'écran intermédiaire).
+
 ### 5.6 Nouvelle réception (Dev B — B8)
 ```
 Nouvelle réception — RC-2026-0002                                   [Brouillon]

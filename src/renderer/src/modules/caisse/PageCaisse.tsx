@@ -13,8 +13,8 @@
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { ArticleCatalogue } from '@shared/types'
-import type { ModePaiementCaisse, SessionCaisse, VenteEnregistree } from '@shared/ipc/caisse'
+import type { ArticleCatalogue, FinVenteClient } from '@shared/types'
+import type { ModePaiementCaisse, RequeteVente, SessionCaisse, VenteEnregistree } from '@shared/ipc/caisse'
 import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
@@ -33,6 +33,7 @@ import {
 } from './panier'
 import { etatCaisseInitial, reducteurCaisse, resumeAttente, type EtatCaisse } from './attente'
 import { actionClavier } from './clavier'
+import { finDeVente } from './ecran-client'
 import { versRequete, type ClientAvoir, type ClientCredit, type EtatPaiement } from './paiement'
 import { TOUT, afficherOnglets, filtrerGrille, ongletsDeGrille } from './grille'
 import { FenetreRecherche } from './FenetreRecherche'
@@ -110,6 +111,7 @@ export function PageCaisse(): React.JSX.Element {
   /** undefined = en cours de lecture ; null = caisse fermée. */
   const [session, setSession] = useState<SessionCaisse | null | undefined>(undefined)
   const [derniereVente, setDerniereVente] = useState<VenteEnregistree | null>(null)
+  const [finClient, setFinClient] = useState<FinVenteClient | null>(null)
   /**
    * Impression du dernier ticket. Un échec reste affiché même après le scan suivant, jusqu'à une
    * réimpression réussie ou « Plus tard » : sinon la caissière perdrait le bouton Réimprimer.
@@ -288,11 +290,13 @@ export function PageCaisse(): React.JSX.Element {
   // La vente est enregistrée en base avant de vider le ticket ; un refus du service remonte dans
   // la fenêtre de paiement, qui reste ouverte avec sa saisie.
   const encaisser = async (etatPaiement: EtatPaiement): Promise<void> => {
-    const vente = await appel('caisse:enregistrerVente', {
+    const requete: RequeteVente = {
       ...versRequete(etatPaiement, versLignesVente(panier)),
       ...((panier.remiseGlobale ?? 0) > 0 && { remiseGlobale: panier.remiseGlobale }),
       ...(panier.accord && { jetonRemise: panier.accord.jeton })
-    })
+    }
+    const vente = await appel('caisse:enregistrerVente', requete)
+    setFinClient(finDeVente(vente, requete))
     agir({ type: 'vider' })
     setPaiement(null)
     setClientCredit(null)
@@ -319,9 +323,15 @@ export function PageCaisse(): React.JSX.Element {
   const total = totalPanier(panier)
   const selection = panier.selection !== null ? trouverLigne(panier, panier.selection) : undefined
 
+  // L'écran client suit le ticket ; juste après un encaissement il reçoit aussi la fin de vente
+  // (merci, monnaie), qui disparaît dès que la caissière commence le client suivant.
   useEffect(() => {
-    window.pos.envoyerPanierClient(versPanierClient(panier))
-  }, [panier])
+    if (panier.lignes.length > 0 && finClient) setFinClient(null)
+    window.pos.envoyerPanierClient({
+      ...versPanierClient(panier),
+      ...(finClient && panier.lignes.length === 0 && { fin: finClient })
+    })
+  }, [panier, finClient])
 
   // Garde la ligne touchée visible quand le ticket est long.
   useEffect(() => {

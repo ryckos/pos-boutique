@@ -70,4 +70,18 @@ export interface PanierClient {
   remiseTicket?: number
   total: number
   message?: string
+  /** Nom de la boutique, ajouté par le processus principal (paramètre `boutique_nom`). */
+  boutique?: string
+  /** Présent juste après un encaissement : l'écran montre « Merci » et la monnaie quelques secondes. */
+  fin?: FinVenteClient
+}
+
+/** Ce que le client voit à la fin de sa vente (A13, UI_UX § 5.5). */
+export interface FinVenteClient {
+  total: number
+  /** Espèces remises par le client, absent en mobile money ou à crédit. */
+  recu?: number
+  monnaieRendue: number
+  /** Part laissée à crédit et date limite (AAAA-MM-JJ). */
+  credit?: { montant: number; echeance: string }
 }
