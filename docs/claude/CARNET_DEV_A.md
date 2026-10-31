@@ -18,7 +18,7 @@ Format d'une entrée :
 
 ---
 
-## 2026-11-01 — a/recouvrement — A12 Recouvrement (codée, PR à ouvrir)
+## 2026-11-01 — a/recouvrement — A12 Recouvrement (PR #87 fusionnée dans `test`)
 **Fait** (une seule PR, voulue ainsi par Dev A ; rien n'est encore commité au moment d'écrire ces lignes) :
 - **Début de session** : `test` à jour (PR #85 fusionnée) ; 11 branches locales fusionnées et 15 branches distantes
   `a/…` supprimées ; `npm run verifier` vert (785 tests). Essai à la main d'A11 **toujours pas fait**.
@@ -50,22 +50,21 @@ Format d'une entrée :
 - Libellés du journal ajoutés dans `src/shared/audit.ts` (fichier de Dev B) : `encaissement_creance`,
   `annulation_encaissement`, clés `recu`, `reference`, `tickets`, `resteDu`, `creanceReduite`.
 
-**En cours** : A12 🔄 dans `ETAT_AVANCEMENT.md`. Branche `a/recouvrement` : tout le travail est dans l'arbre, à
-commiter puis pousser. PR vers `test` à ouvrir **après l'essai à la main**.
+**En cours** : rien de non fusionné. A12 ✅ (PR #87, relue et fusionnée) ; cette mise à jour de l'état et du
+carnet est sur `a/docs-a12-fusion` (PR à ouvrir).
 
 **Prochaine étape** :
-1. `git add -A && git commit` (message : `feat(caisse): recouvrement des créances, reçu, balance âgée, relance,
-   retour sur ticket à crédit (A12)`), `git push -u origin a/recouvrement`.
-2. **Essai à la main** (`npm run dev`, Kossi `5678`) : client avec plafond, vente à crédit, paiement partiel en
-   espèces (reçu, tiroir, X), paiement réparti sur deux crédits, TMoney avec référence, annulation par le gérant,
-   historique, page Recouvrement (vieillir une créance impose de passer par la base : voir le test), retour sur
-   ticket à crédit (tout à crédit, mixte), clôture (carte « Créances encaissées »). Plus l'essai A11 non fait
-   (crédit, avoir, facture avec client enregistré).
-3. Ouvrir la **PR vers `test`** (texte donné à Dev A dans la session : zone partagée = migration + contrats
-   `clients.ts` / `caisse.ts` + libellés `audit.ts`), relue par Dev B ; après fusion : A12 ✅, ligne au journal
-   (déjà écrite, à passer de « PR à ouvrir » à « PR n° … »), supprimer la branche.
-4. Ensuite **A13 Écran client définitif** (`/tache A13`), puis Phase 4 (A14 reste, A15 : `stock:alertesAccueil`
-   de Dev B est disponible).
+1. `/reprendre`, puis `git switch test && git pull` ; supprimer `a/recouvrement` et `a/docs-a12-fusion` (local et
+   GitHub) une fois fusionnées.
+2. **Essai à la main d'A11 et d'A12** (`npm run dev`, Kossi `5678`) : client avec plafond, vente à crédit, paiement
+   partiel en espèces (reçu, tiroir, X), paiement réparti sur deux crédits, TMoney avec référence, annulation par le
+   gérant, historique, page Recouvrement (vieillir une créance impose de passer par la base : voir le test),
+   retour sur ticket à crédit (tout à crédit, mixte), clôture (cartes « Créances encaissées » et « Avoirs
+   utilisés »), retour en avoir puis paiement par avoir, facture avec client enregistré. Signaler tout écart à Claude.
+3. **A13 Écran client définitif** (`/tache A13`, branche `a/ecran-client` depuis `test` à jour) : ouverture
+   automatique au démarrage sur le 11,6″, panier en temps réel, total, monnaie rendue en fin de vente, écran
+   d'accueil au repos ; le mécanisme `envoyerPanierClient` existe déjà. Puis Phase 4 : A14 (reste), A15 (tableau
+   de bord : `stock:alertesAccueil` de Dev B est disponible), A16.
 
 **Questions ouvertes** :
 - Pour Dev A : le gérant doit-il pouvoir encaisser sans avoir sa propre caisse (prendre la seule caisse ouverte) ?
