@@ -2,7 +2,9 @@
  * Lecture du journal d'audit (B14) : chaque action et chaque valeur en français lisible, jamais de
  * code technique ni de JSON à l'écran. Propriétaire : Dev B. Règles pures, testées.
  */
-import { formaterDateHeure, formaterDelai, formaterFCFA, formaterQuantite } from './format'
+import { LIBELLES_MOTIF_CAISSE, type MotifMouvementCaisse } from './caisse'
+import { formaterDate, formaterDateHeure, formaterDelai, formaterFCFA, formaterQuantite } from './format'
+import { LIBELLES_SORT_RETOUR, type SortRetour } from './retour'
 import { LIBELLES_MOUVEMENT } from './stock'
 import type { TypeMouvement } from './types'
 
@@ -29,6 +31,17 @@ export const LIBELLES_ACTION: Record<string, string> = {
   ouverture_session_caisse: 'Ouverture de caisse',
   cloture_session_caisse: 'Clôture de caisse',
   impression_rapport_z: 'Impression du rapport Z',
+  mouvement_caisse: 'Mouvement d’espèces du tiroir',
+  annulation_mouvement_caisse: 'Annulation d’un mouvement d’espèces',
+  retour_client: 'Retour client',
+  facture: 'Facture',
+  edition_facture: 'Édition d’une facture',
+  proforma: 'Facture proforma',
+  creation_client: 'Création d’un client',
+  modification_client: 'Modification d’un client',
+  plafond_credit: 'Changement du plafond de crédit',
+  desactivation_client: 'Désactivation d’un client',
+  vente_credit: 'Vente à crédit',
   modification_parametre: 'Modification d’un paramètre',
   creation_utilisateur: 'Création d’un compte',
   modification_role: 'Changement de rôle',
@@ -99,7 +112,24 @@ const LIBELLES_CHAMP: Record<string, string> = {
   sauvegardeAvant: 'Base remplacée, copiée dans',
   crees: 'Produits créés',
   ignorees: 'Lignes ignorées',
-  nouvellesCategories: 'Nouveaux rayons'
+  nouvellesCategories: 'Nouveaux rayons',
+  client: 'Client',
+  telephone: 'Téléphone',
+  adresse: 'Adresse',
+  nif: 'NIF',
+  plafond: 'Plafond de crédit',
+  echeance: 'Échéance',
+  session: 'Caisse n°',
+  sens: 'Sens',
+  typeDocument: 'Document',
+  document: 'Document n°',
+  contreMouvement: 'Contre-mouvement n°',
+  numeroRetour: 'Retour',
+  ticketOrigine: 'Ticket d’origine',
+  mode: 'Mode',
+  sort: 'Article retourné',
+  sortie: 'Sortie',
+  copie: 'Copie'
 }
 
 const MONTANTS = new Set([
@@ -113,7 +143,8 @@ const MONTANTS = new Set([
   'montantCompte',
   'ecart',
   'manquants',
-  'surplus'
+  'surplus',
+  'plafond'
 ])
 const QUANTITES = new Set(['quantite', 'stockRestant', 'stockAvant', 'stock', 'reste'])
 
@@ -127,6 +158,22 @@ const STATUTS: Record<string, string> = {
 }
 const SOURCES: Record<string, string> = { fonds_propres: 'Fonds propres', caisse: 'Caisse (tiroir)' }
 const PORTEES: Record<string, string> = { ligne: 'Une ligne', ticket: 'Tout le ticket' }
+const SENS: Record<string, string> = { entree: 'Entrée dans le tiroir', sortie: 'Sortie du tiroir' }
+const MODES: Record<string, string> = {
+  especes: 'Espèces',
+  tmoney: 'TMoney',
+  flooz: 'Flooz',
+  carte: 'Carte',
+  credit: 'Crédit',
+  autre: 'Autre'
+}
+const SORTIES: Record<string, string> = { enregistrer: 'Enregistrée en PDF', imprimer: 'Imprimée' }
+const DOCUMENTS: Record<string, string> = {
+  depense: 'Dépense',
+  reglement_fournisseur: 'Règlement fournisseur',
+  encaissement: 'Encaissement de créance',
+  vente: 'Ticket'
+}
 
 const PARAMETRES: Record<string, string> = {
   boutique_nom: 'Nom de la boutique',
@@ -189,6 +236,14 @@ function valeurChamp(cle: string, v: unknown, nomDe: (id: number) => string): st
     if (cle === 'statut') return STATUTS[v] ?? v
     if (cle === 'source') return SOURCES[v] ?? v
     if (cle === 'portee') return PORTEES[v] ?? v
+    if (cle === 'sens') return SENS[v] ?? v
+    if (cle === 'mode') return MODES[v] ?? v
+    if (cle === 'sortie') return SORTIES[v] ?? v
+    if (cle === 'typeDocument') return DOCUMENTS[v] ?? v
+    if (cle === 'sort') return LIBELLES_SORT_RETOUR[v as SortRetour] ?? v
+    // Le motif d'un mouvement de caisse est un code ; ailleurs, un texte libre laissé tel quel.
+    if (cle === 'motif') return LIBELLES_MOTIF_CAISSE[v as MotifMouvementCaisse] ?? v
+    if (cle === 'echeance') return formaterDate(v)
     if (cle === 'type') return LIBELLES_MOUVEMENT[v as TypeMouvement] ?? v
     if (cle === 'dateSauvegarde') return formaterDateHeure(v)
     return v

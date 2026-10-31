@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { choixJournal, lireJournal, TAILLE_PAGE_JOURNAL } from '../src/main/modules/audit/service'
 import { journaliser } from '../src/main/core/audit'
@@ -24,16 +26,71 @@ const nomDe = (id: number): string => ({ 1: 'Patron', 3: 'Kossi' })[id] ?? 'Comp
 
 describe('Journal : mise en mots (règle pure)', () => {
   it('toutes les actions du code ont un libellé français', () => {
-    for (const action of [
-      'connexion',
-      'remise',
-      'annulation_depense',
-      'cloture_session_caisse',
-      'import_catalogue'
-    ]) {
-      expect(LIBELLES_ACTION[action]).toBeDefined()
+    // Lues dans le code du principal : une action ajoutée sans libellé fait échouer ce test.
+    const dossier = join(__dirname, '../src/main')
+    const actions = new Set<string>()
+    for (const f of readdirSync(dossier, { recursive: true, encoding: 'utf8' })) {
+      if (!f.endsWith('.ts')) continue
+      for (const m of readFileSync(join(dossier, f), 'utf8').matchAll(/action: '([a-z_]+)'/g))
+        actions.add(m[1])
     }
+    expect(actions.size).toBeGreaterThan(30)
+    expect([...actions].filter((a) => !(a in LIBELLES_ACTION))).toEqual([])
     expect(libelleAction('annulation_depense')).toBe('Annulation d’une dépense')
+  })
+
+  it('clients et crédit : plafond en F, échéance en date, client en clair', () => {
+    const p = detailsAudit(
+      {
+        action: 'plafond_credit',
+        entite: 'clients',
+        avant: { client: 'Ama', plafond: 0 },
+        apres: { client: 'Ama', plafond: 20000 }
+      },
+      nomDe
+    )
+    expect(libelleAction('plafond_credit')).toBe('Changement du plafond de crédit')
+    expect(p.apres).toEqual([
+      { libelle: 'Client', valeur: 'Ama' },
+      { libelle: 'Plafond de crédit', valeur: `${(20000).toLocaleString('fr-FR')} F` }
+    ])
+    const v = detailsAudit(
+      {
+        action: 'vente_credit',
+        entite: 'ventes',
+        avant: null,
+        apres: { numeroTicket: 'T-2026-000201', client: 'Ama', montant: 4500, echeance: '2026-11-30' }
+      },
+      nomDe
+    )
+    expect(v.apres).toEqual([
+      { libelle: 'Ticket', valeur: 'T-2026-000201' },
+      { libelle: 'Client', valeur: 'Ama' },
+      { libelle: 'Montant', valeur: `${(4500).toLocaleString('fr-FR')} F` },
+      { libelle: 'Échéance', valeur: '30/11/2026' }
+    ])
+  })
+
+  it('mouvement du tiroir : sens et motif en clair, motif libre laissé tel quel', () => {
+    const m = detailsAudit(
+      {
+        action: 'annulation_mouvement_caisse',
+        entite: 'mouvements_caisse',
+        avant: { session: 4, sens: 'sortie', motif: 'depense', montant: 1000 },
+        apres: { contreMouvement: 12, motif: 'Saisie en double' }
+      },
+      nomDe
+    )
+    expect(m.avant.map((d) => d.valeur)).toEqual([
+      '4',
+      'Sortie du tiroir',
+      'Dépense',
+      `${(1000).toLocaleString('fr-FR')} F`
+    ])
+    expect(m.apres).toEqual([
+      { libelle: 'Contre-mouvement n°', valeur: '12' },
+      { libelle: 'Motif', valeur: 'Saisie en double' }
+    ])
   })
 
   it('une action inconnue reste lisible, sans tiret bas', () => {
