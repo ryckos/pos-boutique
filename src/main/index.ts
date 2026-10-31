@@ -6,7 +6,7 @@ import { initialiserBase } from './db/connexion'
 import { migrationsEnAttente, migrer } from './db/migrations'
 import { semerDonneesDemo } from './db/seed'
 import { enregistrerTousLesIpc } from './ipc'
-import { creerFenetrePrincipale } from './fenetres'
+import { creerFenetrePrincipale, ouvrirEcranClientAuDemarrage } from './fenetres'
 import {
   configurerSauvegardes,
   sauvegardeDuDemarrage,
@@ -47,6 +47,7 @@ app.whenReady().then(async () => {
   sauvegardeDuDemarrage()
   enregistrerTousLesIpc({ cheminBase, modeDev })
   creerFenetrePrincipale()
+  ouvrirEcranClientAuDemarrage()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) creerFenetrePrincipale()
