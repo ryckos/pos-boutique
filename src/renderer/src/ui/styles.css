@@ -1911,3 +1911,26 @@ select {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ─── Rapports de ventes (Dev A, A14 — UI_UX § 5.26) ─── */
+.titre-section {
+  font-size: 18px;
+  margin: 20px 0 8px;
+}
+.barre-cellule {
+  width: 30%;
+  min-width: 120px;
+}
+.barre-heure {
+  display: block;
+  height: 14px;
+  border-radius: 7px;
+  background: var(--primaire);
+}
+.pastille-ecart {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--rayon);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
