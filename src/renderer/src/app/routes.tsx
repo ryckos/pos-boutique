@@ -6,6 +6,7 @@ import type { DefinitionRoute } from './types'
 import { routesAchats } from '@renderer/modules/achats/routes'
 import { routesAudit } from '@renderer/modules/audit/routes'
 import { routesCaisse } from '@renderer/modules/caisse/routes'
+import { routesClients } from '@renderer/modules/clients/routes'
 import { routesCatalogue } from '@renderer/modules/catalogue/routes'
 import { routesDepenses } from '@renderer/modules/depenses/routes'
 import { routesFournisseurs } from '@renderer/modules/fournisseurs/routes'
@@ -19,6 +20,7 @@ import { routesReglagesMateriel } from '@renderer/modules/reglages-materiel/rout
 
 export const routes: DefinitionRoute[] = [
   ...routesCaisse, // Dev A
+  ...routesClients, // Dev A
   ...routesCatalogue, // Dev B
   ...routesStock, // Dev B
   ...routesInventaires, // Dev B

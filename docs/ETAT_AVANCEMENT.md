@@ -86,7 +86,7 @@ Le socle comprend :
 ## Phase 3 — Suivi financier (S13–S15)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
 |-------|-------------------------------------------|-----|--------|--------------------------|
-| A11   | Clients et vente à crédit                 | A   | 🔄     | Parties 1 et 2 dans la **PR #79** (`a/clients-fiche`, en relecture par Dev B) : fiches clients, plafond (gérant), encours, migration `20261031_1000_clients_credit.sql` ; vente à crédit (plafond strict, créance à 30 jours, annulation de la créance, retour refusé, ticket en deux exemplaires), venue de la PR #80 fusionnée dans `a/clients-fiche`. Suivent : écran Clients, crédit à la caisse, avoir en boutique |
+| A11   | Clients et vente à crédit                 | A   | 🔄     | Parties 1 et 2 fusionnées (**PR #79**) : fiches clients, plafond (gérant), encours, migration `20261031_1000_clients_credit.sql` ; vente à crédit (plafond strict, créance à 30 jours, annulation de la créance, retour refusé, ticket en deux exemplaires), venue de la PR #80. Partie 3 (écran Clients `/clients`, branche `a/clients-ecran`) en PR. Suivent : crédit à la caisse, avoir en boutique |
 | A12   | Recouvrement                              | A   | ⏳     |   |
 | A13   | Écran client définitif                    | A   | ⏳     |   |
 | B11   | Sorties de stock, retours fournisseur     | B   | ✅     | PR #39 (serveur : sorties, retours, avoirs déduits de la dette, migration `retours_fournisseur`) et #40 (écran Sorties de stock, avoirs reçus ou refusés dans « Dettes », avoir à valoir sur la page Fournisseurs) |
@@ -173,3 +173,5 @@ Le socle comprend :
 | 2026-10-19 | A10   | Parties 3 et 4 : fenêtre « Faire une facture » (PR #68), « Proforma » et « Reprendre une proforma » (PR #70) |
 | 2026-10-29 | B13   | Partie 3 : dépense payée au tiroir (source « caisse »), sortie de caisse dans la même transaction, page « Dépenses de ma caisse » pour la caissière (PR #74) |
 | 2026-10-29 | B14   | Partie 4 : marge et résultat chiffrés depuis `ventesPeriode` (A14) : chiffre d'affaires TTC, coût, marge, résultat ; onglet « Résultat » et export détaillés (PR #76) |
+| 2026-10-31 | A14   | Partie 1 (avancée) : `caisse:ventesPeriode` pour la marge de B14 (PR #73) |
+| 2026-10-31 | A11   | Parties 1 et 2 : fiches clients, plafond, encours ; vente à crédit, créance, annulation, ticket en deux exemplaires (PR #79, avec #80) |

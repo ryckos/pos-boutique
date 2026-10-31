@@ -724,6 +724,22 @@ douchette et raccourcis coupés pendant les fenêtres.
   alertes restent dans la caisse (prix changé, article retiré, proforma périmée, remises au-delà du
   plafond de la caissière) jusqu'à « Compris » ou l'encaissement.
 
+### 5.24 Clients (Dev A — A11, caissière et gérant)
+Page de gestion (§ 5.12) à l'adresse `/clients`, menu « Clients ».
+- **En-tête** : « Crédits en cours » (total des encours des clients actifs), pastille rouge « En retard »
+  si une échéance est dépassée, bouton **« Nouveau client »**.
+- **Recherche** par nom ou téléphone (200 ms après la dernière frappe). Le gérant peut cocher « Afficher
+  les clients désactivés ».
+- **Tableau** : nom (avec « Reste disponible : … sur … » ou « Aucun crédit autorisé »), téléphone,
+  plafond, encours (pastille « En retard »), état. Actions en icônes : voir la fiche ; désactiver (gérant).
+- **Fiche** (fenêtre large) : nom, téléphone, NIF, adresse et plafond, puis l'encours, le reste disponible
+  et le tableau des créances (ticket, date, montant, encaissé, restant dû, échéance, état : Ouverte, En
+  retard en rouge, Soldée, Annulée). Le champ **plafond est grisé pour la caissière** (« Seul le gérant fixe
+  le plafond de crédit »). Les règles de saisie (téléphone de 8 chiffres au moins, obligatoire dès que le
+  plafond dépasse 0) sont dites avant l'envoi ; le service les revérifie.
+- **Désactiver** (gérant) : motif obligatoire ; si le client doit encore de l'argent, le refus du service
+  s'affiche dans la fenêtre.
+
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
 - Les messages d'erreur portent `role="alert"`.
