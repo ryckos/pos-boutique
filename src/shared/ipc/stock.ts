@@ -169,6 +169,50 @@ export interface TableauPeremptions {
   valeurTotale: number
 }
 
+// ─── Alertes de l'accueil (rendez-vous A15) ──────────────────────────────────
+
+/** Nombre d'éléments détaillés par sorte d'alerte : le reste se voit sur les pages Stock et Péremptions. */
+export const NB_ALERTES_ACCUEIL = 5
+
+export interface ProduitEnAlerte {
+  produitId: number
+  nom: string
+  unite: string
+  /** En unités de base ; peut être négatif (D-A1). */
+  stock: number
+  seuil: number
+  niveau: Exclude<NiveauStock, 'normal'>
+}
+
+/**
+ * Résumé des alertes pour l'écran d'accueil du gérant (REGLES_METIER § 3.3 et § 5.1). Mêmes règles
+ * et mêmes chiffres que les pages Stock et Péremptions.
+ */
+export interface AlertesAccueil {
+  stock: {
+    /** Stock ≤ 0. */
+    nbRuptures: number
+    /** 0 < stock ≤ seuil d'alerte. */
+    nbStockBas: number
+    /** Les `NB_ALERTES_ACCUEIL` premiers : ruptures d'abord, puis du stock le plus bas au plus haut. */
+    produits: ProduitEnAlerte[]
+  }
+  peremptions: {
+    /** Paramètre `peremption_seuil_jours`. */
+    horizonJours: number
+    /** Date dépassée (joursRestants < 0). */
+    nbPerimes: number
+    /** De 0 à 3 jours (ligne rouge du tableau, périmés non compris). */
+    nbUrgents: number
+    /** Au-delà de 3 jours, jusqu'à l'horizon (ligne ambre). */
+    nbProches: number
+    /** Somme des valeurs en jeu de tous les lots de l'horizon, FCFA (= total du tableau des péremptions). */
+    valeurEnJeu: number
+    /** Les `NB_ALERTES_ACCUEIL` lots les plus proches de leur date, périmés d'abord. */
+    lots: LotPerimable[]
+  }
+}
+
 // ─── Sorties de stock et retours fournisseur (B11) ───────────────────────────
 
 /** Un lot en stock du produit, pour choisir d'où sort la marchandise. */
@@ -260,6 +304,11 @@ export interface ContratStock {
     requete: { lotId: number; quantite: number; commentaire?: string | null }
     reponse: { restant: number }
   }
+  /**
+   * Alertes rupture, stock bas et péremption pour l'écran d'accueil (A15, Dev A) : compteurs et
+   * premiers éléments, lecture légère. Gérant (valeur en jeu au prix d'achat).
+   */
+  'stock:alertesAccueil': { requete: void; reponse: AlertesAccueil }
   /** Stock de tous les produits actifs, valeur, alertes, dormants. Gérant (valeur au CUMP). */
   'stock:etat': { requete: void; reponse: EtatStock }
   /**
