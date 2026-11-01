@@ -797,6 +797,21 @@ Page de gestion (§ 5.12) à l'adresse `/clients`, menu « Clients ».
   de « À rembourser » ; le message après retour le répète.
 - **Clôture de caisse** (§ 5.4) : carte « Créances encaissées » (si > 0), les espèces étant déjà dans le tiroir.
 
+### 5.26 Rapports de ventes (Dev A — A14, gérant)
+Page « Rapports de ventes » du menu (`modules/rapports-ventes/PageRapportsVentes.tsx`, route `/rapports`), à côté
+de « Rapports de gestion » (Dev B, § 5.20). Lecture seule. Mêmes onglets et mêmes filtres Du / Au (mois en cours par
+défaut, « Revenir au mois en cours ») que les rapports de gestion. Règles : `REGLES_METIER.md` § 11.3.
+- **Par heure** : phrase de synthèse (tickets, total, heure la plus forte), tableau Heure / Tickets / Chiffre
+  d'affaires / Panier moyen avec une barre proportionnelle à la meilleure heure.
+- **Par caissier** : tableau Caissier / Tickets / Ventes / Retours / Chiffre d'affaires / Panier moyen / Remises /
+  Tickets annulés (« 1 (7 500 F) »).
+- **Produits** : choix « Classer par » (chiffre d'affaires, marge, quantité vendue), puis deux tableaux, « Les plus
+  vendus » et « Les moins vendus » (10 lignes), Produit / Quantité / Chiffre d'affaires / Marge.
+- **Sessions de caisse** : total des écarts en pastille colorée (rouge manque, ambre surplus, vert juste, comme à
+  la clôture), tableau Caissier / Ouverte le / Clôturée le (« En cours ») / Fond / Attendues / Comptées / Écart /
+  Commentaire.
+- Pas d'export Excel dans cette première version (il passe par le service d'export de Dev B, § 11.2).
+
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
 - Les messages d'erreur portent `role="alert"`.

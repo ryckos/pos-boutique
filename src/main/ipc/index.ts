@@ -17,6 +17,7 @@ import { enregistrerIpcRapportsGestion } from '../modules/rapports-gestion/ipc'
 import { enregistrerIpcSauvegardes } from '../modules/sauvegardes/ipc'
 import { enregistrerIpcStock } from '../modules/stock/ipc'
 import { enregistrerIpcUtilisateurs } from '../modules/utilisateurs/ipc'
+import { enregistrerIpcRapportsVentes } from '../modules/rapports-ventes/ipc'
 import { enregistrerIpcMateriel } from '../materiel/ipc'
 import { enregistrerIpcSysteme } from './systeme'
 
@@ -39,5 +40,6 @@ export function enregistrerTousLesIpc(options: { cheminBase: string; modeDev: bo
   // ─── Dev A ───
   enregistrerIpcCaisse()
   enregistrerIpcClients()
+  enregistrerIpcRapportsVentes()
   enregistrerIpcMateriel()
 }
