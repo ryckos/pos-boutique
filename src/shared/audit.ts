@@ -45,6 +45,9 @@ export const LIBELLES_ACTION: Record<string, string> = {
   utilisation_avoir: 'Paiement par avoir en boutique',
   encaissement_creance: 'Paiement d’une créance',
   annulation_encaissement: 'Annulation d’un paiement de créance',
+  creation_promotion: 'Création d’une promotion',
+  modification_promotion: 'Modification d’une promotion',
+  arret_promotion: 'Arrêt d’une promotion',
   modification_parametre: 'Modification d’un paramètre',
   creation_utilisateur: 'Création d’un compte',
   modification_role: 'Changement de rôle',
@@ -65,6 +68,10 @@ export const LIBELLES_ACTION: Record<string, string> = {
 
 const LIBELLES_CHAMP: Record<string, string> = {
   motif: 'Motif',
+  regle: 'Règle',
+  cible: 'Cible',
+  du: 'Du',
+  au: 'Au',
   commentaire: 'Commentaire',
   numero: 'Numéro',
   numeroTicket: 'Ticket',

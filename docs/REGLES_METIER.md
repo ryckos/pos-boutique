@@ -464,7 +464,35 @@ Les règlements peuvent être partiels (espèces, mobile money, virement). La vu
   Comme tout mouvement, il est chiffré au CUMP du produit. Gérant. Pas de journal d'audit : le
   mouvement trace déjà qui, quand et pourquoi.
 - **Promotion** : une promotion vaut pour tout un produit, et appartient aux promotions programmées
-  (A16, Dev A). Le bouton « Promo » est affiché inactif d'ici là.
+  (A16, Dev A, § 5.2). Le bouton « Promo » de la page Péremptions s'active en pointant vers `/promotions?produit=<id>&pourcent=20&fin=<date>` (demande à Dev B).
+
+### 5.2 Promotions programmées (validé par Dev A le 2026-11-01, A16)
+- **Une promotion est un prix de vente temporaire.** À la vente, la ligne garde le **prix payé** dans
+  `prix_unitaire` (donc ticket, TVA, retour, facture et marge se calculent comme d'habitude), plus
+  `prix_normal`, `promotion_id` et `promotion_nom` copiés au moment T. Le service relit tout en base :
+  l'écran ne fait que refléter le calcul (`src/shared/promotions.ts`, le même code des deux côtés).
+- **Cible** : un produit (tous ses conditionnements) ou un rayon avec ses sous-rayons. Jamais les deux.
+- **Types** : *pourcentage* (1 à 99) sur le prix de chaque conditionnement ; *remise en francs* et *prix
+  fixe*, exprimés **par unité de base** et multipliés par la quantité du conditionnement (−50 F donne
+  −1 200 F sur un carton de 24 ; un prix fixe de 300 F fait un lot de 3 à 900 F).
+- **Arrondi** : le prix en pourcentage est arrondi **au franc le plus proche, 0,5 vers le haut** (15 % de
+  350 F → 298 F). C'est le seul arrondi autorisé en plus de celui de la TVA.
+- **Jamais de hausse** : si le résultat n'est pas inférieur au prix normal, ou s'il tombe sous 1 F, la
+  promotion n'a pas d'effet sur ce conditionnement.
+- **Dates** : début et fin inclus, date de l'ordinateur de la boutique. Rien à lancer ni à terminer. À la
+  création le début n'est pas dans le passé et la fin n'est pas passée.
+- **Plusieurs promotions** sur un même article : la plus avantageuse seule (prix le plus bas), jamais de
+  cumul ; à prix égal, la plus récente.
+- **Remises manuelles** : elles se calculent sur le prix promotionnel. Une promotion n'entre pas dans le
+  plafond de remise de la caissière (D-A3), ne demande jamais le code du gérant et n'est pas comptée dans
+  les « Remises » du rapport par caissier.
+- **Gérant** : crée, modifie (promotion à venir ou en cours) et arrête, avec journal
+  (`creation_promotion`, `modification_promotion`, `arret_promotion`). Une promotion ne se supprime jamais
+  (trigger) : « Arrêter » la désactive tout de suite ; les tickets déjà faits gardent son nom.
+- **Ticket** : sous chaque ligne en promotion, « Promo <nom> (au lieu de X F) » ; avant les paiements,
+  « Économie promotions : X F ». Pas d'économie sur un ticket de retour. Un retour rend le prix payé.
+- **Proforma** : faite pendant une promotion, elle est au prix promotionnel ; reprise, `prixChange` compare
+  avec le prix du jour **promotion comprise**.
 
 ---
 

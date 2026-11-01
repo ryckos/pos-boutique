@@ -1051,6 +1051,19 @@ select {
   font-size: 13px;
   color: var(--succes);
 }
+.ticket-ligne-promo {
+  grid-column: 1 / -1;
+  text-align: right;
+  font-size: 13px;
+  color: var(--accent-texte);
+}
+.ticket-economie {
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-texte);
+  padding: 4px 0;
+}
 .ticket-remises {
   display: grid;
   grid-template-columns: 1fr auto;

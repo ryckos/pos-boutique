@@ -8,6 +8,7 @@
  * Aucune dépendance à Electron ni à la base : les données arrivent déjà relues (service-ticket.ts).
  */
 import type { PageDeCodes } from '@shared/ipc/materiel'
+import { mentionPromotion } from '@shared/promotions'
 import type { VentilationTaux } from '../modules/caisse/calculs'
 import { Builder, IMPULSION_TIROIR } from './escpos'
 
@@ -21,6 +22,8 @@ export interface LigneTicketVente {
   /** Remise sur la ligne (règle 6.6) ; totalLigne en est déjà net. */
   remise: number
   totalLigne: number
+  /** Promotion appliquée à la vente (A16) : nom copié et prix du catalogue d'alors. */
+  promotion?: { nom: string; prixNormal: number }
 }
 
 export interface PaiementTicket {
@@ -36,6 +39,8 @@ export interface TicketAImprimer {
   horodatage: string
   caissier: string
   lignes: LigneTicketVente[]
+  /** Ce que les promotions ont fait gagner au client sur ce ticket (A16) ; absent ou 0 = rien à afficher. */
+  economiePromotions?: number
   /** Remise sur le ticket entier ; totalTtc en est déjà net. */
   remiseGlobale: number
   totalTtc: number
@@ -215,6 +220,14 @@ export function lignesTicket(
       for (const t of couper(v.designation)) l.push({ texte: t })
       l.push({ texte: colonnes(`  ${v.quantite} x ${montantTicket(v.prixUnitaire)}`, brut) })
     }
+    if (v.promotion) {
+      for (const t of couper(
+        mentionPromotion(v.promotion.nom, v.promotion.prixNormal, montantTicket),
+        LARGEUR - 2
+      )) {
+        l.push({ texte: `  ${t}` })
+      }
+    }
     if (v.remise > 0) l.push({ texte: colonnes('  Remise', `-${montantTicket(v.remise)}`) })
   }
 
@@ -234,6 +247,9 @@ export function lignesTicket(
   for (const t of ticket.parTaux) {
     l.push({ texte: colonnes(`Dont HT ${taux(t.taux)}`, montantTicket(t.ht)) })
     l.push({ texte: colonnes(`Dont TVA ${taux(t.taux)}`, montantTicket(t.tva)) })
+  }
+  if ((ticket.economiePromotions ?? 0) > 0) {
+    l.push({ texte: colonnes('Économie promotions', montantTicket(ticket.economiePromotions!)) })
   }
   l.push(SEPARATEUR)
 

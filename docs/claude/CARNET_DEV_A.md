@@ -18,6 +18,86 @@ Format d'une entrée :
 
 ---
 
+## 2026-11-01 — a/promotions (A16), a/accueil (A15), a/rapports-ventes (A14) + a/ecran-client (A13) — Phase 4 codée
+**Fait** (cette session a enchaîné quatre tâches, une PR chacune, plusieurs commits par PR) :
+- **A13 Écran client définitif — fusionnée (PR #90)**. Ouverture au démarrage sur le second écran s'il existe
+  (sinon rien : le bouton « Ouvrir l'écran client » reste), dernier état rejoué si l'écran s'ouvre en cours de
+  ticket, fermeture avec la caisse, nom de la boutique lu dans `boutique_nom`, trois vues (accueil, panier,
+  fin de vente « Merci » avec monnaie en 56 px pendant 8 s). `UI_UX` § 5.5. **Reste l'essai sur le 11,6″ du terminal.**
+- **A14 partie 2 Rapports de ventes — fusionnée (PR #91)**. Page `/rapports` (gérant) : par heure, par caissier,
+  top / flop produits (par produit, retours déduits), historique des sessions et écarts. Canaux
+  `rapports-ventes:parHeure`, `parCaissier`, `produits`, `sessions` ; `REGLES_METIER` § 11.3, `UI_UX` § 5.26.
+  Le CA par produit est la somme des lignes (la remise du ticket entier n'y est pas répartie) : il dépasse
+  `ventesPeriode` de ces remises. Pas d'export Excel (passerait par le service de Dev B).
+- **A15 Tableau de bord d'accueil — fusionnée (PR #92)**.
+  Page « Accueil » = première entrée du menu du gérant et page d'arrivée après la connexion (la caissière arrive
+  toujours sur « Caisse ») : ventes du jour et d'hier, caisses ouvertes (pastille « À clôturer ? » si ouverte
+  avant aujourd'hui), alertes de stock et de péremption de Dev B. Canal `rapports-ventes:accueil` ;
+  `REGLES_METIER` § 11.4, `UI_UX` § 5.27 ; 849 tests verts sur cette branche. Essai à la main validé par Dev A.
+- **A16 Promotions programmées — branche `a/promotions` poussée, PR à ouvrir/relire** (Dev A a validé l'essai à la
+  main). Une promotion est un **prix de vente temporaire** : la ligne de vente garde le prix payé dans
+  `prix_unitaire` et copie `prix_normal`, `promotion_id`, `promotion_nom` (migration
+  `20261102_0900_promotions.sql`, aussi triggers : cible unique, pas de suppression). Règles validées par Dev A
+  (`REGLES_METIER` § 5.2) : cible produit ou rayon (avec sous-rayons) ; pourcentage 1–99 sur chaque
+  conditionnement, remise en francs et prix fixe **par unité de base** (× quantité du conditionnement) ; arrondi au
+  franc le plus proche (0,5 vers le haut), le seul arrondi autorisé avec celui de la TVA ; jamais de hausse ; la plus
+  avantageuse seule, sans cumul ; une promotion n'entre pas dans le plafond de remise (D-A3) ni dans les « Remises »
+  du rapport par caissier. Calcul partagé `src/shared/promotions.ts` (serveur et caisse), service
+  `modules/promotions/`, canaux `promotions:lister|enCours|creer|modifier|arreter`, page `/promotions`
+  (`UI_UX` § 5.28), prix du jour à la caisse (recalculé chaque minute et sur tout article qui entre au ticket, pas
+  pendant le paiement), mention sur la ligne, ticket imprimé (« Promo … (au lieu de X F) », « Économie
+  promotions »), écran client, proforma (`prixChange` tient compte des promotions). 900 tests verts sur cette
+  branche (61 de plus : 26 + 12 + 23).
+- Libellés du journal ajoutés dans `src/shared/audit.ts` (fichier de Dev B, la CI l'exige) : `creation_promotion`,
+  `modification_promotion`, `arret_promotion`, clés `regle`, `cible`, `du`, `au`.
+
+**En cours** : A16 (PR #93, `a/promotions`) attend la relecture de Dev B. Les conflits avec `test` (après la
+fusion d'A15, PR #92) sont résolus par une fusion de `test` dans la branche (`routes.tsx`, `UI_UX`, `ETAT_AVANCEMENT`),
+77 fichiers de tests verts. **Cette entrée est sur `a/promotions`.**
+
+**Mise à jour en fin de journée** : Dev A a réalisé et **validé l'essai sur le terminal avec la Xprinter** (A3 et A4 passées à ✅ dans `ETAT_AVANCEMENT.md`). Les autres points de l'essai (voir l'étape 4 ci-dessous) ne sont pas confirmés : à demander à Dev A au prochain `/reprendre`.
+
+**Prochaine étape** :
+1. `/reprendre`, puis `git fetch` : la PR #93 (A16, `a/promotions`) est-elle fusionnée ? Si `test` a encore
+   avancé, `git merge origin/test` sur la branche (conflits attendus seulement dans `ETAT_AVANCEMENT.md`, en
+   gardant les deux côtés), `npm run verifier`, pousser.
+2. Après la fusion d'A16 : ligne au journal des fusions de `ETAT_AVANCEMENT.md`, A16 → ✅ (le bouton « Promo » de
+   la page Péremptions reste à relier par Dev B), supprimer `a/accueil` et `a/promotions` (local et GitHub).
+   A13 reste 🔄 (essai sur le 11,6″) ; A14 et A15 sont ✅ (l’export Excel des rapports est facultatif).
+3. **Mettre à jour `docs/SCENARIOS_TEST.md`** : sa liste « fonctions non livrées » cite encore A13, A14, A15 et
+   A16, et il manque des scénarios pour l'écran client, les rapports de ventes, l'accueil et les promotions.
+4. **Essai sur le terminal** (Dev A n'a toujours pas la Xprinter sous la main) : tout ce qui est noté aux entrées
+   précédentes (Xprinter : ticket, reçu EC-…, liste de relance, ticket à crédit en deux exemplaires, ticket de retour,
+   X / Z ; tiroir ; 15,6″ ; douchette) **plus** : écran client sur le 11,6″ (ouverture automatique, monnaie), ticket
+   avec une promotion (mention sur 48 colonnes), page Accueil sur le 15,6″. Puis A3, A4 → ✅.
+5. **Phase 5** (`/tache A-P5`) : tests terrain de la caisse (coupure en pleine vente, bourrage papier, douchette
+   débranchée, 200 ventes d'affilée), guide du caissier, formation. À préparer avec Dev B (recette finale).
+
+**Questions ouvertes** :
+- Pour Dev A : les listes de recherche (F2) et de changement de conditionnement montrent encore le prix du catalogue,
+  pas le prix promotionnel (il apparaît dès que l'article est au ticket). À changer ?
+- Pour la cliente : un avoir expire-t-il ? marge sur le TTC ou le HT (D-A6) ; délai limite d'un retour ; mentions
+  légales de la facture ; ligne « tickets annulés » sur le X et le Z ; D-A1 (stock négatif), D-A3 (plafond de
+  remise) ; l'export Excel des rapports de ventes est-il souhaité ?
+- Pour Dev B : le gérant doit-il pouvoir encaisser sans avoir sa propre caisse (ancienne question, toujours ouverte) ?
+- Sur ce poste : `.claude/settings.json` peut être modifié localement (`git checkout .claude/settings.json`).
+
+**Contrats** :
+- **Livrés (Dev A)** : `rapports-ventes:parHeure|parCaissier|produits|sessions` (A14) et `rapports-ventes:accueil`
+  (A15, sur `a/accueil`) ; `promotions:*` (A16). Champs ajoutés sans impact hors tests qui construisent ces
+  objets : `ArticleCatalogue.prixNormal?` et `promotion?` (renseignés par la caisse, jamais par le catalogue),
+  `LignePanierClient.promotion?`, `PanierClient.boutique?` et `fin?`, `TicketAImprimer.economiePromotions?`,
+  `LigneTicketVente.promotion?`.
+- **Demandé à Dev B** (ligne ⏳ aux rendez-vous de `ETAT_AVANCEMENT.md`) : relier le bouton « Promo −20 % » de
+  `PagePeremptions.tsx` à `/promotions?produit=<id>&pourcent=20&fin=<date de péremption du lot>` ; la page de
+  promotions lit ces paramètres et ouvre le formulaire pré-rempli.
+- **Pour Dev B (rapports, B14)** : avec une promotion, `lignes_vente.prix_unitaire` est le **prix payé** et
+  `prix_normal` le prix du catalogue d'alors (NULL sans promotion) ; `total_ligne`, la marge et `ventesPeriode`
+  restent justes sans rien changer. Une promotion n'est pas une remise : elle n'est pas dans `remise_ligne`.
+- **Zone partagée** (à annoncer dans les PR) : migration `20261102_0900_promotions.sql`, `src/shared/types.ts`,
+  `src/shared/audit.ts`, `app/routes.tsx`, `ui/styles.css`, `src/main/ipc/index.ts`, `src/shared/ipc/index.ts`.
+- Attendu de Dev B : relecture des PR d'A15 et A16, et le bouton « Promo » ci-dessus.
+
 ## 2026-11-01 — a/recouvrement — A12 Recouvrement (PR #87 fusionnée dans `test`)
 **Fait** (une seule PR, voulue ainsi par Dev A ; rien n'est encore commité au moment d'écrire ces lignes) :
 - **Début de session** : `test` à jour (PR #85 fusionnée) ; 11 branches locales fusionnées et 15 branches distantes
@@ -630,58 +710,3 @@ supprimer (`git tag -d sauvegarde-avant-rebase-a3`).
 - D-A1 (stock négatif), D-A2 (page de codes), D-A3 (plafond remise) : inchangées.
 
 **Contrats** : aucun modifié. Reçus : `categorie` et `conditionnementsProduit` (Dev B).
-
-## 2026-09-23 (fin) — a/caisse-encaissement — A2 Encaissement (partie 1 : serveur)
-> **Entrée restaurée** : perdue lors de la résolution de conflit de la PR #7 (fusionnée), remise en place
-> par `/verifier`. Branche créée depuis `test` **avant** la fusion de la PR A1.2 (`a/caisse-grille`, entrée de carnet
-> « A1.2 partie 1 » sur cette branche-là). Au rebase, garder les deux entrées, celle-ci en haut.
-
-**Fait** :
-- **Décision validée par Dev A** : le minimum des sessions de caisse est avancé d'A4 à A2, car
-  `ventes.session_caisse_id` est obligatoire (règle 6.1 : aucune vente sans session). Pas de session
-  automatique. A4 garde clôture, X, Z.
-- Contrat `src/shared/ipc/caisse.ts` : `caisse:sessionCourante`, `caisse:ouvrirSession
-  { fondOuverture }`, `caisse:enregistrerVente` (`RequeteVente` → `VenteEnregistree` avec
-  `alertesStock`). Rôles caissier et gérant. Modes acceptés : `especes`, `tmoney`, `flooz`
-  (**crédit refusé jusqu'à A11**, validé par Dev A).
-- `calculs.ts` : `ventilerTva()` par taux (seul arrondi).
-- `service-session.ts` : `sessionOuverte(db, utilisateurId)`, `ouvrirSession()` (une seule ouverte,
-  fond entier ≥ 0, journalisée `ouverture_session_caisse`).
-- `service-vente.ts` : `enregistrerVente(db, utilisateurId, requete)` en une `avecTransaction`
-  (prix/coûts relus dans `v_catalogue_vente` + CUMP, photocopie, un mouvement `vente` par ligne,
-  `lot_id` null jusqu'à A9, paiements, somme = total, référence mobile money obligatoire, espèces
-  reçues ≥ part espèces, monnaie rendue). Stock négatif : vente enregistrée + `alertesStock`
-  (**D-A1 non tranchée**, validé par Dev A : pas de journalisation spéciale).
-- `tests/caisse-vente.test.ts` : 22 tests (TVA 11 363 / 1 937 ; vente de démo 8 500 F, HT 7 249,
-  TVA 1 251, monnaie 1 500 ; tomate 72 → 46 ; marges 1 500 / 200 / 120 ; scénario 10 100 F ; refus
-  et rollback complet, numéro non consommé). 86 tests au total, build OK.
-- Commits `20f9225`, `1d108fb`.
-
-**En cours** : A2 🔄 — PR « partie 1 » vers `test`. A1.2 partie 1 aussi en PR (non fusionnée).
-
-**Prochaine étape** :
-1. Dès que la PR A1.2 est fusionnée : `git fetch && git rebase origin/test` sur cette branche
-   (conflits attendus seulement dans `ETAT_AVANCEMENT.md` et ce carnet : garder les deux versions).
-2. **A2 partie 2** (même branche si la PR 1 n'est pas encore fusionnée, sinon nouvelle branche
-   `a/caisse-paiement` depuis `test`) :
-   - au chargement de `PageCaisse` : `caisse:sessionCourante` ; sans session, n'afficher que
-     « Ouvrir la caisse » (saisie du fond, `caisse:ouvrirSession`) — UI_UX § 5.2 ;
-   - `FenetrePaiement.tsx` (UI_UX § 5.3), en réutilisant `.voile` / `.fenetre` de la PR A1.2 :
-     billets 1 000 / 2 000 / 5 000 / 10 000 + « Montant exact », monnaie à rendre en très grand,
-     référence obligatoire TMoney/Flooz, paiement mixte avec « Reste à payer », bouton « Encaisser » ;
-     ouverte par les boutons Espèces/TMoney/Flooz et par F4 (`case 'encaisser'` déjà prévu) ;
-   - envoi `{ lignes: [{ conditionnementId, quantite }], paiements, montantRecu }` ; au succès,
-     vider le ticket et afficher « Vente T-… enregistrée. Monnaie à rendre : … » ; afficher
-     `alertesStock` en bandeau ambre ; l'impression et le tiroir restent pour A3.
-   Puis A2 → ✅ et contrat `caisse:enregistrerVente` → ✅.
-
-**Questions ouvertes** :
-- Essai à la vraie douchette sur le terminal (A1.1) : toujours à faire.
-- D-A1 (stock négatif), D-A2 (page de codes, à demander avant A3), D-A3 (plafond remise) : inchangées.
-
-**Contrats** :
-- **Livré en lecture pour Dev B** : `caisse:enregistrerVente`, modèle de transaction
-  (`service-vente.ts`). `sessionOuverte(db, utilisateurId)` existe déjà ; attention, Dev B attend
-  pour B13 une forme **sans** utilisateur (`sessionOuverte(db)`, fin S10) : à discuter en A8.
-- Attendus inchangés : `catalogue:conditionnementsProduit` (fin S4), `categorie` dans
-  `ArticleCatalogue` (avec B2.1), `parametres:lire` (fin S5).

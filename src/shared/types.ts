@@ -52,6 +52,12 @@ export interface ArticleCatalogue {
    * Toujours renseigné par les canaux catalogue:* ; optionnel pour ne pas casser les objets de test.
    */
   categorie?: string | null
+  /**
+   * Promotion appliquée par la caisse (A16) : `prixVente` est alors le prix promotionnel et `prixNormal`
+   * celui du catalogue. Jamais renseigné par le catalogue lui-même ; le service refait ce calcul en base.
+   */
+  prixNormal?: number
+  promotion?: { id: number; nom: string }
 }
 
 /** Ce que l'écran client (11,6″) affiche. */
@@ -62,6 +68,8 @@ export interface LignePanierClient {
   total: number
   /** Remise sur la ligne (A5), affichée au client. */
   remise?: number
+  /** Promotion en cours sur cette ligne (A16) : nom et total qu'elle coûterait au prix normal. */
+  promotion?: { nom: string; totalNormal: number }
 }
 
 export interface PanierClient {

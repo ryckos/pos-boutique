@@ -29,6 +29,7 @@ import { ErreurMetier } from '../../core/erreurs'
 import type { DonneesProforma } from '../../documents/proforma'
 import { enteteDepuis } from '../../materiel/reglages'
 import { conditionnementsProduit } from '../catalogue/service'
+import { meilleurePromotion } from '../promotions/service'
 import { ventilerTva } from './calculs'
 import { controlerPlafond, controlerRemiseGlobale, preparerLignes } from './service-vente'
 
@@ -183,6 +184,13 @@ export function lireProforma(db: Db, numero: string): ProformaReprise {
     const article =
       conditionnementsProduit(db, l.produitId).find((a) => a.conditionnementId === l.conditionnementId) ??
       null
+    // Le prix du jour tient compte des promotions (A16) : le devis fait pendant une promotion, repris
+    // pendant la même promotion, n'a pas changé de prix.
+    const prixDuJour =
+      article === null
+        ? null
+        : (meilleurePromotion(db, article.produitId, article.quantiteBase, article.prixVente)?.prix ??
+          article.prixVente)
     return {
       conditionnementId: l.conditionnementId,
       designation: l.designation,
@@ -190,7 +198,7 @@ export function lireProforma(db: Db, numero: string): ProformaReprise {
       remise: l.remise,
       prixProforma: l.prixProforma,
       article,
-      prixChange: article !== null && article.prixVente !== l.prixProforma
+      prixChange: prixDuJour !== null && prixDuJour !== l.prixProforma
     }
   })
 

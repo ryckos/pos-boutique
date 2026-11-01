@@ -43,6 +43,7 @@ import { allouerFefo } from '../stock/fefo'
 import { encoursClient } from '../clients/service'
 import { depenserAvoirs, soldeAvoirs } from '../clients/service-avoir'
 import { ventilerTva } from './calculs'
+import { meilleurePromotion } from '../promotions/service'
 import { sessionOuverte } from './service-session'
 
 const MODES: Record<ModePaiementVente, string> = {
@@ -71,6 +72,12 @@ interface ConditionnementEnBase {
 
 /** Une ligne préparée, prête à être photocopiée dans lignes_vente. */
 export interface LignePreparee extends ConditionnementEnBase {
+  /**
+   * Promotion appliquée (A16, règle 5.2) : `prixVente` est alors le prix PROMOTIONNEL, c'est celui que le
+   * client paie et que la ligne photocopie ; `prixNormal` garde le prix du catalogue. null sans promotion.
+   */
+  prixNormal: number | null
+  promotion: { id: number; nom: string } | null
   quantite: number
   remise: number
   /** Quantité × prix − remise. */
@@ -113,7 +120,10 @@ export function preparerLignes(db: Db, lignes: RequeteVente['lignes']): LignePre
         `Remise invalide sur « ${c.designation} » : saisissez un montant en francs, sans virgule.`
       )
     }
-    const brut = quantite * c.prixVente
+    // Promotion du jour (A16) : le prix est relu et calculé ici, jamais envoyé par l'écran.
+    const promo = meilleurePromotion(db, c.produitId, c.quantiteBase, c.prixVente)
+    const prix = promo?.prix ?? c.prixVente
+    const brut = quantite * prix
     if (remise > brut) {
       throw new ErreurMetier(
         `La remise sur « ${c.designation} » (${formaterFCFA(remise)}) dépasse le montant de la ligne (${formaterFCFA(brut)}).`
@@ -121,6 +131,9 @@ export function preparerLignes(db: Db, lignes: RequeteVente['lignes']): LignePre
     }
     return {
       ...c,
+      prixVente: prix,
+      prixNormal: promo ? c.prixVente : null,
+      promotion: promo ? { id: promo.id, nom: promo.nom } : null,
       quantite,
       remise,
       totalLigne: brut - remise,
@@ -272,7 +285,11 @@ function controlerAvoir(db: Db, requete: RequeteVente): AvoirControle | null {
   if (parts.length === 0) return null
   if (parts.length > 1) throw new ErreurMetier('Une seule part payée par avoir par ticket : additionnez-les.')
   if (requete.clientId === undefined) throw new ErreurMetier('Choisissez le client avant de payer par avoir.')
-  const c = une<{ nom: string; actif: number }>(db, 'SELECT nom, actif FROM clients WHERE id = ?', requete.clientId)
+  const c = une<{ nom: string; actif: number }>(
+    db,
+    'SELECT nom, actif FROM clients WHERE id = ?',
+    requete.clientId
+  )
   if (!c) throw new ErreurMetier('Client introuvable : choisissez-le à nouveau.')
   if (!c.actif) throw new ErreurMetier(`« ${c.nom} » est désactivé : choisissez un autre client.`)
   const solde = soldeAvoirs(db, requete.clientId)
@@ -411,8 +428,8 @@ export function enregistrerVente(db: Db, utilisateurId: number, requete: Requete
         db,
         `INSERT INTO lignes_vente (vente_id, produit_id, conditionnement_id, lot_id, designation, quantite,
                                    prix_unitaire, remise_ligne, taux_tva, cout_unitaire, quantite_base_totale,
-                                   total_ligne)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                                   total_ligne, prix_normal, promotion_id, promotion_nom)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         venteId,
         l.produitId,
         l.conditionnementId,
@@ -424,7 +441,10 @@ export function enregistrerVente(db: Db, utilisateurId: number, requete: Requete
         l.tauxTva,
         l.cump * l.quantiteBase,
         l.quantiteBaseTotale,
-        l.totalLigne
+        l.totalLigne,
+        l.prixNormal,
+        l.promotion?.id ?? null,
+        l.promotion?.nom ?? null
       )
       for (const part of parts) {
         if (part.lotId === null && l.suiviPeremption) sansLot.add(l.produitId)
@@ -455,7 +475,12 @@ export function enregistrerVente(db: Db, utilisateurId: number, requete: Requete
     // L'avoir est dépensé avec la vente, dans la même transaction (REGLES_METIER § 7.2).
     let soldeAvoirApres = 0
     if (avoir) {
-      const detail = depenserAvoirs(db, { clientId: avoir.clientId, venteId, montant: avoir.montant, utilisateurId })
+      const detail = depenserAvoirs(db, {
+        clientId: avoir.clientId,
+        venteId,
+        montant: avoir.montant,
+        utilisateurId
+      })
       soldeAvoirApres = soldeAvoirs(db, avoir.clientId)
       journaliser(db, {
         utilisateurId,
