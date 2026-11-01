@@ -55,6 +55,8 @@ Format d'une entrée :
 `a/promotions` (A16). **Cette entrée et l'état d'A16 sont sur `a/promotions`** ; `a/accueil` a sa propre mise à jour
 de l'état (A15 🔄, A14 / A13 au journal des fusions) : les deux se recouvrent, garder les deux côtés.
 
+**Mise à jour en fin de journée** : Dev A a réalisé et **validé l'essai sur le terminal avec la Xprinter** (A3 et A4 passées à ✅ dans `ETAT_AVANCEMENT.md`). Les autres points de l'essai (voir l'étape 4 ci-dessous) ne sont pas confirmés : à demander à Dev A au prochain `/reprendre`.
+
 **Prochaine étape** :
 1. `/reprendre`, puis `git fetch` : A15 (`a/accueil`) et A16 (`a/promotions`) sont-elles fusionnées ? La seconde
    à fusionner aura des conflits **faciles, à résoudre en gardant les deux côtés** : `app/routes.tsx` (A15 ajoute
