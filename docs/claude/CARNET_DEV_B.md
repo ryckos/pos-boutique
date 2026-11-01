@@ -18,6 +18,71 @@ Format d'une entrée :
 
 ---
 
+## 2026-11-01 — b/revue-a12, b/kiosque — relectures, répétition de l'essai de restauration, B-P5 codée
+**Fait** :
+- **PR #86** (procédure d'essai de restauration) et **PR #89** (`b/revue-a12` : PR #86 au journal des
+  fusions) fusionnées. Ménage avec l'accord de Dev B : 8 branches `b/…` fusionnées supprimées (local et
+  GitHub).
+- **Relecture après coup des migrations de Dev A** (fusionnées sans relecture de Dev B) :
+  `20261101_1400_recouvrement.sql` (A12) et `20261102_0900_promotions.sql` (A16) : **conformes** (noms,
+  aucun historique modifié, pas de `PRAGMA`, triggers « ni modification ni suppression », plafonds,
+  `MODELE_DONNEES` à jour). À savoir : le statut d'une créance est désormais **calculé** dans
+  `v_creances_clients` ; la colonne `creances.statut` n'est plus lue. Libellés ajoutés par Dev A dans
+  `src/shared/audit.ts` : corrects.
+- **B16 — répétition à blanc** de `ESSAI_RESTAURATION.md` sur le PC de Dev B (rc.1 installée) : essais 1
+  à 4 et remise en état **conformes**, restauration entre 30 s et 2 min, script de lancement OK. Notée
+  dans `ETAT_AVANCEMENT.md`. B16 reste 🔄 (essai sur le terminal, puis D-A4).
+- **B-P5** (choix validés par Dev B), branche `b/kiosque`, commit `862e3bc`, alignée sur `test` (#94) :
+  - paramètre `demarrage_automatique` (§ 13, défaut oui, admin, journalisé ; Paramètres › « Ce poste ») ;
+    règle pure `reglageDemarrage` (`src/shared/demarrage.ts`) et appel Windows
+    `appliquerDemarrageAutomatique` (`src/main/demarrage.ts`), au lancement et à chaque changement ;
+    jamais en développement ni sur une base d'essai (`POS_DB`) ;
+  - application installée **en plein écran** sans barre de titre (`creerFenetrePrincipale({ pleinEcran })`),
+    **une seule instance** (`requestSingleInstanceLock`, second lancement = `ramenerFenetrePrincipale`),
+    sauf en développement et sur `POS_DB` ;
+  - canal `auth:quitter` (gérant, admin) → `fermerApplication` journalise `fermeture_application` ;
+    bouton « Quitter l'application » (icône `eteindre`) en bas du menu, avec confirmation ;
+  - icône `build/icon.ico` (`scripts/generer_icone.py`, Pillow), `author` = « Projet Boutique » ;
+  - **risque traité** : après une coupure de courant pendant l'essai de restauration, la vraie caisse
+    s'ouvre seule avec Windows ; le verrou d'instance aurait renvoyé le script d'essai sur elle. D'où
+    l'exception `POS_DB` et les étapes 3.15 / 3.19 de la fiche (fermer d'abord la caisse ouverte seule) ;
+  - docs : `REGLES_METIER` § 1.4 et 13, `UI_UX` § 5.13, `DEPLOIEMENT` § 3.1, 5.6 (réécrit : le raccourci
+    `shell:startup` de la rc.1 est à effacer après la mise à jour), 6, 7.3 ; guides gérant (§ 18) et
+    admin ; `.docx` régénérés ;
+  - 6 tests (`tests/demarrage.test.ts`) + 2 attentes dans `saisie-parametres`, `parametres` ;
+    `npm run verifier` : **916 tests verts**, typecheck et build OK. Aucune migration.
+  - **Pas encore testée à la main** par Dev B (scénario donné dans la session : base jetable avec
+    `POS_DB` + `POS_SIMULER_PROD=1`).
+
+**En cours** : PR `b/kiosque` → `test` à ouvrir (texte fourni à Dev B ; `gh` absent) :
+https://github.com/ryckos/pos-boutique/compare/test...b/kiosque?expand=1
+
+**Prochaine étape** :
+1. Dev B teste en développement (plein écran, « Ce poste » Oui/Non journalisé, bouton Quitter absent pour
+   la caissière, présent et journalisé pour le gérant).
+2. Proposé, **non encore validé** : passer la version en **1.0.0-rc.2**, `npm run dist`, installer sur le
+   PC de Dev B : icône, double-clic = même fenêtre, ouverture seule après redémarrage, « Non » → plus
+   d'ouverture seule. Puis livrer la rc.2 chez la cliente (`DEPLOIEMENT` § 6) et effacer le raccourci
+   `shell:startup`.
+3. Après la fusion : B-P5 reste 🔄 (signature plus tard, import du vrai catalogue, recette avec Dev A) ;
+   ligne au journal des fusions ; supprimer `b/kiosque`.
+4. Jouer l'essai de restauration sur le terminal (B16), avec la fiche à jour.
+
+**Questions ouvertes** :
+- D-A1, D-A3, D-A4 (bloque la fin de B16), D-A5, D-A6 : toujours en attente.
+- Rappeler à Dev A que ses migrations doivent être relues par Dev B **avant** la fusion (trois fois
+  sans relecture : #79, #87, #93).
+- À faire confirmer par Dev A : « un téléphone ne sert pas à deux clients actifs ».
+
+**Contrats** :
+- Ajoutés (sans impact pour la caisse) : `auth:quitter` ; champ `ParametresBoutique.demarrageAutomatique`
+  (ajout seul).
+- **Pour Dev A** : `src/main/fenetres.ts` (son fichier, partie kiosque attribuée à Dev B) :
+  `creerFenetrePrincipale` prend désormais `{ pleinEcran: boolean }`, nouvelle fonction
+  `ramenerFenetrePrincipale()` ; `src/main/index.ts` : verrou d'instance unique et démarrage automatique ;
+  `Layout.tsx` : bouton « Quitter l'application » ; nouvelle icône `eteindre` dans `ui/Icone.tsx`.
+- Attendus de Dev A : rien.
+
 ## 2026-10-31 (suite) — b/essai-restauration — B16 : procédure d'essai de restauration sur le terminal
 **Fait** :
 - **PR #83 fusionnée** (`b/libelles-clients`, libellés du journal des clients, du crédit et de 6 actions
