@@ -18,6 +18,81 @@ Format d'une entrée :
 
 ---
 
+## 2026-11-01 — b/revue-a12, b/kiosque — relectures, répétition de l'essai de restauration, B-P5 codée
+**Fait** :
+- **PR #86** (procédure d'essai de restauration) et **PR #89** (`b/revue-a12` : PR #86 au journal des
+  fusions) fusionnées. Ménage avec l'accord de Dev B : 8 branches `b/…` fusionnées supprimées (local et
+  GitHub).
+- **Relecture après coup des migrations de Dev A** (fusionnées sans relecture de Dev B) :
+  `20261101_1400_recouvrement.sql` (A12) et `20261102_0900_promotions.sql` (A16) : **conformes** (noms,
+  aucun historique modifié, pas de `PRAGMA`, triggers « ni modification ni suppression », plafonds,
+  `MODELE_DONNEES` à jour). À savoir : le statut d'une créance est désormais **calculé** dans
+  `v_creances_clients` ; la colonne `creances.statut` n'est plus lue. Libellés ajoutés par Dev A dans
+  `src/shared/audit.ts` : corrects.
+- **B16 — répétition à blanc** de `ESSAI_RESTAURATION.md` sur le PC de Dev B (rc.1 installée) : essais 1
+  à 4 et remise en état **conformes**, restauration entre 30 s et 2 min, script de lancement OK. Notée
+  dans `ETAT_AVANCEMENT.md`. B16 reste 🔄 (essai sur le terminal, puis D-A4).
+- **B-P5** (choix validés par Dev B), branche `b/kiosque`, commit `862e3bc`, alignée sur `test` (#94) :
+  - paramètre `demarrage_automatique` (§ 13, défaut oui, admin, journalisé ; Paramètres › « Ce poste ») ;
+    règle pure `reglageDemarrage` (`src/shared/demarrage.ts`) et appel Windows
+    `appliquerDemarrageAutomatique` (`src/main/demarrage.ts`), au lancement et à chaque changement ;
+    jamais en développement ni sur une base d'essai (`POS_DB`) ;
+  - application installée **en plein écran** sans barre de titre (`creerFenetrePrincipale({ pleinEcran })`),
+    **une seule instance** (`requestSingleInstanceLock`, second lancement = `ramenerFenetrePrincipale`),
+    sauf en développement et sur `POS_DB` ;
+  - canal `auth:quitter` (gérant, admin) → `fermerApplication` journalise `fermeture_application` ;
+    bouton « Quitter l'application » (icône `eteindre`) en bas du menu, avec confirmation ;
+  - icône `build/icon.ico` (`scripts/generer_icone.py`, Pillow), `author` = « Projet Boutique » ;
+  - **risque traité** : après une coupure de courant pendant l'essai de restauration, la vraie caisse
+    s'ouvre seule avec Windows ; le verrou d'instance aurait renvoyé le script d'essai sur elle. D'où
+    l'exception `POS_DB` et les étapes 3.15 / 3.19 de la fiche (fermer d'abord la caisse ouverte seule) ;
+  - docs : `REGLES_METIER` § 1.4 et 13, `UI_UX` § 5.13, `DEPLOIEMENT` § 3.1, 5.6 (réécrit : le raccourci
+    `shell:startup` de la rc.1 est à effacer après la mise à jour), 6, 7.3 ; guides gérant (§ 18) et
+    admin ; `.docx` régénérés ;
+  - 6 tests (`tests/demarrage.test.ts`) + 2 attentes dans `saisie-parametres`, `parametres` ;
+    `npm run verifier` : **916 tests verts**, typecheck et build OK. Aucune migration.
+  - **Pas encore testée à la main** par Dev B (scénario donné dans la session : base jetable avec
+    `POS_DB` + `POS_SIMULER_PROD=1`).
+- **Version 1.0.0-rc.2** (validé par Dev B) : `package.json`, commit `0dddc1f` sur `b/kiosque`, poussé ;
+  installateur `dist\Ma Boutique POS Setup 1.0.0-rc.2.exe` (non signé, SHA-256
+  `DA7F97747B88779F0DAD4AA028D4B68C18B6A3A2D6CA77CD065DC5F995D8B0D3`). **Tag `v1.0.0-rc.2` pas encore
+  posé** : à poser après la fusion, sur le commit présent dans `test`.
+
+**En cours** : PR `b/kiosque` → `test` (3 commits : B-P5, carnet, version rc.2) à ouvrir par Dev B (texte
+fourni dans la session ; `gh` absent) :
+https://github.com/ryckos/pos-boutique/compare/test...b/kiosque?expand=1
+
+**Prochaine étape** :
+1. Dev B teste en développement (plein écran, « Ce poste » Oui/Non journalisé, bouton Quitter absent pour
+   la caissière, présent et journalisé pour le gérant).
+2. Installer la **rc.2** sur le PC de Dev B (remplace la rc.1, base conservée) : icône sur le bureau et
+   dans la barre des tâches ; plein écran ; double-clic pendant qu'elle tourne = même fenêtre ;
+   Gestionnaire des tâches › Démarrage : « Ma Boutique POS » Activé ; « Ce poste » → Non = Désactivé
+   (remettre Oui) ; Quitter (gérant oui, caissière non). Effacer un éventuel raccourci `shell:startup`.
+   Si un écart : corriger sur `b/kiosque`, refaire `npm run dist` (même version tant qu'elle n'est pas
+   livrée). Sinon cocher « Testé à la main » dans la PR.
+3. Après la fusion (Dev A relit `fenetres.ts` et `index.ts`) : tag `v1.0.0-rc.2` sur le commit dans
+   `test` (`git tag v1.0.0-rc.2 <commit> && git push origin v1.0.0-rc.2`) ; ligne au journal des fusions ;
+   supprimer `b/kiosque`. B-P5 reste 🔄 (signature plus tard, import du vrai catalogue, recette avec
+   Dev A). Livrer la rc.2 chez la cliente selon `DEPLOIEMENT` § 6 (sauvegarde, Quitter, installer) et
+   effacer son raccourci `shell:startup`.
+4. Jouer l'essai de restauration sur le terminal (B16), avec la fiche à jour.
+
+**Questions ouvertes** :
+- D-A1, D-A3, D-A4 (bloque la fin de B16), D-A5, D-A6 : toujours en attente.
+- Rappeler à Dev A que ses migrations doivent être relues par Dev B **avant** la fusion (trois fois
+  sans relecture : #79, #87, #93).
+- À faire confirmer par Dev A : « un téléphone ne sert pas à deux clients actifs ».
+
+**Contrats** :
+- Ajoutés (sans impact pour la caisse) : `auth:quitter` ; champ `ParametresBoutique.demarrageAutomatique`
+  (ajout seul).
+- **Pour Dev A** : `src/main/fenetres.ts` (son fichier, partie kiosque attribuée à Dev B) :
+  `creerFenetrePrincipale` prend désormais `{ pleinEcran: boolean }`, nouvelle fonction
+  `ramenerFenetrePrincipale()` ; `src/main/index.ts` : verrou d'instance unique et démarrage automatique ;
+  `Layout.tsx` : bouton « Quitter l'application » ; nouvelle icône `eteindre` dans `ui/Icone.tsx`.
+- Attendus de Dev A : rien.
+
 ## 2026-10-31 (suite) — b/essai-restauration — B16 : procédure d'essai de restauration sur le terminal
 **Fait** :
 - **PR #83 fusionnée** (`b/libelles-clients`, libellés du journal des clients, du crédit et de 6 actions
@@ -660,78 +735,3 @@ https://github.com/ryckos/pos-boutique/compare/test...b/docs-b12-fusion?expand=1
   INV-… ».
 - Attendu : `enregistrerMouvementCaisse()` (Dev A, A8, prévu fin S10) toujours pas livré ; il bloque
   B13 (source caisse) et le paiement des fournisseurs au tiroir.
-
----
-
-## 2026-10-06 (suite) — b/sorties, b/sorties-ecran — B11 Sorties de stock et retours fournisseur
-**Fait** :
-- **B10 fusionnée** (PR #37 et #38) : B10 → ✅ et deux lignes au journal des fusions. Le commit
-  `docs(etat)` de la branche `b/docs-b10-fusion` a été **repris sur `b/sorties-ecran`** : la PR
-  `b/docs-b10-fusion` devient inutile (à fermer sans fusion, branche à supprimer). Branches locales
-  `b/reglements` et `b/reglements-ecran` supprimées.
-- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 8 (précisions B11), § 4.5 (avoirs)
-  et § 1.4 (journal) :
-  - avoir suivi dans une **table dédiée** : attendu → reçu (montant réel, peut différer) ou refusé
-    (motif journalisé, `refus_avoir_fournisseur`) ; annulé avec la sortie tant qu'il est attendu ;
-  - avoir reçu imputé **comme un règlement global** ; s'il dépasse la dette, le solde devient
-    **négatif = avoir à valoir**, consommé par les livraisons suivantes ; désactivation d'un
-    fournisseur refusée si solde ≠ 0 ou avoir attendu ;
-  - coût de l'avoir : **prix du lot** s'il vient de ce fournisseur, sinon **dernier prix payé** à ce
-    fournisseur, sinon CUMP ; avoir = quantité × coût arrondi au franc, corrigeable ;
-  - don = `casse` + libellé « Don » (pas de type dédié) ; retour seulement pour « Défectueux ou casse »
-    et « Périmé » ;
-  - quantité au plus le stock du lot ou du produit ; sortie chiffrée au CUMP ; gérant ; pas de numéro ;
-  - annulation par contre-passation, motif, journalisée (`annulation_sortie_stock`), refusée si
-    l'avoir est reçu ou refusé ; vaut aussi pour les retraits du tableau des péremptions.
-- **PR 1 `b/sorties` fusionnée (PR #39, commit de fusion)** : migration
-  `20261006_1400_retours_fournisseur.sql`, `stock/sorties.ts`, `fournisseurs/avoirs.ts`, avoirs dans
-  `SOLDE_DU`, l'échéancier et `v_dettes_fournisseurs`, règles pures `MOTIFS_SORTIE`, `coutRetour`,
-  `avoirAttendu` (`src/shared/stock.ts`). 18 tests (`tests/sorties.test.ts`). `MODELE_DONNEES.md` à jour.
-- **PR 2 `b/sorties-ecran`** (commit `49b156a`, poussée) : menu « Sorties de stock »
-  (`PageSorties.tsx`), logique pure `saisieSortie.ts` (6 tests), avoirs dans `FenetreDettes.tsx`
-  (« Avoir reçu », « Refusé »), page Fournisseurs (avoir à valoir hors du total dû, avoir attendu),
-  `UI_UX.md` § 5.9 et 5.17. **Scénario complet testé à la main par Dev B.**
-- 455 tests verts, typecheck OK.
-
-**En cours** : PR 2 `b/sorties-ecran` → `test` à ouvrir ou en relecture
-(https://github.com/ryckos/pos-boutique/compare/test...b/sorties-ecran?expand=1 ; texte fourni à
-Dev B). Elle porte aussi ce carnet et le passage de B10 à ✅.
-
-**Prochaine étape** :
-1. Après la fusion de la PR 2 : B11 → ✅ et une ligne au journal des fusions de `ETAT_AVANCEMENT.md` ;
-   fermer la PR `b/docs-b10-fusion` si elle a été ouverte ; supprimer `b/sorties`, `b/sorties-ecran`,
-   `b/docs-b10-fusion` (local et GitHub). Sur GitHub restent aussi à supprimer : `b/commandes`,
-   `b/commandes-ecran`, `b/docs-b8-fusion`, `b/receptions`, `b/receptions-ecran`, `b/fournisseurs`,
-   `b/fournisseurs-achats`, `b/fefo`, `b/peremptions`, `b/reglements`, `b/reglements-ecran`.
-2. **B12 Inventaires** (`/tache B12`, branche `b/inventaires` depuis `test` à jour). Relire
-   `REGLES_METIER.md` § 9 (et § 9.1 pour le comptage par conditionnement déjà fait en B6 :
-   `saisieStockInitial.ts`, `repartirStock`), `UI_UX.md` § 5.11, `SCENARIO_REFERENCE.md` (1 carton +
-   5 lots + 2 unités = **41** ; 2 savons × 150 = **300 F** de démarque). Tables `inventaires` et
-   `lignes_inventaire` (écart = colonne générée, `detail_comptage` JSON), numéro `INV`, mouvements
-   `ajustement_inventaire` au CUMP avec `document_type = 'inventaire'` (l'historique B4 affiche déjà
-   « Inventaire INV-… »), journal `validation_inventaire`. Questions à poser à Dev B avant le plan :
-   inventaire total ou par rayon (les deux ?) ; que faire des ventes faites pendant le comptage
-   (théorique photographié au comptage de chaque produit ?) ; comptage par lot pour les produits
-   périssables ; liste des motifs d'écart ; qui compte (gérant seul, ou caissière qui saisit et gérant
-   qui valide) ; inventaire en cours repris après une coupure.
-3. B13 Dépenses reste bloquée par `enregistrerMouvementCaisse()` (Dev A, A8) pour la source
-   « caisse » ; la source « fonds propres » peut démarrer seule si B12 attend.
-
-**Questions ouvertes** :
-- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
-- Plafond de remise caissier (D-A3) : en attente de la cliente.
-- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photo des produits : reportée.
-- Paiement d'un fournisseur depuis le tiroir : après A8 (motif de mouvement de caisse à prévoir).
-- Rapports de pertes (B14) : distinguer les dons des casses par le libellé « Don » (pas de type dédié).
-
-**Contrats** :
-- Ajoutés (gérant, **sans impact pour la caisse**) : `stock:ficheSortie`, `stock:enregistrerSortie`,
-  `stock:sorties`, `stock:annulerSortie`, `fournisseurs:avoirRecu`, `fournisseurs:refuserAvoir` ;
-  champ facultatif `Fournisseur.avoirsAttendus` ; `DettesFournisseur.avoirs` et `avoirsAttendus` ;
-  `Fournisseur.soldeDu` peut désormais être **négatif** (avoir à valoir).
-- **Pour Dev A** : nouvelle migration (table `retours_fournisseur`, vue `v_dettes_fournisseurs`), aucune
-  table de la caisse touchée. Une casse issue d'un retour client (A7, `document_type = 'vente'`)
-  n'apparaît pas dans les sorties de Dev B et ne s'y annule pas. `MOTIFS_SORTIE` et
-  `LIBELLES_MOUVEMENT` (`src/shared/stock.ts`) sont réutilisables.
-- Attendu : `enregistrerMouvementCaisse()` (Dev A, A8, fin S10) pas encore livré ; il bloque B13
-  (source caisse) et le paiement des fournisseurs au tiroir.

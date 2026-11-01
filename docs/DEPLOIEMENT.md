@@ -59,7 +59,7 @@ vide.
 | **Figer le nom de l'application** : ajouter `"productName": "Ma Boutique POS"` à la racine de `package.json` (il n'est aujourd'hui que dans la section `build`) | Le nom du dossier de données en dépend. **S'il changeait entre deux versions, l'application ouvrirait une base vide dans un nouveau dossier.** Le fixer une fois pour toutes, avant la première installation | Dev B |
 | Plafond de remise de la caissière (D-A3) | Sans plafond, toute remise de la caissière demande le code du gérant | La cliente |
 | Politique de stock négatif (D-A1) | En attendant, une vente n'est jamais bloquée | La cliente |
-| Démarrage automatique et mode kiosque | Pas encore développés (Phase 5) : solution provisoire au § 5.6 | Dev B |
+| Démarrage automatique et mode kiosque | En place depuis la 1.0.0-rc.2 (B-P5) : voir § 5.6 | Dev B |
 | Signature de l'installateur | Non signé : Windows affiche un avertissement (§ 5.2) | Plus tard |
 
 ### 3.2 Ce que la cliente doit savoir le premier jour
@@ -176,13 +176,27 @@ Connectée en administratrice :
 4. Expliquer à la cliente : une sauvegarde se fait d'elle-même à **chaque clôture de caisse** ; la
    clé doit rester branchée, et être emportée hors de la boutique une fois par semaine (vol, incendie).
 
-### 5.6 Démarrage automatique (solution provisoire)
+### 5.6 Démarrage automatique et plein écran
 
-En attendant le démarrage automatique et le mode kiosque (Phase 5) :
+L'application installée (B-P5) :
 
-1. Windows + R, taper `shell:startup`, Entrée.
-2. Y copier le raccourci « Ma Boutique POS » du bureau.
-3. Redémarrer le terminal : l'application doit s'ouvrir seule.
+- **s'ouvre seule au démarrage de Windows** : rien à faire, c'est le réglage par défaut. Pour l'arrêter,
+  l'administratrice va dans **Paramètres › Ce poste** ;
+- **occupe tout l'écran**, sans barre de titre ni croix : la caissière ne peut pas la fermer ou la
+  réduire par erreur ;
+- **ne s'ouvre qu'une fois** : un double-clic sur l'icône pendant qu'elle tourne ramène simplement la
+  caisse au premier plan.
+
+**Fermer l'application** (mise à jour, restauration à la main, essai) : se connecter en gérant ou en
+administratrice, puis **« Quitter l'application »** en bas du menu. Sans compte sous la main, le
+technicien ferme avec **Alt+F4**.
+
+Contrôle à l'installation : redémarrer le terminal, l'application doit s'ouvrir seule, en plein écran,
+avec l'écran client sur le 11,6″.
+
+**Terminal installé avec la 1.0.0-rc.1** : un raccourci avait été mis à la main dans le dossier de
+démarrage de Windows (Windows + R, `shell:startup`). Après la mise à jour, **l'effacer** : il ferait
+double emploi (sans danger, l'application ne s'ouvre qu'une fois, mais inutile).
 
 ### 5.7 Contrôles avant d'ouvrir la caisse
 
@@ -268,7 +282,7 @@ Choisir un moment **sans client** : après la clôture du soir, ou avant l'ouver
 
 1. **Toutes les caisses sont clôturées** (écran Clôture de caisse : aucune caisse ouverte).
 2. Écran **Sauvegardes** : « Sauvegarder maintenant », vérifier qu'elle est aussi sur la clé USB.
-3. **Fermer l'application.**
+3. **Fermer l'application** (« Quitter l'application » en bas du menu, § 5.6).
 4. Copie de sécurité supplémentaire : copier le dossier de données complet (`%APPDATA%\<dossier>`)
    sur la clé USB, dans un dossier `Avant_maj_1.0.1_AAAA-MM-JJ`.
 5. Lancer le nouvel installateur `Ma Boutique POS Setup 1.0.1.exe` (même procédure qu'au § 5.2). Il
@@ -319,7 +333,8 @@ pas.
 
 ### 7.3 Restauration manuelle (quand l'application ne démarre pas)
 
-1. Fermer l'application (vérifier dans le Gestionnaire des tâches qu'elle ne tourne plus).
+1. Fermer l'application (« Quitter l'application », sinon Alt+F4 ; vérifier dans le Gestionnaire des
+   tâches qu'elle ne tourne plus).
 2. Ouvrir le dossier de données (`%APPDATA%\<dossier>`).
 3. Renommer `boutique.db` en `boutique_HS_AAAA-MM-JJ.db` (ne rien effacer), ainsi que
    `boutique.db-wal` et `boutique.db-shm` s'ils existent.

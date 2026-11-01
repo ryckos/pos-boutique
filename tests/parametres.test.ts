@@ -23,7 +23,8 @@ describe('Lecture des paramètres', () => {
       imprimanteMethode: 'spooler',
       imprimanteCible: null,
       imprimantePageCodes: null,
-      sauvegardeDossierExterne: null
+      sauvegardeDossierExterne: null,
+      demarrageAutomatique: true
     })
   })
 

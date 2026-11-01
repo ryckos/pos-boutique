@@ -276,6 +276,12 @@ const TRACES = {
       <path d="M16 17l5-5-5-5M21 12H9" />
     </>
   ),
+  eteindre: (
+    <>
+      <path d="M12 2v10" />
+      <path d="M18.4 6.6a9 9 0 1 1-12.8 0" />
+    </>
+  ),
   boutique: (
     <>
       <path d="M3 9l1.5-5h15L21 9" />

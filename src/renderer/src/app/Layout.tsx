@@ -1,14 +1,17 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import type { DefinitionRoute } from './types'
 import { useUtilisateur } from './contexte'
 import { Icone } from '@renderer/ui/Icone'
 import { useInfobulle } from '@renderer/ui/BoutonIcone'
+import { FenetreFormulaire } from '@renderer/ui/FenetreFormulaire'
+import { appel } from '@renderer/lib/api'
 
 const LIBELLES_ROLE = { caissier: 'Caisse', gerant: 'Gérant', admin: 'Administrateur' } as const
 
 export function Layout(props: { routes: DefinitionRoute[]; onDeconnexion: () => void }): React.JSX.Element {
   const u = useUtilisateur()
+  const [quitter, setQuitter] = useState(false)
   return (
     <div className="coque">
       <nav className="menu" aria-label="Menu principal">
@@ -39,11 +42,33 @@ export function Layout(props: { routes: DefinitionRoute[]; onDeconnexion: () => 
             <Icone nom="deconnexion" />
             <span className="menu-libelle">Se déconnecter</span>
           </button>
+          {/* Caisse en plein écran (B-P5) : seuls le gérant et l'admin la ferment. */}
+          {u.role !== 'caissier' && (
+            <button className="btn btn-discret" onClick={() => setQuitter(true)} aria-label="Quitter l’application">
+              <Icone nom="eteindre" />
+              <span className="menu-libelle">Quitter l’application</span>
+            </button>
+          )}
         </div>
       </nav>
       <main className="contenu">
         <Outlet />
       </main>
+      {quitter && (
+        <FenetreFormulaire
+          titre="Quitter l’application"
+          libelleValider="Quitter l’application"
+          valide
+          attention
+          onValider={() => appel('auth:quitter')}
+          onFermer={() => setQuitter(false)}
+        >
+          <p>
+            La caisse se ferme sur ce poste. Pour la rouvrir, touchez l’icône « Ma Boutique POS » du
+            bureau, ou redémarrez l’ordinateur.
+          </p>
+        </FenetreFormulaire>
+      )}
     </div>
   )
 }

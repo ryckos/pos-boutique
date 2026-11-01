@@ -1,4 +1,5 @@
 /** Propriétaire : Dev B. */
+import { app } from 'electron'
 import type { UtilisateurConnecte } from '@shared/types'
 import { base } from '../../db/connexion'
 import { gerer } from '../../ipc/gerer'
@@ -11,7 +12,8 @@ import {
   creerPremierAdmin,
   definirCodePersonnel,
   etatDemarrage,
-  etatVerrouillage
+  etatVerrouillage,
+  fermerApplication
 } from './service'
 
 function ouvrirSession(u: UtilisateurConnecte): UtilisateurConnecte {
@@ -55,4 +57,11 @@ export function enregistrerIpcAuth(options: { modeDev: boolean }): void {
   })
 
   gerer('auth:utilisateurCourant', () => session.utilisateur())
+
+  gerer('auth:quitter', () => {
+    fermerApplication(base(), session.exiger(['gerant']))
+    session.effacer()
+    // Laisser la réponse arriver à l'écran avant de fermer.
+    setTimeout(() => app.quit(), 300)
+  })
 }

@@ -37,7 +37,7 @@ Dans cette fiche, `E:` désigne la clé USB des sauvegardes : remplacer par sa v
 
 | N° | À faire | Attendu | Résultat | Remarque |
 |----|---------|---------|----------|----------|
-| 1.1 | Clôturer les caisses ouvertes, fermer l'application. Gestionnaire des tâches : aucun « Ma Boutique POS » ne tourne | Plus rien ne tourne | ☐ OK ☐ Non | |
+| 1.1 | Clôturer les caisses ouvertes, fermer l'application (« Quitter l'application » en bas du menu). Gestionnaire des tâches : aucun « Ma Boutique POS » ne tourne | Plus rien ne tourne | ☐ OK ☐ Non | |
 | 1.2 | PowerShell : `Get-FileHash "$env:APPDATA\Ma Boutique POS\boutique.db"`. Recopier ici les **8 premiers** et les **8 derniers** caractères de l'empreinte | Empreinte notée : `________ … ________` | ☐ OK ☐ Non | |
 | 1.3 | Créer le dossier `C:\EssaiRestauration`. Dans `%APPDATA%\Ma Boutique POS\sauvegardes`, **copier** (pas déplacer) la sauvegarde la plus récente (`boutique_AAAA-MM-JJ_HHMMSS_cloture.db` de préférence) dans `C:\EssaiRestauration`, puis renommer la copie `boutique.db` | `C:\EssaiRestauration\boutique.db` existe ; le fichier d'origine est toujours dans `sauvegardes` | ☐ OK ☐ Non | Fichier copié : |
 | 1.4 | Copier `lancer-essai-restauration.cmd` sur le Bureau | — | ☐ OK ☐ Non | |
@@ -120,7 +120,7 @@ On simule le cas du `DEPLOIEMENT.md` § 7.3, **dans `C:\EssaiRestauration` seule
 | N° | À faire | Attendu | Résultat | Remarque |
 |----|---------|---------|----------|----------|
 | 3.14 | Écran Sauvegardes : « Sauvegarder maintenant » et, **aussitôt**, débrancher le terminal du secteur | — | ☐ Fait | |
-| 3.15 | Rebrancher, démarrer Windows, relancer par le script, se connecter | L'application démarre ; repères = R0 | ☐ OK ☐ Non | |
+| 3.15 | Rebrancher, démarrer Windows. Si l'application s'est ouverte seule sur la vraie base (démarrage avec Windows), la fermer d'abord : « Quitter l'application » en bas du menu (gérant ou admin). Puis relancer par le script, se connecter | L'application démarre ; repères = R0 | ☐ OK ☐ Non | |
 | 3.16 | Écran Sauvegardes | La liste ne montre que des sauvegardes complètes : la sauvegarde coupée est soit présente et entière, soit absente. Un fichier `….db.partiel` peut rester dans le dossier `sauvegardes` : il est ignoré | ☐ OK ☐ Non | Sauvegarde coupée : ☐ présente ☐ absente |
 | 3.17 | Si elle est présente : la restaurer (comme en 3.3) | Redémarrage, repères = R0 | ☐ OK ☐ Non ☐ Sans objet | |
 
@@ -129,7 +129,7 @@ On simule le cas du `DEPLOIEMENT.md` § 7.3, **dans `C:\EssaiRestauration` seule
 | N° | À faire | Attendu | Résultat | Remarque |
 |----|---------|---------|----------|----------|
 | 3.18 | Restaurer **S2** depuis la liste (la dépense ESSAI RESTAURATION doit revenir) ; dès « Restauration en cours : l'application redémarre… », débrancher le terminal | — | ☐ Fait | |
-| 3.19 | Rebrancher, relancer par le script, se connecter | L'application démarre. Soit la restauration est faite (la dépense est revenue, journal « Restauration d'une sauvegarde »), soit rien n'a changé (pas de dépense) : **jamais** un message « Démarrage impossible » | ☐ OK ☐ Non | ☐ faite ☐ rien changé |
+| 3.19 | Rebrancher, démarrer Windows. Si l'application s'est ouverte seule sur la vraie base (démarrage avec Windows), la fermer d'abord : « Quitter l'application » en bas du menu (gérant ou admin). Puis relancer par le script, se connecter | L'application démarre. Soit la restauration est faite (la dépense est revenue, journal « Restauration d'une sauvegarde »), soit rien n'a changé (pas de dépense) : **jamais** un message « Démarrage impossible » | ☐ OK ☐ Non | ☐ faite ☐ rien changé |
 
 ### Essai 9 (facultatif) — Reprise sur un autre ordinateur
 

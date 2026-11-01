@@ -33,4 +33,9 @@ export interface ContratAuth {
   'auth:etatDemarrage': { requete: void; reponse: { premierDemarrage: boolean } }
   /** Assistant de premier démarrage : crée l'admin et le connecte. Refusé si un compte existe. */
   'auth:creerPremierAdmin': { requete: { nom: string; pin: string }; reponse: UtilisateurConnecte }
+  /**
+   * « Quitter l'application » (B-P5) : gérant et admin, journalisé. L'application se ferme juste
+   * après la réponse ; la caissière n'en sort pas (mode plein écran).
+   */
+  'auth:quitter': { requete: void; reponse: void }
 }

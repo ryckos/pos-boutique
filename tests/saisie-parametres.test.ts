@@ -26,6 +26,7 @@ describe('Saisie des paramètres', () => {
     })
     expect(champsDuGroupe('stock', p)).toEqual({ peremptionSeuilJours: '15', dormantJours: '60' })
     expect(champsDuGroupe('caisse', p)).toEqual({ tvaDefaut: '18', plafondRemiseCaissier: '' })
+    expect(champsDuGroupe('poste', p)).toEqual({ demarrageAutomatique: 'oui' })
   })
 
   it('n’envoie que les champs du bloc, convertis', () => {
@@ -37,6 +38,7 @@ describe('Saisie des paramètres', () => {
       tvaDefaut: 0,
       plafondRemiseCaissier: 1000
     })
+    expect(versModifications('poste', { demarrageAutomatique: 'non' })).toEqual({ demarrageAutomatique: false })
   })
 
   it('plafond vide = aucun plafond fixé (null)', () => {

@@ -188,6 +188,16 @@ export function etatDemarrage(db: Db, empaquetee: boolean): { premierDemarrage: 
 }
 
 /**
+ * « Quitter l'application » (REGLES_METIER § 1.4) : réservé au gérant et à l'admin, car la caisse
+ * tourne en plein écran pour que la caissière ne la ferme pas par erreur. Revérifié ici : l'interface
+ * n'est pas digne de confiance. La fermeture elle-même est faite par l'appelant (`ipc.ts`).
+ */
+export function fermerApplication(db: Db, u: UtilisateurConnecte): void {
+  if (u.role === 'caissier') throw new ErreurMetier('Seul un gérant peut fermer l’application')
+  journaliser(db, { utilisateurId: u.id, action: 'fermeture_application' })
+}
+
+/**
  * Assistant de premier démarrage : crée le compte administrateur, avec le code qu'il a choisi.
  * Refusé dès qu'un compte existe — sinon ce serait une porte d'entrée sans code.
  */

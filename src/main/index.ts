@@ -2,11 +2,12 @@
 import { app, BrowserWindow, dialog } from 'electron'
 import { existsSync } from 'fs'
 import { join } from 'path'
-import { initialiserBase } from './db/connexion'
+import { base, initialiserBase } from './db/connexion'
 import { migrationsEnAttente, migrer } from './db/migrations'
 import { semerDonneesDemo } from './db/seed'
 import { enregistrerTousLesIpc } from './ipc'
-import { creerFenetrePrincipale, ouvrirEcranClientAuDemarrage } from './fenetres'
+import { creerFenetrePrincipale, ouvrirEcranClientAuDemarrage, ramenerFenetrePrincipale } from './fenetres'
+import { appliquerDemarrageAutomatique } from './demarrage'
 import {
   configurerSauvegardes,
   sauvegardeDuDemarrage,
@@ -18,7 +19,17 @@ import { appliquerRestauration, journaliserRestauration } from './modules/sauveg
 // assistant de premier démarrage), pour tester en développement. À utiliser avec POS_DB.
 const modeDev = !app.isPackaged && !process.env['POS_SIMULER_PROD']
 
+// Une seule instance sur le terminal : un double-clic sur l'icône pendant que l'application
+// tourne déjà (lancée avec Windows) ramène sa fenêtre, au lieu d'ouvrir une seconde caisse sur la
+// même base. En développement, on laisse lancer à côté de l'application installée. Sur une base
+// d'essai (POS_DB) aussi : sinon le script d'essai, lancé alors que la vraie caisse s'est ouverte
+// avec Windows, ramènerait la vraie caisse et l'essai se jouerait sur la vraie base.
+const instanceUnique = modeDev || !!process.env['POS_DB'] || app.requestSingleInstanceLock()
+if (!instanceUnique) app.quit()
+else app.on('second-instance', ramenerFenetrePrincipale)
+
 app.whenReady().then(async () => {
+  if (!instanceUnique) return
   // POS_DB permet de pointer une autre base en développement (ex : POS_DB=C:\temp\test.db).
   const cheminBase = process.env['POS_DB'] ?? join(app.getPath('userData'), 'boutique.db')
   configurerSauvegardes(cheminBase)
@@ -44,13 +55,15 @@ app.whenReady().then(async () => {
   }
 
   console.log('[BASE]', cheminBase)
+  appliquerDemarrageAutomatique(base())
   sauvegardeDuDemarrage()
   enregistrerTousLesIpc({ cheminBase, modeDev })
-  creerFenetrePrincipale()
+  // Application installée : plein écran, sans barre de titre (mode kiosque, B-P5).
+  creerFenetrePrincipale({ pleinEcran: !modeDev })
   ouvrirEcranClientAuDemarrage()
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) creerFenetrePrincipale()
+    if (BrowserWindow.getAllWindows().length === 0) creerFenetrePrincipale({ pleinEcran: !modeDev })
   })
 })
 

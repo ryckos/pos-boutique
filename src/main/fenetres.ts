@@ -22,17 +22,23 @@ function charger(fenetre: BrowserWindow, page: 'index' | 'client'): void {
   else fenetre.loadFile(join(__dirname, `../renderer/${page}.html`))
 }
 
-export function creerFenetrePrincipale(): BrowserWindow {
+/**
+ * `pleinEcran` (application installée, B-P5) : la caisse occupe tout l'écran, sans barre de titre ni
+ * croix, pour que la caissière ne la ferme ni ne la réduise par erreur. On en sort par « Quitter
+ * l'application » (gérant, admin) ; Alt+F4 reste possible pour le technicien.
+ */
+export function creerFenetrePrincipale(options: { pleinEcran: boolean }): BrowserWindow {
   principale = new BrowserWindow({
     width: 1280,
     height: 800,
     show: false,
+    fullscreen: options.pleinEcran,
     title: 'Ma Boutique',
     autoHideMenuBar: true,
     webPreferences: { preload, contextIsolation: true, sandbox: false }
   })
   principale.once('ready-to-show', () => {
-    principale?.maximize()
+    if (!options.pleinEcran) principale?.maximize()
     principale?.show()
   })
   principale.on('closed', () => {
@@ -45,6 +51,14 @@ export function creerFenetrePrincipale(): BrowserWindow {
 
 export function fenetrePrincipale(): BrowserWindow | null {
   return principale
+}
+
+/** Second lancement (double-clic sur l'icône) : on remet la caisse déjà ouverte au premier plan. */
+export function ramenerFenetrePrincipale(): void {
+  if (!principale || principale.isDestroyed()) return
+  if (principale.isMinimized()) principale.restore()
+  principale.show()
+  principale.focus()
 }
 
 function second(): Electron.Display | null {
