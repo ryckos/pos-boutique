@@ -108,7 +108,7 @@ Le socle comprend :
 | Tâche | Intitulé                                            | Dev | Statut | Notes (branche, blocage) |
 |-------|-----------------------------------------------------|-----|--------|--------------------------|
 | A-P5  | Tests terrain caisse, guide caissier, formation     | A   | ⏳     |   |
-| B-P5  | Installateur, kiosque, mises à jour, guide gérant   | B   | 🔄     | `npm run dist` opérationnel, version **1.0.0-rc.1** installée chez la cliente pour test (tag `v1.0.0-rc.1`) ; procédure `docs/DEPLOIEMENT.md` ; guides utilisateur `docs/guides/` et fiches de test `docs/fiches-test/`. Branche `b/kiosque` : démarrage avec Windows (paramètre `demarrage_automatique`, admin), plein écran, une seule instance, « Quitter l'application » (gérant, admin, journalisé), icône `build/icon.ico`, `author`. **Reste** : essai sur l'application installée, signature (plus tard) |
+| B-P5  | Installateur, kiosque, mises à jour, guide gérant   | B   | 🔄     | `npm run dist` opérationnel, version **1.0.0-rc.1** installée chez la cliente pour test (tag `v1.0.0-rc.1`) ; procédure `docs/DEPLOIEMENT.md` ; guides utilisateur `docs/guides/` et fiches de test `docs/fiches-test/`. Branche `b/kiosque` : démarrage avec Windows (paramètre `demarrage_automatique`, admin), plein écran, une seule instance, « Quitter l'application » (gérant, admin, journalisé), icône `build/icon.ico`, `author` ; version **1.0.0-rc.2** construite (tag après fusion). **Reste** : essai de la rc.2 installée, livraison chez la cliente, signature (plus tard) |
 
 ## Transverse
 | Tâche | Intitulé                                            | Dev | Statut | Notes (branche, blocage) |
