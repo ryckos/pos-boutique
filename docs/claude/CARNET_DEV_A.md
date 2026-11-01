@@ -65,7 +65,7 @@ de l'état (A15 🔄, A14 / A13 au journal des fusions) : les deux se recouvrent
    `git merge origin/test` sur la branche, `npm run verifier`, pousser.
 2. Après chaque fusion : ligne au journal des fusions de `ETAT_AVANCEMENT.md`, A15 → ✅ et A16 → ✅ (A16 : le
    bouton « Promo » de la page Péremptions reste à relier par Dev B), supprimer `a/accueil` et `a/promotions`
-   (local et GitHub). A13 et A14 restent 🔄 (essai terminal ; export Excel facultatif).
+   (local et GitHub). A13 reste 🔄 (essai sur le 11,6″) ; A14 est ✅ (l’export Excel est facultatif).
 3. **Mettre à jour `docs/SCENARIOS_TEST.md`** : sa liste « fonctions non livrées » cite encore A13, A14, A15 et
    A16, et il manque des scénarios pour l'écran client, les rapports de ventes, l'accueil et les promotions.
 4. **Essai sur le terminal** (Dev A n'a toujours pas la Xprinter sous la main) : tout ce qui est noté aux entrées
