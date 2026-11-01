@@ -41,7 +41,7 @@ document à jour.
 | `lignes_vente`      | Photocopie au moment T : `conditionnement_id`, `designation`, `quantite`, `prix_unitaire`, `cout_unitaire` (d'un conditionnement), `quantite_base_totale`, `taux_tva`, `lot_id`. **Suppression interdite**. Sur un retour : quantités positives, `total_ligne` négatif (le rendu), `ligne_origine_id` |
 | `paiements`         | Un ou plusieurs par vente : `mode` (dont `credit` et `avoir`), `montant` (négatif pour un remboursement), `reference` |
 | `mouvements_caisse` | Entrées et sorties d'espèces hors vente, rattachées à une session **ouverte** : `sens`, `motif` (apport, retrait, dépense, encaissement de créance, remboursement, règlement fournisseur, autre), `montant` > 0, document d'origine, `mouvement_origine_id` sur un contre-mouvement d'annulation (un seul par mouvement). **Ni modification ni suppression** |
-| `promotions`        | Remises programmées (Phase 4)                                        |
+| `promotions`        | Promotions programmées (A16) : prix temporaire d'un produit ou d'un rayon (`remise_pourcent`, `remise_montant`, `prix_fixe`), du `date_debut` au `date_fin` inclus. **Suppression interdite** (`actif = 0`) |
 
 ### Achats — Dev B
 | Table                     | Rôle                                                            |
@@ -94,6 +94,7 @@ document à jour.
 | `trg_audit_no_delete`       | Interdit tout `DELETE` sur `journal_audit`    |
 | `trg_ventes_no_delete`      | Interdit tout `DELETE` sur `ventes`           |
 | `trg_lignes_vente_no_delete`| Interdit tout `DELETE` sur `lignes_vente`     |
+| `trg_promotions_cible_insert`, `trg_promotions_cible_update`, `trg_promotions_no_delete` | Une promotion vise un produit OU une catégorie ; elle ne se supprime pas |
 | `trg_retours_fournisseur_no_delete` | Interdit tout `DELETE` sur `retours_fournisseur` |
 | `trg_inventaires_no_delete`, `trg_lignes_inventaire_no_delete` | Interdisent tout `DELETE` sur `inventaires` et `lignes_inventaire` |
 | `trg_inventaires_fige`, `trg_lignes_inventaire_figees`, `trg_lignes_inventaire_ajout_fige` | Un inventaire validé ou annulé ne se modifie plus, ses comptages non plus |
@@ -116,6 +117,8 @@ document à jour.
 | `20261008_1704_mouvements_caisse.sql` | `mouvements_caisse` recréée (lignes recopiées) : motif `reglement_fournisseur`, `mouvement_origine_id` (index unique) ; triggers : ni modification ni suppression, rien sur une session clôturée |
 | `20261013_1400_retours_client.sql` | `ventes.motif_retour`, `sort_retour` ; `lignes_vente.ligne_origine_id` (la ligne vendue qu'un retour rend) ; index sur `vente_origine_id` et `ligne_origine_id` (A7) |
 | `20261015_1000_factures_proformas.sql` | Tables `factures` (une par ticket, client recopié), `proformas` et `lignes_proforma` (devis, prix recopiés) ; triggers : ni modification ni suppression (A10) |
+
+| `20261102_0900_promotions.sql` | `lignes_vente.prix_normal`, `promotion_id`, `promotion_nom` (la promotion appliquée, copiée au moment T) ; triggers de `promotions` (cible unique, pas de suppression) (A16) |
 
 Ajouter ici chaque nouvelle migration (nom et contenu en une ligne).
 

@@ -436,7 +436,7 @@ Précisions de la réalisation (B9, 2026-10-04) :
 - les lots déjà périmés apparaissent en tête, en rouge, avec « Périmé depuis 2 j » ;
 - « Retirer » ouvre une fenêtre : quantité (le restant proposé), commentaire facultatif, perte au
   prix d'achat affichée ; bouton rouge « Retirer du stock » ;
-- « Promo −20 % » est affiché inactif jusqu'aux promotions programmées (A16, Dev A) ;
+- « Promo −20 % » est affiché inactif jusqu'à ce que Dev B le relie à `/promotions` (A16 livrée, § 5.28) ;
 - classes communes `.tableau tr.ligne-urgente` (rouge) et `tr.ligne-proche` (ambre).
 
 ### 5.9 Sortie de stock (Dev B — B11)
@@ -811,6 +811,29 @@ défaut, « Revenir au mois en cours ») que les rapports de gestion. Règles : 
   la clôture), tableau Caissier / Ouverte le / Clôturée le (« En cours ») / Fond / Attendues / Comptées / Écart /
   Commentaire.
 - Pas d'export Excel dans cette première version (il passe par le service d'export de Dev B, § 11.2).
+
+### 5.28 Promotions (Dev A — A16, gérant)
+Page « Promotions » du menu (`modules/promotions/PagePromotions.tsx`, route `/promotions`). Règles :
+`REGLES_METIER.md` § 5.2.
+- **Liste** : deux onglets, « En cours et à venir » (en cours d'abord) et « Terminées et arrêtées ». Tableau
+  Promotion / Pour (produit ou « Rayon … ») / Règle (« −20 % », « −50 F par unité ») / Période / État
+  (pastilles En cours, À venir, Terminée, Arrêtée). Icônes « Modifier » et « Arrêter » seulement sur une
+  promotion en cours ou à venir.
+- **Nouvelle promotion** (fenêtre de formulaire) : « La promotion vaut pour » un produit (recherche par nom)
+  ou un rayon (liste des rayons et sous-rayons), type, valeur, dates (aujourd'hui et sept jours par
+  défaut), nom (celui proposé, « Yaourt −20 % », si on le laisse vide). Pour un produit, un **aperçu** du
+  prix normal et du prix en promotion de chaque conditionnement, « Sans effet » quand elle ne baisse rien.
+  Message si aucun prix ne baisse. Le bouton reste grisé tant que la saisie est incomplète.
+- **Arrêter** : fenêtre à bouton rouge, « les prix reviennent à la normale tout de suite ».
+- **Lien d'un autre écran** : `/promotions?produit=12&pourcent=20&fin=2026-11-15` ouvre le formulaire
+  pré-rempli (produit, pourcentage, fin = date de péremption du lot).
+- **À la caisse** : une ligne en promotion affiche « Promo <nom> · au lieu de X F » (ambre) et
+  « Économie grâce aux promotions : X F » apparaît au-dessus du total. Le prix est celui du jour, recalculé
+  chaque minute et sur tout article qui entre au ticket (scan, F2, grille, ticket repris), pas pendant le
+  paiement. L'écran client montre la même mention sous la ligne. Les listes de recherche (F2) et de
+  conditionnements montrent encore le prix du catalogue.
+- **Ticket imprimé** : « Promo <nom> (au lieu de X F) » sous la ligne, « Économie promotions » avant les
+  paiements.
 
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
