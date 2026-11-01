@@ -51,19 +51,11 @@ Format d'une entrée :
 - Libellés du journal ajoutés dans `src/shared/audit.ts` (fichier de Dev B, la CI l'exige) : `creation_promotion`,
   `modification_promotion`, `arret_promotion`, clés `regle`, `cible`, `du`, `au`.
 
-**En cours** : A16 (PR #93, `a/promotions`) attend la relecture de Dev B. Les conflits avec `test` (après la
-fusion d'A15, PR #92) sont résolus par une fusion de `test` dans la branche (`routes.tsx`, `UI_UX`, `ETAT_AVANCEMENT`),
-77 fichiers de tests verts. **Cette entrée est sur `a/promotions`.**
-
-**Mise à jour en fin de journée** : Dev A a réalisé et **validé l'essai sur le terminal avec la Xprinter** (A3 et A4 passées à ✅ dans `ETAT_AVANCEMENT.md`). Les autres points de l'essai (voir l'étape 4 ci-dessous) ne sont pas confirmés : à demander à Dev A au prochain `/reprendre`.
+**En cours** : rien. A15 (PR #92) et A16 (PR #93) sont fusionnées dans `test` ; les branches `a/accueil` et `a/promotions` sont supprimées (local et GitHub). Cette mise à jour est sur `a/docs-a16-fusion`.
 
 **Prochaine étape** :
-1. `/reprendre`, puis `git fetch` : la PR #93 (A16, `a/promotions`) est-elle fusionnée ? Si `test` a encore
-   avancé, `git merge origin/test` sur la branche (conflits attendus seulement dans `ETAT_AVANCEMENT.md`, en
-   gardant les deux côtés), `npm run verifier`, pousser.
-2. Après la fusion d'A16 : ligne au journal des fusions de `ETAT_AVANCEMENT.md`, A16 → ✅ (le bouton « Promo » de
-   la page Péremptions reste à relier par Dev B), supprimer `a/accueil` et `a/promotions` (local et GitHub).
-   A13 reste 🔄 (essai sur le 11,6″) ; A14 et A15 sont ✅ (l’export Excel des rapports est facultatif).
+1. `/reprendre`, puis `git switch test && git pull` ; supprimer `a/docs-a16-fusion` (local et GitHub) une fois sa PR fusionnée.
+2. A16 est ✅ (le bouton « Promo » de la page Péremptions reste à relier par Dev B). A13 reste 🔄 (essai sur le 11,6″) ; A3, A4, A14 et A15 sont ✅ (l'export Excel des rapports est facultatif).
 3. **Mettre à jour `docs/SCENARIOS_TEST.md`** : sa liste « fonctions non livrées » cite encore A13, A14, A15 et
    A16, et il manque des scénarios pour l'écran client, les rapports de ventes, l'accueil et les promotions.
 4. **Essai sur le terminal** (Dev A n'a toujours pas la Xprinter sous la main) : tout ce qui est noté aux entrées
