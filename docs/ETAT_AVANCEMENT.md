@@ -96,8 +96,8 @@ Le socle comprend :
 ## Phase 4 — Pilotage (S16–S18)
 | Tâche | Intitulé                                  | Dev | Statut | Notes (branche, blocage) |
 |-------|-------------------------------------------|-----|--------|--------------------------|
-| A14   | Rapports ventes et caisse                 | A   | 🔄     | Partie 1 (PR #73) : `caisse:ventesPeriode`. Partie 2, branche `a/rapports-ventes` : ventes par heure, par caissier, top / flop produits (par produit, retours déduits), historique des sessions et écarts, écran `/rapports` ; REGLES_METIER § 11.3, UI_UX § 5.26. **Reste** : fusion de la PR, puis export Excel si la gérante le veut (service de Dev B) |
-| A15   | Tableau de bord d'accueil                 | A   | ⏳     |   |
+| A14   | Rapports ventes et caisse                 | A   | 🔄     | Partie 1 (PR #73) : `caisse:ventesPeriode`. Partie 2 (PR #91 fusionnée) : ventes par heure, par caissier, top / flop produits (par produit, retours déduits), historique des sessions et écarts, écran `/rapports` ; REGLES_METIER § 11.3, UI_UX § 5.26. **Reste** : export Excel si la gérante le veut (service de Dev B) |
+| A15   | Tableau de bord d'accueil                 | A   | 🔄     | Branche `a/accueil` : page « Accueil » du gérant, première du menu et page d'arrivée (ventes du jour et d'hier, caisses ouvertes, alertes de stock et de péremption de Dev B) ; canal `rapports-ventes:accueil` ; REGLES_METIER § 11.4, UI_UX § 5.27. **Reste** : fusion de la PR |
 | A16   | Promotions programmées                    | A   | ⏳     |   |
 | B14   | Rapports de gestion, journal d'audit      | B   | ✅     | PR #47 (serveur : pertes par cause, valeur du stock par rayon, achats par fournisseur, résultat), #48 (menu « Rapports de gestion », quatre onglets), #49 (journal des opérations, admin, `audit:journal` / `audit:choix`) et #76 (marge branchée sur `ventesPeriode` d'A14 : chiffre d'affaires, coût, marge TTC, résultat) ; testé à la main. Marge HT prête à afficher selon D-A6 |
 | B15   | Exports Excel                             | B   | ✅     | PR #50 (canal générique `exports:excel`, `BoutonExporter`, Stock, Dépenses, Rapports de gestion) et #51 (Produits, Péremptions, Sorties, Réceptions, Commandes, Fournisseurs, détail d'un inventaire, Journal en entier) ; testé à la main |
@@ -181,3 +181,4 @@ Le socle comprend :
 | 2026-10-31 | B16   | Procédure d'essai de restauration sur le terminal, sur une copie de la vraie base (`docs/fiches-test/ESSAI_RESTAURATION.md`, script `scripts/lancer-essai-restauration.cmd`) (PR #86) |
 | 2026-11-01 | A12   | Recouvrement : encaissement des créances (espèces, TMoney, Flooz) avec reçu EC-… et tiroir, annulation par le gérant, historique, balance âgée, liste de relance, retour sur ticket à crédit ; migration `20261101_1400_recouvrement.sql` (PR #87) |
 | 2026-11-01 | A13   | Écran client définitif : ouverture au démarrage sur le second écran, dernier état rejoué, accueil / panier / fin de vente avec monnaie (PR #90) |
+| 2026-11-01 | A14   | Rapports de ventes : par heure, par caissier, top et flop produits, historique des sessions et écarts, écran `/rapports` (PR #91) |

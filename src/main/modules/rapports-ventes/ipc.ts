@@ -2,7 +2,13 @@
 import { base } from '../../db/connexion'
 import { gerer } from '../../ipc/gerer'
 import { session } from '../../core/session'
-import { classementProduits, historiqueSessions, ventesParCaissier, ventesParHeure } from './service'
+import {
+  classementProduits,
+  historiqueSessions,
+  ventesParCaissier,
+  ventesParHeure,
+  syntheseAccueil
+} from './service'
 
 export function enregistrerIpcRapportsVentes(): void {
   gerer('rapports-ventes:parHeure', (periode) => {
@@ -20,5 +26,9 @@ export function enregistrerIpcRapportsVentes(): void {
   gerer('rapports-ventes:sessions', (periode) => {
     session.exiger(['gerant'])
     return historiqueSessions(base(), periode)
+  })
+  gerer('rapports-ventes:accueil', () => {
+    session.exiger(['gerant'])
+    return syntheseAccueil(base())
   })
 }
