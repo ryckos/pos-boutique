@@ -67,10 +67,13 @@ export function lireTicket(db: Db, venteId: number): TicketAImprimer {
     remise: number
     totalLigne: number
     tauxTva: number
+    prixNormal: number | null
+    promotionNom: string | null
   }>(
     db,
     `SELECT designation, quantite, prix_unitaire AS prixUnitaire, remise_ligne AS remise,
-            total_ligne AS totalLigne, taux_tva AS tauxTva
+            total_ligne AS totalLigne, taux_tva AS tauxTva, prix_normal AS prixNormal,
+            promotion_nom AS promotionNom
      FROM lignes_vente WHERE vente_id = ? ORDER BY id`,
     venteId
   )
@@ -121,8 +124,19 @@ export function lireTicket(db: Db, venteId: number): TicketAImprimer {
       quantite: l.quantite,
       prixUnitaire: l.prixUnitaire,
       remise: l.remise,
-      totalLigne: l.totalLigne
+      totalLigne: l.totalLigne,
+      ...(l.prixNormal !== null &&
+        l.promotionNom !== null && {
+          promotion: { nom: l.promotionNom, prixNormal: l.prixNormal }
+        })
     })),
+    // Ce que les promotions ont fait gagner : (prix normal − prix payé) × quantité, sur un vrai ticket de vente.
+    economiePromotions: estRetour
+      ? 0
+      : lignes.reduce(
+          (n, l) => n + (l.prixNormal === null ? 0 : (l.prixNormal - l.prixUnitaire) * l.quantite),
+          0
+        ),
     remiseGlobale: v.remiseGlobale,
     totalTtc: v.totalTtc,
     parTaux,
@@ -136,8 +150,11 @@ export function lireTicket(db: Db, venteId: number): TicketAImprimer {
           motif: v.motifRetour ?? '',
           sort: v.sortRetour ? LIBELLES_SORT_RETOUR[v.sortRetour] : '',
           creanceReduite:
-            une<{ montant: number }>(db, 'SELECT montant FROM reductions_creances WHERE retour_id = ?', venteId)
-              ?.montant ?? 0
+            une<{ montant: number }>(
+              db,
+              'SELECT montant FROM reductions_creances WHERE retour_id = ?',
+              venteId
+            )?.montant ?? 0
         }
       : null
   }
