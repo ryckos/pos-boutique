@@ -561,11 +561,20 @@ code inconnu affiche « Code … inconnu » avec le bouton **« Créer le produi
 ouvre la fiche pré-remplie (§ 5.7). Un code d'un autre format est signalé « illisible ».
 
 ### 5.13 Paramètres (Dev B — B5, admin)
-Trois blocs `.panneau` (« Boutique et ticket », « Stock », « Caisse »), chacun en lecture
+Quatre blocs `.panneau` (« Boutique et ticket », « Stock », « Caisse », « Ce poste »), chacun en lecture
 (`.liste-valeurs` : libellé à gauche, valeur à droite, « Non renseigné » en gris) avec un bouton
 « Modifier » qui ouvre la fenêtre du bloc. « Enregistrer » reste grisé tant que rien n'a changé.
 Chaque bloc s'enregistre à part, tout ou rien. Les réglages de l'imprimante n'y sont pas : ils sont
 dans « Réglages matériel » (Dev A, A3, gérant).
+
+« Ce poste » (B-P5) : « S’ouvre au démarrage de Windows » Oui / Non, liste à deux choix qui disent
+la conséquence (« la caisse est prête dès que l’ordinateur s’allume » / « on l’ouvre avec l’icône du
+bureau »).
+
+**Quitter l'application** (B-P5) : l'application installée est en plein écran, sans croix. Sous
+« Se déconnecter », en bas du menu, le gérant et l'admin voient **« Quitter l'application »** (icône
+`eteindre`), qui ouvre une fenêtre de confirmation au bouton rouge « Quitter l’application » et dit
+comment rouvrir (icône du bureau, ou redémarrer). La caissière ne voit pas ce bouton.
 
 ### 5.14 Import du catalogue (Dev B — B3, gérant)
 Bouton « Importer depuis Excel » (secondaire) à côté de « Nouveau produit », sur la page Produits.

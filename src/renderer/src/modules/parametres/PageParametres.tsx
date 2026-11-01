@@ -1,6 +1,6 @@
 /**
  * Paramètres de la boutique. Propriétaire : Dev B. Admin.
- * Trois blocs, chacun modifié dans sa fenêtre et enregistré à part (tout ou rien, journalisé).
+ * Quatre blocs, chacun modifié dans sa fenêtre et enregistré à part (tout ou rien, journalisé).
  * Les réglages de l'imprimante n'y sont pas : ils sont dans « Réglages matériel » (Dev A, A3).
  */
 import { useEffect, useState } from 'react'
@@ -15,7 +15,8 @@ import { AideIcones } from '@renderer/ui/AideIcones'
 const TITRES: Record<Groupe, string> = {
   boutique: 'Boutique et ticket',
   stock: 'Stock',
-  caisse: 'Caisse'
+  caisse: 'Caisse',
+  poste: 'Ce poste'
 }
 
 const nonRenseigne = <span className="vide">Non renseigné</span>
@@ -110,6 +111,9 @@ export function PageParametres(): React.JSX.Element {
               )
             ]
           ])}
+          {bloc('poste', [
+            ['S’ouvre au démarrage de Windows', p.demarrageAutomatique ? 'Oui' : 'Non']
+          ])}
         </>
       )}
 
@@ -182,6 +186,19 @@ function FormulaireGroupe(props: {
             aide: 'Vide : aucun plafond fixé'
           })}
         </>
+      )}
+      {props.groupe === 'poste' && (
+        <label className="champ">
+          S’ouvre au démarrage de Windows
+          <select
+            value={c.demarrageAutomatique}
+            onChange={(e) => setC({ ...c, demarrageAutomatique: e.target.value })}
+          >
+            <option value="oui">Oui : la caisse est prête dès que l’ordinateur s’allume</option>
+            <option value="non">Non : on l’ouvre avec l’icône du bureau</option>
+          </select>
+          <span className="champ-aide">Ne compte que sur l’application installée.</span>
+        </label>
       )}
     </FenetreFormulaire>
   )

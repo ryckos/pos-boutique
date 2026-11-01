@@ -194,3 +194,9 @@ Ma Boutique POS — version 1.0.0-rc.1
 1. Une sauvegarde se fait seule à chaque clôture de caisse.
 2. Pour en faire une tout de suite : menu **Sauvegardes** → « Sauvegarder maintenant ».
 3. Laissez la clé USB des sauvegardes branchée.
+
+## 18. Fermer l'application
+
+L'application occupe tout l'écran et s'ouvre seule quand l'ordinateur s'allume. La caissière ne peut
+pas la fermer. Pour la fermer (à la demande du technicien, par exemple) : en bas du menu, touchez
+« Quitter l'application », puis confirmez. Pour la rouvrir : l'icône « Ma Boutique POS » du bureau.

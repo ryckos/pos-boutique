@@ -3,6 +3,7 @@ import { base } from '../../db/connexion'
 import { gerer } from '../../ipc/gerer'
 import { session } from '../../core/session'
 import { ecrireParametres, lireParametres } from './service'
+import { appliquerDemarrageAutomatique } from '../../demarrage'
 
 export function enregistrerIpcParametres(): void {
   gerer('parametres:lire', () => {
@@ -11,6 +12,9 @@ export function enregistrerIpcParametres(): void {
   })
   gerer('parametres:ecrire', (modifications) => {
     const u = session.exiger(['gerant'])
-    return ecrireParametres(base(), u, modifications)
+    const parametres = ecrireParametres(base(), u, modifications)
+    // Hors transaction : Windows suit le paramètre dès qu'il est enregistré.
+    if ('demarrageAutomatique' in modifications) appliquerDemarrageAutomatique(base())
+    return parametres
   })
 }

@@ -32,6 +32,8 @@ export interface ParametresBoutique {
   imprimantePageCodes: string | null
   /** Dossier de la clé USB où copier chaque sauvegarde (B16, admin). `null` = pas de copie. */
   sauvegardeDossierExterne: string | null
+  /** Ouvrir l'application au démarrage de Windows (B-P5, admin). Défaut : oui. */
+  demarrageAutomatique: boolean
 }
 
 export interface ContratParametres {

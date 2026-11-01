@@ -49,6 +49,7 @@ export const LIBELLES_ACTION: Record<string, string> = {
   modification_promotion: 'Modification d’une promotion',
   arret_promotion: 'Arrêt d’une promotion',
   modification_parametre: 'Modification d’un paramètre',
+  fermeture_application: 'Fermeture de l’application',
   creation_utilisateur: 'Création d’un compte',
   modification_role: 'Changement de rôle',
   desactivation_utilisateur: 'Désactivation d’un compte',
@@ -206,7 +207,8 @@ const PARAMETRES: Record<string, string> = {
   imprimante_methode: 'Imprimante : raccordement',
   imprimante_cible: 'Imprimante : nom ou port',
   imprimante_page_codes: 'Imprimante : page de codes',
-  sauvegarde_dossier_externe: 'Sauvegardes : dossier de la clé USB'
+  sauvegarde_dossier_externe: 'Sauvegardes : dossier de la clé USB',
+  demarrage_automatique: 'Ouverture au démarrage de Windows'
 }
 
 /** « stockApres » → « Stock apres » : dernier recours pour un champ que ce fichier ne connaît pas encore. */

@@ -27,7 +27,8 @@ const CLES: Record<Champ, string> = {
   imprimanteMethode: 'imprimante_methode',
   imprimanteCible: 'imprimante_cible',
   imprimantePageCodes: 'imprimante_page_codes',
-  sauvegardeDossierExterne: 'sauvegarde_dossier_externe'
+  sauvegardeDossierExterne: 'sauvegarde_dossier_externe',
+  demarrageAutomatique: 'demarrage_automatique'
 }
 
 /** Le gérant règle l'imprimante (écran « Réglages matériel », A3) ; le reste est à l'admin. */
@@ -71,7 +72,9 @@ export function lireParametres(db: Db): ParametresBoutique {
     imprimanteMethode: v('imprimanteMethode')?.trim() === 'share' ? 'share' : 'spooler',
     imprimanteCible: texte(v('imprimanteCible')),
     imprimantePageCodes: texte(v('imprimantePageCodes')),
-    sauvegardeDossierExterne: texte(v('sauvegardeDossierExterne'))
+    sauvegardeDossierExterne: texte(v('sauvegardeDossierExterne')),
+    // Seul « 0 » l'arrête : un terminal neuf doit s'ouvrir seul dès l'installation.
+    demarrageAutomatique: v('demarrageAutomatique')?.trim() !== '0'
   }
 }
 
@@ -122,6 +125,9 @@ function valeurAEnregistrer(champ: Champ, valeur: unknown): string | null {
       return String(
         exigerEntier(valeur, 1, 'Le seuil des produits dormants est un nombre de jours, au moins 1')
       )
+    case 'demarrageAutomatique':
+      if (typeof valeur !== 'boolean') throw new ErreurMetier('Valeur de paramètre invalide')
+      return valeur ? '1' : '0'
     case 'imprimanteMethode':
       if (valeur !== 'spooler' && valeur !== 'share') throw new ErreurMetier('Méthode d’impression inconnue')
       return valeur

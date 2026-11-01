@@ -39,6 +39,7 @@ Actions à journaliser avec `journaliser()` :
 |-------------------------------|--------------------|
 | `connexion`                   |                    |
 | `deconnexion`                 |                    |
+| `fermeture_application`       | « Quitter l'application » (gérant, admin ; B-P5) |
 | `echec_connexion_verrouillage`| n° du verrouillage, délai (au nom du compte visé) |
 | `modification_prix`           | avant/après        |
 | `desactivation_produit`       | motif, stock restant |
@@ -1202,6 +1203,7 @@ repart à 1 chaque année.
 | `imprimante_cible`               | Nom de l'imprimante ou du partage          | — (boutique : `XPOS`, D-20) |
 | `imprimante_page_codes`          | Page de codes validée en Phase 0           | cp1252 (D-20)           |
 | `sauvegarde_dossier_externe`     | Dossier de la clé USB des sauvegardes (§ 14) | —                     |
+| `demarrage_automatique`          | Ouvrir l'application au démarrage de Windows (`1` / `0`) | 1 (oui)  |
 
 **Utilisation par la caisse (A3)** : le ticket prend son en-tête et son pied dans `boutique_nom`,
 `boutique_adresse` (une ligne imprimée par ligne saisie) et `ticket_pied` ; « Ma Boutique » s'imprime si
@@ -1219,6 +1221,16 @@ modifier (écran « Réglages matériel » de Dev A, A3). Chaque clé réellemen
 **Lecture** : `parametres:lire` (ou `lireParametres(db)` dans le processus principal) renvoie un objet
 typé, défauts appliqués. Une valeur vide ou illisible vaut son défaut ; une clé sans défaut vaut
 `null` (non renseignée) — c'est le cas du plafond de remise tant que D-A3 n'est pas tranchée.
+
+**Poste de la boutique** (B-P5, validé par Dev B le 2026-11-01) :
+- `demarrage_automatique` : l'application installée s'inscrit au démarrage de Windows (oui par défaut ;
+  admin, Paramètres › Ce poste). Réappliqué à chaque lancement et à chaque changement. Rien n'est
+  touché en développement ni sur une base d'essai (`POS_DB`), dont le paramètre est celui d'une copie.
+- L'application installée occupe **tout l'écran**, sans barre de titre ; elle ne s'ouvre **qu'une
+  fois** (un second lancement ramène la première fenêtre), sauf sur une base d'essai (`POS_DB`), pour
+  que l'essai ne se joue jamais sur la vraie caisse ouverte avec Windows.
+- **« Quitter l'application »** (bas du menu) : gérant et admin seulement, avec confirmation,
+  journalisé (`fermeture_application`). La caissière se déconnecte mais ne ferme pas la caisse.
 
 ---
 

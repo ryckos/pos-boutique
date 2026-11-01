@@ -5,7 +5,7 @@
 import type { ParametresBoutique } from '@shared/ipc/parametres'
 
 /** Les trois blocs de l'écran ; chacun s'enregistre à part. */
-export type Groupe = 'boutique' | 'stock' | 'caisse'
+export type Groupe = 'boutique' | 'stock' | 'caisse' | 'poste'
 
 export type ChampsParametres = Record<string, string>
 
@@ -31,6 +31,8 @@ export function champsDuGroupe(groupe: Groupe, p: ParametresBoutique): ChampsPar
         tvaDefaut: String(p.tvaDefaut),
         plafondRemiseCaissier: p.plafondRemiseCaissier === null ? '' : String(p.plafondRemiseCaissier)
       }
+    case 'poste':
+      return { demarrageAutomatique: p.demarrageAutomatique ? 'oui' : 'non' }
   }
 }
 
@@ -55,5 +57,7 @@ export function versModifications(groupe: Groupe, c: ChampsParametres): Partial<
         plafondRemiseCaissier:
           c.plafondRemiseCaissier.trim() === '' ? null : lireEntier(c.plafondRemiseCaissier)
       }
+    case 'poste':
+      return { demarrageAutomatique: c.demarrageAutomatique === 'oui' }
   }
 }

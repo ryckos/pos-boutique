@@ -22,7 +22,12 @@ Ma Boutique POS — version 1.0.0-rc.1
 2. Crayon **Boutique et ticket** : nom, adresse, NIF, message du bas du ticket.
 3. Crayon **Stock** : nombre de jours pour surveiller les péremptions.
 4. Crayon **Caisse** : remise maximale qu'une caissière peut faire seule (vide = toujours le code du gérant).
-5. Enregistrez chaque groupe.
+5. Crayon **Ce poste** : la caisse s'ouvre-t-elle seule quand l'ordinateur s'allume (Oui conseillé).
+6. Enregistrez chaque groupe.
+
+**Fermer l'application** : elle occupe tout l'écran et n'a pas de croix, pour qu'on ne la ferme pas par
+erreur. En bas du menu, touchez « Quitter l'application », puis confirmez. Pour la rouvrir : l'icône
+« Ma Boutique POS » du bureau, ou redémarrer l'ordinateur.
 
 ## 3. Créer un compte pour un employé
 
