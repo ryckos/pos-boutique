@@ -1109,6 +1109,17 @@ repart à 1 chaque année.
 - **Historique des sessions** : sessions ouvertes dans la période (date d'ouverture), avec les valeurs figées à la
   clôture (attendu, compté, écart, commentaire) ; une session en cours n'a pas d'écart. Total des écarts des
   sessions clôturées en tête.
+### 11.4 Tableau de bord d'accueil (validé par Dev A le 2026-11-01, A15)
+- **Droits** : gérant (et admin), lecture seule. Le jour est celui de l'ordinateur de la boutique, lu en base par
+  le processus principal (l'écran n'envoie aucune date).
+- **Ventes du jour** : chiffre d'affaires **net des retours** (règles de `ventesPeriode`, § 11), nombre de tickets
+  terminés, panier moyen = ventes (hors retours) / tickets, arrondi au franc, 0 sans ticket. À côté, les mêmes
+  chiffres pour **la veille** (jour calendaire précédent), sans pourcentage de variation.
+- **Caisses ouvertes** : les sessions sans clôture, la plus ancienne d'abord ; une session ouverte avant
+  aujourd'hui est signalée « À clôturer ? » (probablement oubliée).
+- **Alertes de stock et de péremption** : celles de Dev B, § 3.3 (mêmes règles, mêmes chiffres que les pages Stock
+  et Péremptions), 5 éléments détaillés au plus.
+- Ni la marge du jour ni les créances à relancer n'y figurent (la page Recouvrement existe déjà).
 ---
 
 ## 12. Utilisateurs et sécurité (Dev B)

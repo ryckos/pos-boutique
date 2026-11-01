@@ -812,6 +812,18 @@ défaut, « Revenir au mois en cours ») que les rapports de gestion. Règles : 
   Commentaire.
 - Pas d'export Excel dans cette première version (il passe par le service d'export de Dev B, § 11.2).
 
+### 5.27 Accueil du gérant (Dev A — A15)
+Page « Accueil » (`modules/rapports-ventes/PageAccueil.tsx`, route `/accueil`), **première entrée du menu** du gérant
+et de l'admin : c'est la page d'arrivée après la connexion. La caissière arrive toujours sur « Caisse ». Règles :
+`REGLES_METIER.md` § 11.4. Lecture seule, rafraîchie chaque minute ; quatre cartes qui se chargent chacune seule
+(une carte en erreur n'empêche pas les autres).
+- **Ventes du jour** : chiffre d'affaires en 40 px, « 2 tickets · panier moyen 4 600 F », « Hier (31/10) : … F, … ticket ».
+- **Caisses ouvertes** : une ligne par caisse, « Afi · depuis 07 h 45 » ; si elle date d'avant aujourd'hui,
+  « depuis le 31/10 à 18 h 05 » en ambre avec la pastille « À clôturer ? ». Lien « Clôture de caisse ».
+- **Stock** : « 1 rupture · 4 stocks bas », les 5 premiers produits (rupture en rouge), lien « Voir le stock ».
+- **Péremptions** : « 2 périmés · 1 urgent · 4 à surveiller », les 5 premiers lots (« Périmé depuis 2 jours »,
+  « Périme demain »), valeur en jeu sous l'horizon, lien « Voir les péremptions ».
+
 ## 6. Accessibilité et robustesse
 - Contraste AA minimum : les jetons existants le respectent.
 - Les messages d'erreur portent `role="alert"`.
