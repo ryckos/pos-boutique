@@ -14,6 +14,8 @@
  * (le prix n'est plus le même) ; remises et accord du gérant tombent avec un ticket vidé.
  */
 import type { AccordRemiseDonne } from '@shared/ipc/caisse'
+import type { PromotionEnCours } from '@shared/ipc/promotions'
+import { prixPromotionnel } from '@shared/promotions'
 import type { ArticleCatalogue, PanierClient } from '@shared/types'
 
 export interface LignePanier {
@@ -191,6 +193,58 @@ export function quantiteBaseTotale(ligne: LignePanier): number {
   return ligne.quantite * ligne.article.quantiteBase
 }
 
+/**
+ * Promotions (A16, REGLES_METIER § 5.2) : l'article au prix du jour. Le prix du catalogue est gardé dans
+ * `prixNormal`, ce qui rend le calcul idempotent : on peut le refaire quand la liste des promotions
+ * change sans jamais appliquer une promotion sur une promotion. La plus avantageuse seule, sans cumul —
+ * comme le service, qui refait ce calcul en base à l'encaissement et fait foi.
+ */
+export function appliquerPromotion(
+  article: ArticleCatalogue,
+  promotions: PromotionEnCours[]
+): ArticleCatalogue {
+  const normal = article.prixNormal ?? article.prixVente
+  let meilleure: { id: number; nom: string; prix: number } | null = null
+  for (const p of promotions) {
+    if (!p.produitIds.includes(article.produitId)) continue
+    const prix = prixPromotionnel(p, normal, article.quantiteBase)
+    if (prix !== null && (meilleure === null || prix <= meilleure.prix)) {
+      meilleure = { id: p.id, nom: p.nom, prix }
+    }
+  }
+  if (meilleure) {
+    if (article.promotion?.id === meilleure.id && article.prixVente === meilleure.prix) return article
+    return {
+      ...article,
+      prixNormal: normal,
+      prixVente: meilleure.prix,
+      promotion: { id: meilleure.id, nom: meilleure.nom }
+    }
+  }
+  if (article.prixNormal === undefined) return article
+  const { prixNormal: _prixNormal, promotion: _promotion, ...sansPromotion } = article
+  return { ...sansPromotion, prixVente: normal }
+}
+
+/** Le panier re-tarifé ; le même objet s'il n'y a rien à changer (pas de rendu inutile). */
+export function appliquerPromotions(panier: Panier, promotions: PromotionEnCours[]): Panier {
+  const lignes = panier.lignes.map((l) => {
+    const article = appliquerPromotion(l.article, promotions)
+    return article === l.article ? l : { ...l, article }
+  })
+  return lignes.every((l, i) => l === panier.lignes[i]) ? panier : { ...panier, lignes }
+}
+
+/** Ce que les promotions font gagner au client sur ce ticket, FCFA. */
+export function economiePanier(panier: Panier): number {
+  return panier.lignes.reduce(
+    (n, l) =>
+      n +
+      (l.article.prixNormal === undefined ? 0 : (l.article.prixNormal - l.article.prixVente) * l.quantite),
+    0
+  )
+}
+
 /** Ce que l'écran client affiche. */
 export function versPanierClient(panier: Panier): PanierClient {
   return {
@@ -199,7 +253,11 @@ export function versPanierClient(panier: Panier): PanierClient {
       designation: l.article.designation,
       quantite: l.quantite,
       total: totalLigne(l),
-      ...((l.remise ?? 0) > 0 && { remise: l.remise })
+      ...((l.remise ?? 0) > 0 && { remise: l.remise }),
+      ...(l.article.promotion &&
+        l.article.prixNormal !== undefined && {
+          promotion: { nom: l.article.promotion.nom, totalNormal: l.article.prixNormal * l.quantite }
+        })
     })),
     ...((panier.remiseGlobale ?? 0) > 0 && { remiseTicket: panier.remiseGlobale })
   }
@@ -216,6 +274,7 @@ export type ActionPanier =
   | { type: 'remiserLigne'; conditionnementId: number; montant: number }
   | { type: 'remiserTicket'; montant: number }
   | { type: 'accorder'; accord: AccordRemiseDonne }
+  | { type: 'promotions'; promotions: PromotionEnCours[] }
   | { type: 'vider' }
 
 export function reducteurPanier(panier: Panier, action: ActionPanier): Panier {
@@ -244,6 +303,8 @@ function appliquer(panier: Panier, action: ActionPanier): Panier {
       return remiserTicket(panier, action.montant)
     case 'accorder':
       return { ...panier, accord: action.accord }
+    case 'promotions':
+      return appliquerPromotions(panier, action.promotions)
     case 'vider':
       return panierVide
   }

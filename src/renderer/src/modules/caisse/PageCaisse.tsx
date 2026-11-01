@@ -14,13 +14,16 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ArticleCatalogue, FinVenteClient } from '@shared/types'
+import type { PromotionEnCours } from '@shared/ipc/promotions'
 import type { ModePaiementCaisse, RequeteVente, SessionCaisse, VenteEnregistree } from '@shared/ipc/caisse'
 import { formaterDate, formaterFCFA, formaterQuantite } from '@shared/format'
 import { appel } from '@renderer/lib/api'
 import { useScanner } from '@renderer/lib/useScanner'
 import { useUtilisateur } from '@renderer/app/contexte'
 import {
+  appliquerPromotions,
   brutLigne,
+  economiePanier,
   sousTotal,
   totalLigne,
   totalPanier,
@@ -102,6 +105,8 @@ export function PageCaisse(): React.JSX.Element {
   const [reimprime, setReimprime] = useState<string | null>(null)
   /** Mode choisi pour ouvrir la fenêtre de paiement ; null = fenêtre fermée. */
   const [paiement, setPaiement] = useState<ModePaiementCaisse | null>(null)
+  // Promotions du jour (A16) : null tant que la liste n'est pas arrivée.
+  const [promotions, setPromotions] = useState<PromotionEnCours[] | null>(null)
   /** Vente à crédit (A11) : fenêtre « quel client ? » ouverte, puis client choisi pour le paiement. */
   const [choixClientOuvert, setChoixClientOuvert] = useState(false)
   const [clientCredit, setClientCredit] = useState<ClientCredit | null>(null)
@@ -139,6 +144,19 @@ export function PageCaisse(): React.JSX.Element {
         setSession(null)
         setMessage(e.message)
       })
+  }, [])
+
+  // Promotions du jour, relues chaque minute : une promotion qui commence ou finit à minuit se voit sans
+  // rouvrir la caisse. En cas d'échec on garde la liste précédente ; le service refait le calcul à l'encaissement.
+  useEffect(() => {
+    const lire = (): void => {
+      appel('promotions:enCours')
+        .then(setPromotions)
+        .catch(() => setPromotions((p) => p ?? []))
+    }
+    lire()
+    const minuteur = setInterval(lire, 60_000)
+    return () => clearInterval(minuteur)
   }, [])
 
   // La grille est chargée une seule fois : pas de requête pendant la vente.
@@ -320,6 +338,14 @@ export function PageCaisse(): React.JSX.Element {
     }
   }
 
+  // Tout article qui entre au ticket (scan, F2, grille, changement de conditionnement, proforma, ticket en
+  // attente repris) est mis au prix du jour ici, en un seul endroit. Pas pendant le paiement : le total
+  // affiché dans la fenêtre ne bouge pas sous les doigts de la caissière.
+  useEffect(() => {
+    if (promotions === null || paiement !== null) return
+    if (appliquerPromotions(panier, promotions) !== panier) agir({ type: 'promotions', promotions })
+  }, [panier, promotions, paiement, agir])
+
   const total = totalPanier(panier)
   const selection = panier.selection !== null ? trouverLigne(panier, panier.selection) : undefined
 
@@ -452,6 +478,12 @@ export function PageCaisse(): React.JSX.Element {
                     )}
                   </span>
                   <span className="montant">{formaterFCFA(totalLigne(l))}</span>
+                  {l.article.promotion && l.article.prixNormal !== undefined && (
+                    <span className="ticket-ligne-promo">
+                      Promo {l.article.promotion.nom} · au lieu de{' '}
+                      {formaterFCFA(l.article.prixNormal * l.quantite)}
+                    </span>
+                  )}
                   {!!l.remise && (
                     <span className="ticket-ligne-remise">
                       {formaterFCFA(brutLigne(l))} − remise {formaterFCFA(l.remise)}
@@ -623,6 +655,12 @@ export function PageCaisse(): React.JSX.Element {
               {panier.accord && ` · accord de ${panier.accord.gerant}`}
             </span>
           </div>
+        )}
+
+        {economiePanier(panier) > 0 && (
+          <p className="ticket-economie">
+            Économie grâce aux promotions : {formaterFCFA(economiePanier(panier))}
+          </p>
         )}
 
         <div className="ticket-total">

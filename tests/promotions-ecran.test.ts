@@ -187,3 +187,101 @@ describe('Choix du rayon (A16)', () => {
     ])
   })
 })
+
+// ─── Caisse : le panier au prix du jour (A16) ───
+import {
+  ajouterArticle,
+  appliquerPromotion,
+  appliquerPromotions,
+  economiePanier,
+  panierVide,
+  reducteurPanier,
+  totalPanier,
+  versPanierClient
+} from '../src/renderer/src/modules/caisse/panier'
+import type { PromotionEnCours } from '../src/shared/ipc/promotions'
+
+describe('Panier sous promotion (A16)', () => {
+  const unite = article('Unité', 1, 350)
+  const carton = article('Carton de 24', 24, 7500)
+  const moins20: PromotionEnCours = {
+    id: 1,
+    nom: 'Tomate −20 %',
+    type: 'remise_pourcent',
+    valeur: 20,
+    produitIds: [3]
+  }
+  const moins50F: PromotionEnCours = {
+    id: 2,
+    nom: '−50 F',
+    type: 'remise_montant',
+    valeur: 50,
+    produitIds: [3]
+  }
+
+  it('l’article prend le prix promotionnel et garde le prix normal', () => {
+    expect(appliquerPromotion(unite, [moins20])).toMatchObject({
+      prixVente: 280,
+      prixNormal: 350,
+      promotion: { id: 1, nom: 'Tomate −20 %' }
+    })
+    expect(appliquerPromotion(carton, [moins20]).prixVente).toBe(6000)
+  })
+
+  it('la plus avantageuse seule, sans cumul ; un autre produit n’est pas touché', () => {
+    expect(appliquerPromotion(unite, [moins50F, moins20]).prixVente).toBe(280)
+    expect(appliquerPromotion(carton, [moins50F, moins20]).prixVente).toBe(6000)
+    const autre = { ...unite, produitId: 9 }
+    expect(appliquerPromotion(autre, [moins20])).toBe(autre)
+  })
+
+  it('idempotent : refaire le calcul ne change rien, et n’applique pas une promotion sur une promotion', () => {
+    const une = appliquerPromotion(unite, [moins20])
+    expect(appliquerPromotion(une, [moins20])).toBe(une)
+    expect(appliquerPromotion(une, [moins50F]).prixVente).toBe(300)
+  })
+
+  it('la promotion qui se termine rend le prix normal', () => {
+    const une = appliquerPromotion(unite, [moins20])
+    const retour = appliquerPromotion(une, [])
+    expect(retour).toEqual(unite)
+    expect(retour.prixNormal).toBeUndefined()
+  })
+
+  it('panier : 1 carton + 2 unités = 6 560 F au lieu de 8 200 F, économie 1 640 F', () => {
+    let p = ajouterArticle(panierVide, carton)
+    p = ajouterArticle(p, unite)
+    p = ajouterArticle(p, unite)
+    expect(totalPanier(p)).toBe(8200)
+    const promo = reducteurPanier(p, { type: 'promotions', promotions: [moins20] })
+    expect(totalPanier(promo)).toBe(6560)
+    expect(economiePanier(promo)).toBe(1640)
+    expect(economiePanier(p)).toBe(0)
+  })
+
+  it('rien à changer : le même panier est rendu (pas de rendu inutile)', () => {
+    const p = ajouterArticle(panierVide, unite)
+    expect(appliquerPromotions(p, [])).toBe(p)
+    const promo = appliquerPromotions(p, [moins20])
+    expect(appliquerPromotions(promo, [moins20])).toBe(promo)
+  })
+
+  it('une remise de ligne trop grande pour le nouveau prix est ramenée à la ligne', () => {
+    let p = ajouterArticle(panierVide, unite)
+    p = reducteurPanier(p, { type: 'remiserLigne', conditionnementId: 1, montant: 340 })
+    const promo = reducteurPanier(p, { type: 'promotions', promotions: [moins20] })
+    expect(promo.lignes[0].remise).toBe(280)
+    expect(totalPanier(promo)).toBe(0)
+  })
+
+  it('écran client : la ligne en promotion montre le nom et le total au prix normal', () => {
+    let p = ajouterArticle(panierVide, carton)
+    p = ajouterArticle(p, carton)
+    const client = versPanierClient(reducteurPanier(p, { type: 'promotions', promotions: [moins20] }))
+    expect(client.lignes[0]).toMatchObject({
+      total: 12000,
+      promotion: { nom: 'Tomate −20 %', totalNormal: 15000 }
+    })
+    expect(versPanierClient(p).lignes[0].promotion).toBeUndefined()
+  })
+})
