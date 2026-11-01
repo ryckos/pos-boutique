@@ -59,7 +59,7 @@ vide.
 | **Figer le nom de l'application** : ajouter `"productName": "Ma Boutique POS"` à la racine de `package.json` (il n'est aujourd'hui que dans la section `build`) | Le nom du dossier de données en dépend. **S'il changeait entre deux versions, l'application ouvrirait une base vide dans un nouveau dossier.** Le fixer une fois pour toutes, avant la première installation | Dev B |
 | Plafond de remise de la caissière (D-A3) | Sans plafond, toute remise de la caissière demande le code du gérant | La cliente |
 | Politique de stock négatif (D-A1) | En attendant, une vente n'est jamais bloquée | La cliente |
-| Démarrage automatique et mode kiosque | En place depuis la version qui suit la 1.0.0-rc.1 (B-P5) : voir § 5.6 | Dev B |
+| Démarrage automatique et mode kiosque | En place depuis la 1.0.0-rc.2 (B-P5) : voir § 5.6 | Dev B |
 | Signature de l'installateur | Non signé : Windows affiche un avertissement (§ 5.2) | Plus tard |
 
 ### 3.2 Ce que la cliente doit savoir le premier jour
