@@ -466,7 +466,7 @@ Les règlements peuvent être partiels (espèces, mobile money, virement). La vu
 - **Promotion** : une promotion vaut pour tout un produit, et appartient aux promotions programmées
   (A16, Dev A, § 5.2). Le bouton « Promo » de la page Péremptions s'active en pointant vers `/promotions?produit=<id>&pourcent=20&fin=<date>` (demande à Dev B).
 
-### 5.2 Promotions programmées (validé par Dev A le 2026-11-02, A16)
+### 5.2 Promotions programmées (validé par Dev A le 2026-11-01, A16)
 - **Une promotion est un prix de vente temporaire.** À la vente, la ligne garde le **prix payé** dans
   `prix_unitaire` (donc ticket, TVA, retour, facture et marge se calculent comme d'habitude), plus
   `prix_normal`, `promotion_id` et `promotion_nom` copiés au moment T. Le service relit tout en base :
