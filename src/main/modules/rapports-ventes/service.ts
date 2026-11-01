@@ -14,11 +14,15 @@ import type {
   RapportVentesParHeure,
   RequeteClassementProduits,
   SessionHistorique,
+  SyntheseAccueil,
   VentesCaissier,
+  VentesDuJour,
   VentesHeure
 } from '@shared/ipc/rapports-ventes'
 import type { Db } from '../../db/connexion'
-import { toutes } from '../../db/requetes'
+import { toutes, une } from '../../db/requetes'
+import { sessionsOuvertes } from '../caisse/service-cloture'
+import { ventesPeriode } from '../caisse/service-rapports'
 import { dansPeriode, lirePeriode } from '../rapports-gestion/periode'
 
 const moyenne = (total: number, n: number): number => (n > 0 ? Math.round(total / n) : 0)
@@ -181,5 +185,31 @@ export function historiqueSessions(db: Db, periode?: PeriodeRapport | null): Rap
     lignes,
     totalEcarts: cloturees.reduce((n, l) => n + (l.ecart ?? 0), 0),
     nbCloturees: cloturees.length
+  }
+}
+
+function ventesDuJour(db: Db, jour: string): VentesDuJour {
+  const v = ventesPeriode(db, { du: jour, au: jour })
+  return {
+    jour,
+    nbTickets: v.nbTickets,
+    chiffreAffaires: v.chiffreAffaires,
+    panierMoyen: moyenne(v.ventesTtc, v.nbTickets)
+  }
+}
+
+/**
+ * Tableau de bord d'accueil (A15, REGLES_METIER § 11.4) : le jour est celui de l'ordinateur de la
+ * boutique, lu en base comme partout ailleurs, jamais envoyé par l'écran.
+ */
+export function syntheseAccueil(db: Db): SyntheseAccueil {
+  const { jour, veille } = une<{ jour: string; veille: string }>(
+    db,
+    "SELECT date('now','localtime') AS jour, date('now','localtime','-1 day') AS veille"
+  )!
+  return {
+    aujourdhui: ventesDuJour(db, jour),
+    hier: ventesDuJour(db, veille),
+    caissesOuvertes: sessionsOuvertes(db)
   }
 }

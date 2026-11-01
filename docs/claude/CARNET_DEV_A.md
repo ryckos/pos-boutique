@@ -29,7 +29,7 @@ Format d'une entrée :
   `rapports-ventes:parHeure`, `parCaissier`, `produits`, `sessions` ; `REGLES_METIER` § 11.3, `UI_UX` § 5.26.
   Le CA par produit est la somme des lignes (la remise du ticket entier n'y est pas répartie) : il dépasse
   `ventesPeriode` de ces remises. Pas d'export Excel (passerait par le service de Dev B).
-- **A15 Tableau de bord d'accueil — branche `a/accueil` poussée, PR attend la relecture de Dev B (demain)**.
+- **A15 Tableau de bord d'accueil — fusionnée (PR #92)**.
   Page « Accueil » = première entrée du menu du gérant et page d'arrivée après la connexion (la caissière arrive
   toujours sur « Caisse ») : ventes du jour et d'hier, caisses ouvertes (pastille « À clôturer ? » si ouverte
   avant aujourd'hui), alertes de stock et de péremption de Dev B. Canal `rapports-ventes:accueil` ;
@@ -51,21 +51,19 @@ Format d'une entrée :
 - Libellés du journal ajoutés dans `src/shared/audit.ts` (fichier de Dev B, la CI l'exige) : `creation_promotion`,
   `modification_promotion`, `arret_promotion`, clés `regle`, `cible`, `du`, `au`.
 
-**En cours** : rien de non commité ni de non poussé. Deux PR attendent la relecture de Dev B : `a/accueil` (A15) et
-`a/promotions` (A16). **Cette entrée et l'état d'A16 sont sur `a/promotions`** ; `a/accueil` a sa propre mise à jour
-de l'état (A15 🔄, A14 / A13 au journal des fusions) : les deux se recouvrent, garder les deux côtés.
+**En cours** : A16 (PR #93, `a/promotions`) attend la relecture de Dev B. Les conflits avec `test` (après la
+fusion d'A15, PR #92) sont résolus par une fusion de `test` dans la branche (`routes.tsx`, `UI_UX`, `ETAT_AVANCEMENT`),
+77 fichiers de tests verts. **Cette entrée est sur `a/promotions`.**
 
 **Mise à jour en fin de journée** : Dev A a réalisé et **validé l'essai sur le terminal avec la Xprinter** (A3 et A4 passées à ✅ dans `ETAT_AVANCEMENT.md`). Les autres points de l'essai (voir l'étape 4 ci-dessous) ne sont pas confirmés : à demander à Dev A au prochain `/reprendre`.
 
 **Prochaine étape** :
-1. `/reprendre`, puis `git fetch` : A15 (`a/accueil`) et A16 (`a/promotions`) sont-elles fusionnées ? La seconde
-   à fusionner aura des conflits **faciles, à résoudre en gardant les deux côtés** : `app/routes.tsx` (A15 ajoute
-   `routesAccueil` en tête, A16 ajoute `routesPromotions`), `ui/styles.css` (deux blocs ajoutés en fin de fichier),
-   `docs/ETAT_AVANCEMENT.md`, `docs/REGLES_METIER.md` (§ 11.4 et § 5.2) et `docs/UI_UX.md` (§ 5.27 et § 5.28). Faire
-   `git merge origin/test` sur la branche, `npm run verifier`, pousser.
-2. Après chaque fusion : ligne au journal des fusions de `ETAT_AVANCEMENT.md`, A15 → ✅ et A16 → ✅ (A16 : le
-   bouton « Promo » de la page Péremptions reste à relier par Dev B), supprimer `a/accueil` et `a/promotions`
-   (local et GitHub). A13 reste 🔄 (essai sur le 11,6″) ; A14 est ✅ (l’export Excel est facultatif).
+1. `/reprendre`, puis `git fetch` : la PR #93 (A16, `a/promotions`) est-elle fusionnée ? Si `test` a encore
+   avancé, `git merge origin/test` sur la branche (conflits attendus seulement dans `ETAT_AVANCEMENT.md`, en
+   gardant les deux côtés), `npm run verifier`, pousser.
+2. Après la fusion d'A16 : ligne au journal des fusions de `ETAT_AVANCEMENT.md`, A16 → ✅ (le bouton « Promo » de
+   la page Péremptions reste à relier par Dev B), supprimer `a/accueil` et `a/promotions` (local et GitHub).
+   A13 reste 🔄 (essai sur le 11,6″) ; A14 et A15 sont ✅ (l’export Excel des rapports est facultatif).
 3. **Mettre à jour `docs/SCENARIOS_TEST.md`** : sa liste « fonctions non livrées » cite encore A13, A14, A15 et
    A16, et il manque des scénarios pour l'écran client, les rapports de ventes, l'accueil et les promotions.
 4. **Essai sur le terminal** (Dev A n'a toujours pas la Xprinter sous la main) : tout ce qui est noté aux entrées

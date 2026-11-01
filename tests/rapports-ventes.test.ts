@@ -11,6 +11,7 @@ import { enregistrerVente } from '../src/main/modules/caisse/service-vente'
 import {
   classementProduits,
   historiqueSessions,
+  syntheseAccueil,
   ventesParCaissier,
   ventesParHeure
 } from '../src/main/modules/rapports-ventes/service'
@@ -298,5 +299,41 @@ describe('Historique des sessions (A14)', () => {
   it('aucune session : liste vide, écarts à 0', () => {
     const db = baseAvecDemo()
     expect(historiqueSessions(db, {})).toMatchObject({ lignes: [], totalEcarts: 0, nbCloturees: 0 })
+  })
+})
+
+describe('Tableau de bord d’accueil (A15)', () => {
+  it('ventes du jour : retours déduits du chiffre d’affaires, panier moyen sur les ventes', () => {
+    const { db } = semaine()
+    const r = syntheseAccueil(db)
+    // 2 tickets (8 200 + 1 000), 1 retour de 350 : chiffre d'affaires 8 850, panier 9 200 / 2 = 4 600.
+    expect(r.aujourdhui).toEqual({ jour: jour(db), nbTickets: 2, chiffreAffaires: 8850, panierMoyen: 4600 })
+    expect(r.hier).toMatchObject({ nbTickets: 0, chiffreAffaires: 0, panierMoyen: 0 })
+  })
+
+  it('hier est la veille calendaire : un ticket d’hier n’est plus dans aujourd’hui', () => {
+    const { db, ticket1 } = semaine()
+    dater(db, ticket1, '-1 day')
+    const r = syntheseAccueil(db)
+    // Aujourd'hui : le ticket de 1 000 F et le retour de 350 F (qui compte à sa propre date).
+    expect(r.aujourdhui).toMatchObject({ nbTickets: 1, chiffreAffaires: 650, panierMoyen: 1000 })
+    expect(r.hier).toMatchObject({ nbTickets: 1, chiffreAffaires: 8200, panierMoyen: 8200 })
+    expect(r.hier.jour < r.aujourdhui.jour).toBe(true)
+  })
+
+  it('caisses ouvertes : celles sans clôture, la plus ancienne d’abord', () => {
+    const { db } = semaine()
+    expect(syntheseAccueil(db).caissesOuvertes.map((c) => c.caissier)).toEqual(['Afi', 'Kossi'])
+    cloturerSession(db, AFI, { montantCompte: 18000, commentaire: 'Monnaie rendue en trop ?' })
+    const restantes = syntheseAccueil(db).caissesOuvertes
+    expect(restantes.map((c) => c.caissier)).toEqual(['Kossi'])
+    expect(restantes[0].fondOuverture).toBe(10000)
+  })
+
+  it('boutique sans vente ni caisse : tout à zéro, sans division par zéro', () => {
+    const db = baseAvecDemo()
+    const r = syntheseAccueil(db)
+    expect(r.aujourdhui).toMatchObject({ nbTickets: 0, chiffreAffaires: 0, panierMoyen: 0 })
+    expect(r.caissesOuvertes).toEqual([])
   })
 })
