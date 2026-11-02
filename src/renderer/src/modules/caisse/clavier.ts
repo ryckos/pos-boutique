@@ -2,7 +2,9 @@
  * Propriétaire : Dev A.
  *
  * Raccourcis clavier de la caisse (docs/UI_UX.md § 3). La douchette n'envoie que des chiffres et
- * Entrée : aucune de ces touches ne peut donc être produite par un scan.
+ * Entrée. Mais elle est réglée en QWERTY : sur le Windows AZERTY de la boutique, la touche du chiffre 6
+ * produit « - », qui retirait un article du ticket à chaque 6 d'un code scanné. On ignore donc toute
+ * touche de la rangée des chiffres (`Digit…`) : « - » reste au pavé numérique.
  */
 export type ActionClavier =
   'rechercher' | 'encaisser' | 'mettreEnAttente' | 'supprimerLigne' | 'fermer' | 'plus' | 'moins'
@@ -17,7 +19,8 @@ const RACCOURCIS: Record<string, ActionClavier> = {
   '-': 'moins'
 }
 
-/** `touche` est la valeur de KeyboardEvent.key. */
-export function actionClavier(touche: string): ActionClavier | null {
+/** `touche` et `codePhysique` sont KeyboardEvent.key et KeyboardEvent.code. */
+export function actionClavier(touche: string, codePhysique = ''): ActionClavier | null {
+  if (codePhysique.startsWith('Digit')) return null
   return RACCOURCIS[touche] ?? null
 }

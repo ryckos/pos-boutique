@@ -273,7 +273,7 @@ export function PageCaisse(): React.JSX.Element {
     const surTouche = (e: KeyboardEvent): void => {
       const cible = e.target as HTMLElement | null
       if (cible && (cible.tagName === 'INPUT' || cible.tagName === 'TEXTAREA')) return
-      const action = actionClavier(e.key)
+      const action = actionClavier(e.key, e.code)
       if (!action) return
       e.preventDefault()
       const selection = etatCourant.current.courant.selection

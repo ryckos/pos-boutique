@@ -99,4 +99,11 @@ describe('Raccourcis clavier de la caisse', () => {
   it('ignore les chiffres et Entrée envoyés par la douchette', () => {
     for (const t of ['0', '6', 'Enter', 'a', 'F5']) expect(actionClavier(t)).toBeNull()
   })
+
+  it('un 6 de la douchette QWERTY sur Windows AZERTY (« - » sur la touche 6) ne retire rien', () => {
+    expect(actionClavier('-', 'Digit6')).toBeNull()
+    expect(actionClavier('-', 'NumpadSubtract')).toBe('moins')
+    expect(actionClavier('+', 'NumpadAdd')).toBe('plus')
+    expect(actionClavier('+', 'Equal')).toBe('plus')
+  })
 })

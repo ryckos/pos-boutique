@@ -108,7 +108,7 @@ Le socle comprend :
 | Tâche | Intitulé                                            | Dev | Statut | Notes (branche, blocage) |
 |-------|-----------------------------------------------------|-----|--------|--------------------------|
 | A-P5  | Tests terrain caisse, guide caissier, formation     | A   | ⏳     |   |
-| B-P5  | Installateur, kiosque, mises à jour, guide gérant   | B   | 🔄     | `npm run dist` opérationnel, version **1.0.0-rc.1** installée chez la cliente pour test (tag `v1.0.0-rc.1`) ; procédure `docs/DEPLOIEMENT.md` ; guides utilisateur `docs/guides/` et fiches de test `docs/fiches-test/`. Branche `b/kiosque` : démarrage avec Windows (paramètre `demarrage_automatique`, admin), plein écran, une seule instance, « Quitter l'application » (gérant, admin, journalisé), icône `build/icon.ico`, `author` ; version **1.0.0-rc.2** construite (tag après fusion). **Reste** : essai de la rc.2 installée, livraison chez la cliente, signature (plus tard) |
+| B-P5  | Installateur, kiosque, mises à jour, guide gérant   | B   | 🔄     | `npm run dist` opérationnel, version **1.0.0-rc.1** installée chez la cliente pour test (tag `v1.0.0-rc.1`) ; procédure `docs/DEPLOIEMENT.md` ; guides utilisateur `docs/guides/` et fiches de test `docs/fiches-test/`. Branche `b/kiosque` : démarrage avec Windows (paramètre `demarrage_automatique`, admin), plein écran, une seule instance, « Quitter l'application » (gérant, admin, journalisé), icône `build/icon.ico`, `author` (PR #95) ; version **1.0.0-rc.3** (rc.2 + correctif du scan à la caisse), tag après fusion. **Reste** : essai de la version installée, livraison chez la cliente, signature (plus tard) |
 
 ## Transverse
 | Tâche | Intitulé                                            | Dev | Statut | Notes (branche, blocage) |
@@ -185,3 +185,4 @@ Le socle comprend :
 | 2026-11-01 | A14   | Rapports de ventes : par heure, par caissier, top et flop produits, historique des sessions et écarts, écran `/rapports` (PR #91) |
 | 2026-11-01 | A15   | Tableau de bord d'accueil du gérant : ventes du jour et d'hier, caisses ouvertes, alertes de stock et de péremption ; première page après la connexion (PR #92) |
 | 2026-11-01 | A16   | Promotions programmées : prix temporaire d'un produit ou d'un rayon (pourcentage, remise en francs, prix fixe), appliqué à la vente, au ticket, à la caisse et à l'écran client ; migration `20261102_0900_promotions.sql` (PR #93) |
+| 2026-11-01 | B-P5  | Démarrage avec Windows (paramètre admin), plein écran, une seule instance, « Quitter l'application » (gérant, admin), icône, `author` ; relectures des migrations A12 et A16 (PR #95) |

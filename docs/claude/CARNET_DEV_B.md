@@ -18,6 +18,44 @@ Format d'une entrée :
 
 ---
 
+## 2026-11-02 — b/correctif-scan — correctif urgent du scan à la caisse, version 1.0.0-rc.3
+**Fait** :
+- **PR #95 fusionnée** (`b/kiosque`, B-P5 et rc.2) : ligne au journal des fusions ; B-P5 reste 🔄.
+- **Bug signalé chez la cliente** : au scan d'un produit, le ticket se vidait avant l'ajout. Cause : la
+  douchette est en QWERTY, Windows en AZERTY ; la touche du chiffre 6 arrive en « - », raccourci
+  « diminuer la ligne choisie » de la caisse ; chaque 6 du code retirait un article (et la ligne entière
+  si elle était à 1). **Correctif** (fichiers de **Dev A**, fait d'urgence à la demande de Dev B) :
+  `caisse/clavier.ts` : `actionClavier(touche, codePhysique)` ignore les touches `Digit…` ;
+  `PageCaisse.tsx` lui passe `e.code`. « - » reste au pavé numérique. 1 test (`tests/attente.test.ts`).
+  `npm run verifier` : **917 tests verts**. Contournement immédiat sur le terminal : clavier
+  « Anglais (États-Unis) » (Windows + Espace).
+- **Version 1.0.0-rc.3** (= rc.2 + correctif) : installateur `dist\Ma Boutique POS Setup 1.0.0-rc.3.exe`,
+  SHA-256 `9BD0007E6FEED93E4AA1077562CC098D0C6A39322BACFF81FABC86F8FB23F2C3` (construit avant la reprise
+  des commits sur cette branche : contenu identique).
+- Décisions de la session : **pas de reprise sur base neuve** (la cliente garde toutes ses données, y
+  compris ses essais) ; idée de Google Drive pour les sauvegardes (dossier externe = dossier Drive, sans
+  code) présentée, **à faire valider par la cliente** (ce serait la réponse provisoire à D-A4).
+
+**En cours** : PR `b/correctif-scan` → `test` à ouvrir par Dev B (`gh` absent) :
+https://github.com/ryckos/pos-boutique/compare/test...b/correctif-scan?expand=1
+
+**Prochaine étape** :
+1. Après la fusion : tag `v1.0.0-rc.3` sur le commit de `test`
+   (`git fetch && git tag v1.0.0-rc.3 origin/test && git push origin v1.0.0-rc.3`) ; supprimer
+   `b/kiosque` et `b/correctif-scan` (local et GitHub) ; ligne au journal des fusions.
+2. Installer la rc.3 chez la cliente (`DEPLOIEMENT` § 6.3 ; données conservées ; effacer le raccourci
+   `shell:startup`), contrôle : scanner deux fois un code contenant un 6 → même ligne, quantité 2.
+3. Prévenir Dev A du correctif dans ses fichiers et des « lignes retirées » parasites au journal de la
+   cliente (dues au bug).
+4. Suite : essai de restauration sur le terminal (B16) ; Google Drive pour les sauvegardes si la cliente
+   accepte (note D-A4 dans `DECISIONS.md`, `DEPLOIEMENT` § 5.5).
+
+**Questions ouvertes** : D-A1, D-A3, D-A4 (Drive ?), D-A5, D-A6 en attente. Dev A : relecture des
+migrations avant fusion ; règle « un téléphone, un client actif » à confirmer.
+
+**Contrats** : aucun canal modifié. **Pour Dev A** : `actionClavier` prend un second paramètre facultatif
+(`KeyboardEvent.code`) ; les touches de la rangée des chiffres ne sont plus des raccourcis.
+
 ## 2026-11-01 — b/revue-a12, b/kiosque — relectures, répétition de l'essai de restauration, B-P5 codée
 **Fait** :
 - **PR #86** (procédure d'essai de restauration) et **PR #89** (`b/revue-a12` : PR #86 au journal des
@@ -661,77 +699,3 @@ Dev B dans la session) :
   `mouvements_caisse`).
 - Attendu : `enregistrerMouvementCaisse()` (Dev A, A8, prévu fin S10) toujours pas livré ;
   `caisse:ventesPeriode` (fin S16) pour la marge de B14.
-
----
-
-## 2026-10-07 / 08 — b/inventaires, b/inventaires-ecran — B11 et B12 fusionnées (B12 Inventaires)
-**Fait** :
-- **B11 fusionnée** (PR #39, #40) ; la PR de documentation **#41** (`b/docs-b11-fusion`) a rattrapé
-  les deux commits restés hors de la PR #40 (B10 → ✅, carnet B11) et passé B11 à ✅.
-- **Règles validées par Dev B**, écrites dans `REGLES_METIER.md` § 9.0 (et § 1.4 pour le journal) :
-  - gérant seul (ouvrir, compter, valider, annuler) ; **un seul inventaire en cours** ; numéro `INV`
-    dès l'ouverture ;
-  - total, ou partiel = un rayon **et ses sous-rayons** (ou un sous-rayon) ;
-  - chaque comptage **enregistré aussitôt**, théorique photographié à ce moment (une vente faite
-    ensuite reste dans le stock) ; **recomptage = remplace** tant que l'inventaire est en cours ;
-  - motif obligatoire au comptage si écart (liste du schéma : casse, vol, erreur de saisie,
-    péremption, don, autre) + commentaire facultatif ;
-  - **produits non comptés : stock inchangé** (avertissement avant validation) ;
-  - périssables comptés **par produit** : un manquant est retiré des lots, date la plus ancienne
-    d'abord (périmés compris), le reste sans lot ; un surplus entre sans lot ;
-  - démarque = manquants × CUMP ; surplus chiffrés à part ; net ;
-  - annulation d'un inventaire en cours : motif, journalisée (`annulation_inventaire`), aucun
-    mouvement ; validé ou annulé = figé.
-- **PR #42 `b/inventaires`** : migration `20261007_0900_inventaires.sql` (`inventaires.categorie_id`,
-  `motif_annulation` ; `lignes_inventaire.compte_le`, `commentaire` ; index unique inventaire +
-  produit ; triggers : pas de suppression, inventaire figé), module `src/main/modules/inventaires/`,
-  contrat `src/shared/ipc/inventaires.ts`, règles pures `src/shared/inventaires.ts`
-  (`repartirManquant`, `valeurEcart`, libellés). 18 tests (`tests/inventaires.test.ts` : 41 = écart
-  nul ; savon 29 → 27 = **300 F** ; vente après comptage → 26 ; lots A −3 / B −2 ; panne → tout annulé).
-- **PR #43 `b/inventaires-ecran`** : menu « Inventaires » (`modules/inventaires/PageInventaires.tsx`),
-  logique pure `saisieInventaire.ts` (7 tests). Choix d'écran : **tableau + comptage en fenêtre**
-  (règle des formulaires en fenêtre modale) au lieu de cartes dans la page ; `UI_UX.md` § 5.11
-  réécrit. **Scénario complet testé à la main par Dev B.**
-- B12 → ✅ et deux lignes au journal des fusions (dans `test`, le statut de B12 était resté ⏳ après
-  la résolution d'un conflit de fusion : corrigé ici). 480 tests verts, typecheck et build OK.
-- Astuce poste de Dev B : `C:\temp` n'existe pas ; base jetable avec
-  `$env:POS_DB="$env:TEMP\inventaire.db"; npm run dev` (puis `Remove-Item Env:POS_DB`).
-
-**En cours** : PR de documentation `b/docs-b12-fusion` → `test` (B12 ✅, journal des fusions, ce
-carnet, archive de l'entrée du 2026-09-25) :
-https://github.com/ryckos/pos-boutique/compare/test...b/docs-b12-fusion?expand=1
-
-**Prochaine étape** :
-1. Faire fusionner `b/docs-b12-fusion`. Supprimer sur GitHub les branches fusionnées :
-   `b/inventaires`, `b/inventaires-ecran`, `b/docs-b11-fusion`, `b/docs-b12-fusion`, `b/sorties`,
-   `b/sorties-ecran`, `b/docs-b10-fusion`, `b/commandes`, `b/commandes-ecran`, `b/docs-b8-fusion`,
-   `b/receptions`, `b/receptions-ecran`, `b/fournisseurs`, `b/fournisseurs-achats`, `b/fefo`,
-   `b/peremptions`, `b/reglements`, `b/reglements-ecran`.
-2. **B13 Dépenses** (`/tache B13`, branche `b/depenses` depuis `test` à jour). Relire
-   `REGLES_METIER.md` § 10, `UI_UX.md` (écran des dépenses s'il existe), tables `categories_depense` et
-   `depenses` (`source` `caisse` / `fonds_propres`, `session_caisse_id`), numéro `DEP`.
-   - Vérifier d'abord si `enregistrerMouvementCaisse()` (Dev A, A8) est arrivé dans `test` :
-     `grep -rn enregistrerMouvementCaisse src/main`. Si non, ne faire que la source
-     **« fonds propres »** et prévoir la source « caisse » dans le contrat (refus clair en attendant).
-   - Questions à poser à Dev B avant le plan : catégories de dépenses de départ (loyer, électricité,
-     eau, salaires, transport… créables par le gérant ?) ; droits (gérant seul, ou caissière pour une
-     petite dépense de caisse ?) ; pièce justificative (référence texte) ; correction = annulation
-     avec motif journalisée ? ; date passée acceptée ; plafond éventuel.
-3. Ensuite Phase 4 : B14 rapports de gestion (rapport des pertes par cause : dons = libellé « Don »,
-   démarques d'inventaire = document `inventaire`), B15 exports Excel, B16 sauvegardes (D-A4 en attente).
-
-**Questions ouvertes** :
-- Colonne « Suivi péremption » dans l'import Excel : toujours non confirmée par Dev B.
-- Plafond de remise caissier (D-A3) : en attente de la cliente.
-- Réactivation (produit, compte, catégorie, fournisseur) : non prévue. Photo des produits : reportée.
-- Paiement d'un fournisseur depuis le tiroir : après A8.
-
-**Contrats** :
-- Ajoutés (gérant, **sans impact pour la caisse**) : `inventaires:ouvrir`, `enCours`, `detail`,
-  `liste`, `compter`, `valider`, `annuler`. Nouveau module enregistré dans `src/main/ipc/index.ts`,
-  `src/shared/ipc/index.ts` et `app/routes.tsx`.
-- **Pour Dev A** : nouvelle migration (tables `inventaires` et `lignes_inventaire` seulement, plus des
-  triggers) ; aucune table de la caisse touchée. L'historique d'un produit affiche « Inventaire
-  INV-… ».
-- Attendu : `enregistrerMouvementCaisse()` (Dev A, A8, prévu fin S10) toujours pas livré ; il bloque
-  B13 (source caisse) et le paiement des fournisseurs au tiroir.
